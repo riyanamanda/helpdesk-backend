@@ -1,0 +1,24 @@
+# Git and editor metadata
+.git
+.gitignore
+.vscode
+.idea
+
+# Local env/secrets
+.env
+.env.*
+
+# Build/test artifacts
+bin
+dist
+build
+tmp
+*.log
+*.out
+*.test
+*.coverprofile
+coverage.out
+
+# OS noise
+.DS_Store
+Thumbs.db
