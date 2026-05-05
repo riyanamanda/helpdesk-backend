@@ -11,42 +11,17 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
-	"github.com/labstack/echo/v5/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/database"
+	"github.com/riyanamanda/helpdesk-backend/internal/middleware"
 )
 
 func main() {
 	cfg := config.Load()
 
 	e := echo.New()
-	e.Use(middleware.RequestID())
-	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
-		LogRequestID: true,
-		LogMethod:    true,
-		LogURI:       true,
-		LogStatus:    true,
-		LogLatency:   true,
-		HandleError:  true,
-		LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
-			level := slog.LevelInfo
-			if v.Status >= 500 {
-				level = slog.LevelError
-			}
-			slog.Log(c.Request().Context(), level, "http request",
-				"request_id", v.RequestID,
-				"method", v.Method,
-				"uri", v.URI,
-				"status", v.Status,
-				"latency", v.Latency,
-				"error", v.Error,
-			)
-
-			return nil
-		},
-	}))
-	e.Use(middleware.Recover())
+	middleware.Register(e)
 
 	// health check route
 	e.GET("/", func(c *echo.Context) error {
