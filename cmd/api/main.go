@@ -12,6 +12,7 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
+	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/database"
 )
@@ -27,8 +28,13 @@ func main() {
 		LogURI:       true,
 		LogStatus:    true,
 		LogLatency:   true,
+		HandleError:  true,
 		LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
-			slog.Info("http request",
+			level := slog.LevelInfo
+			if v.Status >= 500 {
+				level = slog.LevelError
+			}
+			slog.Log(c.Request().Context(), level, "http request",
 				"request_id", v.RequestID,
 				"method", v.Method,
 				"uri", v.URI,
@@ -53,6 +59,10 @@ func main() {
 	// depencencies
 	db := database.NewPostgres(cfg.DBConnString())
 	defer db.Close()
+
+	// routes
+	api := e.Group("/api/v1")
+	category.Register(api, db)
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.AppHost, cfg.AppPort),
