@@ -13,13 +13,33 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/database"
 )
 
 func main() {
 	cfg := config.Load()
 
 	e := echo.New()
-	e.Use(middleware.RequestLogger())
+	e.Use(middleware.RequestID())
+	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogRequestID: true,
+		LogMethod:    true,
+		LogURI:       true,
+		LogStatus:    true,
+		LogLatency:   true,
+		LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
+			slog.Info("http request",
+				"request_id", v.RequestID,
+				"method", v.Method,
+				"uri", v.URI,
+				"status", v.Status,
+				"latency", v.Latency,
+				"error", v.Error,
+			)
+
+			return nil
+		},
+	}))
 	e.Use(middleware.Recover())
 
 	// health check route
@@ -31,6 +51,8 @@ func main() {
 	})
 
 	// depencencies
+	db := database.NewPostgres(cfg.DBConnString())
+	defer db.Close()
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.AppHost, cfg.AppPort),
@@ -42,7 +64,7 @@ func main() {
 		slog.Info("server starting", "addr", server.Addr)
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("Error to start server", "host", server.Addr)
+			slog.Error("Error to start server", "addr", server.Addr, "error", err)
 		}
 	}()
 

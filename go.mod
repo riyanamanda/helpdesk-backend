@@ -3,8 +3,10 @@ module github.com/riyanamanda/helpdesk-backend
 go 1.26.2
 
 require (
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v5 v5.1.1
+	github.com/lib/pq v1.10.9
 )
 
 require (
