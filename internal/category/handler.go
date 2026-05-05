@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v5"
+	"github.com/riyanamanda/helpdesk-backend/internal/response"
 )
 
 type handler struct {
@@ -26,16 +27,18 @@ func (h *handler) ListCategories(c *echo.Context) error {
 		Offset: offset,
 	}
 
-	categories, err := h.svc.GetCategories(c.Request().Context(), params)
+	result, err := h.svc.GetCategories(c.Request().Context(), params)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+		return c.JSON(http.StatusInternalServerError, response.Error("internal server error"))
 	}
 
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data": toCategoryResponses(categories),
-		"meta": map[string]int{
-			"limit":  params.Limit,
-			"offset": params.Offset,
-		},
-	})
+	meta := &response.Meta{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+		Total:  result.Total,
+	}
+
+	return c.JSON(http.StatusOK,
+		response.Success(toCategoryResponses(result.Data), meta),
+	)
 }

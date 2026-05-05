@@ -14,3 +14,8 @@ type ListCategoriesParams struct {
 	Limit  int
 	Offset int
 }
+
+type ListCategoriesResult struct {
+	Data  []Category
+	Total int
+}

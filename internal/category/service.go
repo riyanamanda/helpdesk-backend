@@ -3,10 +3,12 @@ package category
 import (
 	"context"
 	"log/slog"
+
+	"github.com/riyanamanda/helpdesk-backend/internal/response"
 )
 
 type CategoryService interface {
-	GetCategories(ctx context.Context, params ListCategoriesParams) ([]Category, error)
+	GetCategories(ctx context.Context, params ListCategoriesParams) (ListCategoriesResult, error)
 }
 
 type service struct {
@@ -19,17 +21,12 @@ func NewCategoryService(repo CategoryRepository) CategoryService {
 	}
 }
 
-func (svc *service) GetCategories(ctx context.Context, params ListCategoriesParams) ([]Category, error) {
-	const (
-		defaultLimit = 10
-		maxLimit     = 100
-	)
-
+func (svc *service) GetCategories(ctx context.Context, params ListCategoriesParams) (ListCategoriesResult, error) {
 	limit := params.Limit
 	offset := params.Offset
 
-	if limit <= 0 || limit > maxLimit {
-		limit = defaultLimit
+	if limit <= 0 || limit > response.MaxLimit {
+		limit = response.DefaultLimit
 	}
 	if offset < 0 {
 		offset = 0
@@ -38,11 +35,14 @@ func (svc *service) GetCategories(ctx context.Context, params ListCategoriesPara
 	params.Limit = limit
 	params.Offset = offset
 
-	categories, err := svc.repo.List(ctx, params)
+	categories, total, err := svc.repo.List(ctx, params)
 	if err != nil {
 		slog.Error("list category failed", "error", err)
-		return nil, err
+		return ListCategoriesResult{}, err
 	}
 
-	return categories, nil
+	return ListCategoriesResult{
+		Data:  categories,
+		Total: total,
+	}, nil
 }

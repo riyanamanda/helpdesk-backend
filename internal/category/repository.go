@@ -7,7 +7,7 @@ import (
 )
 
 type CategoryRepository interface {
-	List(ctx context.Context, params ListCategoriesParams) ([]Category, error)
+	List(ctx context.Context, params ListCategoriesParams) ([]Category, int, error)
 }
 
 type repository struct {
@@ -20,8 +20,19 @@ func NewCategoryRepository(db *sqlx.DB) CategoryRepository {
 	}
 }
 
-func (r *repository) List(ctx context.Context, params ListCategoriesParams) ([]Category, error) {
+func (r *repository) List(ctx context.Context, params ListCategoriesParams) ([]Category, int, error) {
 	var categories []Category
+	var total int
+
+	const queryTotal = `
+		SELECT COUNT(*)
+		FROM categories
+		WHERE is_active = TRUE
+	`
+
+	if err := r.db.GetContext(ctx, &total, queryTotal); err != nil {
+		return nil, 0, err
+	}
 
 	const query = `
 		SELECT id, name, is_active, created_at, updated_at
@@ -31,10 +42,9 @@ func (r *repository) List(ctx context.Context, params ListCategoriesParams) ([]C
 		LIMIT $1 OFFSET $2
 	`
 
-	err := r.db.SelectContext(ctx, &categories, query, params.Limit, params.Offset)
-	if err != nil {
-		return nil, err
+	if err := r.db.SelectContext(ctx, &categories, query, params.Limit, params.Offset); err != nil {
+		return nil, 0, err
 	}
 
-	return categories, nil
+	return categories, total, nil
 }
