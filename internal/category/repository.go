@@ -9,7 +9,7 @@ import (
 )
 
 type CategoryRepository interface {
-	List(ctx context.Context, params ListCategoriesParams) ([]Category, int, error)
+	List(ctx context.Context, params GetCategoryParams) ([]Category, int, error)
 	Create(ctx context.Context, category *Category) error
 }
 
@@ -23,7 +23,7 @@ func NewCategoryRepository(db *sqlx.DB) CategoryRepository {
 	}
 }
 
-func (r *repository) List(ctx context.Context, params ListCategoriesParams) ([]Category, int, error) {
+func (r *repository) List(ctx context.Context, params GetCategoryParams) ([]Category, int, error) {
 	var categories []Category
 	var total int
 
@@ -45,7 +45,8 @@ func (r *repository) List(ctx context.Context, params ListCategoriesParams) ([]C
 		LIMIT $1 OFFSET $2
 	`
 
-	if err := r.db.SelectContext(ctx, &categories, query, params.Limit, params.Offset); err != nil {
+	_, limit, offset := params.Normalize()
+	if err := r.db.SelectContext(ctx, &categories, query, limit, offset); err != nil {
 		return nil, 0, err
 	}
 

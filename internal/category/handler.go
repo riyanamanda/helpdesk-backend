@@ -3,10 +3,10 @@ package category
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v5"
-	"github.com/riyanamanda/helpdesk-backend/internal/response"
+	apperrors "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
 type handler struct {
@@ -20,54 +20,40 @@ func NewCategoryHandler(svc CategoryService) *handler {
 }
 
 func (h *handler) ListCategories(c *echo.Context) error {
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
-	offset, _ := strconv.Atoi(c.QueryParam("offset"))
+	var params GetCategoryParams
 
-	params := ListCategoriesParams{
-		Limit:  limit,
-		Offset: offset,
+	if err := c.Bind(&params); err != nil {
+		return response.Error(c, apperrors.BadRequest("invalid query params"))
 	}
 
-	result, err := h.svc.GetCategories(c.Request().Context(), params)
+	page, limit, _ := params.Normalize()
+
+	categories, total, err := h.svc.GetCategories(c.Request().Context(), &params)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.Error("internal server error"))
+		return response.Error(c, err)
 	}
 
-	meta := &response.Meta{
-		Limit:  params.Limit,
-		Offset: params.Offset,
-		Total:  result.Total,
-	}
-
-	return c.JSON(http.StatusOK,
-		response.Success(toCategoryResponses(result.Data), meta),
-	)
+	return response.WithPagination(c, http.StatusOK, categories, page, limit, total)
 }
 
 func (h *handler) Create(c *echo.Context) error {
 	var req CreateCategoryRequest
 
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, response.Error("invalid request format"))
+		return response.Error(c, apperrors.BadRequest("invalid request format"))
 	}
 
 	category, err := h.svc.Create(c.Request().Context(), &req)
 	if err != nil {
 		if errors.Is(err, ErrInvalidCategory) {
-			return c.JSON(http.StatusBadRequest, map[string]string{
-				"error": err.Error(),
-			})
+			return response.Error(c, apperrors.BadRequest(err.Error()))
 		}
 
 		if errors.Is(err, ErrCategoryAlreadyExists) {
-			return c.JSON(http.StatusConflict, map[string]string{
-				"error": err.Error(),
-			})
+			return response.Error(c, apperrors.AlreadyExists("category"))
 		}
 
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "internal server error",
-		})
+		return response.Error(c, err)
 	}
 
 	return c.JSON(http.StatusCreated, map[string]interface{}{

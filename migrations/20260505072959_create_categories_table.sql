@@ -12,7 +12,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS categories_name_unique
 ON categories (LOWER(name));
 
 CREATE INDEX IF NOT EXISTS categories_active_created_at
-ON categories (is_active, created_at DESC)
+ON categories (is_active, created_at DESC);
 -- +goose StatementEnd
 
 -- +goose Down

@@ -27,7 +27,7 @@ func Load() *Config {
 	}
 
 	return &Config{
-		AppName: getEnv("APP_NAME", "Helpdek App"),
+		AppName: getEnv("APP_NAME", "Helpdesk App"),
 		AppHost: getEnv("APP_HOST", "localhost"),
 		AppPort: getEnv("APP_PORT", "8080"),
 

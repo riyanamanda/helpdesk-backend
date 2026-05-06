@@ -6,7 +6,7 @@ func toCategoryResponse(c Category) CategoryResponse {
 		Name:      c.Name,
 		IsActive:  c.IsActive,
 		CreatedAt: c.CreatedAt,
-		UpdatedAt: *c.UpdatedAt,
+		UpdatedAt: c.UpdatedAt,
 	}
 }
 

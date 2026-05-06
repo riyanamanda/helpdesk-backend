@@ -25,17 +25,32 @@ func requestLogger() echo.MiddlewareFunc {
 		HandleError:  true,
 		LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
 			level := slog.LevelInfo
-			if v.Status >= 500 {
+
+			switch {
+			case v.Status >= 500:
 				level = slog.LevelError
+			case v.Status >= 400:
+				level = slog.LevelWarn
 			}
 
-			slog.Log((*c).Request().Context(), level, "http request",
+			if v.Error != nil {
+				slog.Log(c.Request().Context(), level, "http request failed",
+					"request_id", v.RequestID,
+					"method", v.Method,
+					"uri", v.URI,
+					"status", v.Status,
+					"latency", v.Latency,
+					"error", v.Error,
+				)
+				return nil
+			}
+
+			slog.Log(c.Request().Context(), level, "http request",
 				"request_id", v.RequestID,
 				"method", v.Method,
 				"uri", v.URI,
 				"status", v.Status,
 				"latency", v.Latency,
-				"error", v.Error,
 			)
 
 			return nil
