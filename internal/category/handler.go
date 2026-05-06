@@ -1,7 +1,6 @@
 package category
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
@@ -45,18 +44,8 @@ func (h *handler) Create(c *echo.Context) error {
 
 	category, err := h.svc.Create(c.Request().Context(), &req)
 	if err != nil {
-		if errors.Is(err, ErrInvalidCategory) {
-			return response.Error(c, apperrors.BadRequest(err.Error()))
-		}
-
-		if errors.Is(err, ErrCategoryAlreadyExists) {
-			return response.Error(c, apperrors.AlreadyExists("category"))
-		}
-
 		return response.Error(c, err)
 	}
 
-	return c.JSON(http.StatusCreated, map[string]interface{}{
-		"data": category,
-	})
+	return response.Success(c, http.StatusCreated, category)
 }

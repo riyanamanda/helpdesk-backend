@@ -2,12 +2,15 @@ package category
 
 import (
 	"context"
+	"errors"
 	"log/slog"
+
+	apperrors "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 )
 
 type CategoryService interface {
 	GetCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int, error)
-	Create(ctx context.Context, req *CreateCategoryRequest) (Category, error)
+	Create(ctx context.Context, req *CreateCategoryRequest) (CategoryResponse, error)
 }
 
 type service struct {
@@ -30,14 +33,17 @@ func (svc *service) GetCategories(ctx context.Context, params *GetCategoryParams
 	return toCategoryResponses(categories), total, nil
 }
 
-func (svc *service) Create(ctx context.Context, req *CreateCategoryRequest) (Category, error) {
+func (svc *service) Create(ctx context.Context, req *CreateCategoryRequest) (CategoryResponse, error) {
 	category := Category{
 		Name: req.Name,
 	}
 
 	if err := svc.repo.Create(ctx, &category); err != nil {
-		return Category{}, err
+		if errors.Is(err, ErrCategoryAlreadyExists) {
+			return CategoryResponse{}, apperrors.AlreadyExists("category")
+		}
+		return CategoryResponse{}, err
 	}
 
-	return category, nil
+	return toCategoryResponse(category), nil
 }
