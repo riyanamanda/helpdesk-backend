@@ -1,6 +1,7 @@
 package category
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -41,4 +42,35 @@ func (h *handler) ListCategories(c *echo.Context) error {
 	return c.JSON(http.StatusOK,
 		response.Success(toCategoryResponses(result.Data), meta),
 	)
+}
+
+func (h *handler) Create(c *echo.Context) error {
+	var req CreateCategoryRequest
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, response.Error("invalid request format"))
+	}
+
+	category, err := h.svc.Create(c.Request().Context(), &req)
+	if err != nil {
+		if errors.Is(err, ErrInvalidCategory) {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": err.Error(),
+			})
+		}
+
+		if errors.Is(err, ErrCategoryAlreadyExists) {
+			return c.JSON(http.StatusConflict, map[string]string{
+				"error": err.Error(),
+			})
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "internal server error",
+		})
+	}
+
+	return c.JSON(http.StatusCreated, map[string]interface{}{
+		"data": category,
+	})
 }

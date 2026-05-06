@@ -9,6 +9,7 @@ import (
 
 type CategoryService interface {
 	GetCategories(ctx context.Context, params ListCategoriesParams) (ListCategoriesResult, error)
+	Create(ctx context.Context, req *CreateCategoryRequest) (Category, error)
 }
 
 type service struct {
@@ -45,4 +46,16 @@ func (svc *service) GetCategories(ctx context.Context, params ListCategoriesPara
 		Data:  categories,
 		Total: total,
 	}, nil
+}
+
+func (svc *service) Create(ctx context.Context, req *CreateCategoryRequest) (Category, error) {
+	category := Category{
+		Name: req.Name,
+	}
+
+	if err := svc.repo.Create(ctx, &category); err != nil {
+		return Category{}, err
+	}
+
+	return category, nil
 }

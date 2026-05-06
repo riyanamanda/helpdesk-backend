@@ -2,12 +2,15 @@ package category
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type CategoryRepository interface {
 	List(ctx context.Context, params ListCategoriesParams) ([]Category, int, error)
+	Create(ctx context.Context, category *Category) error
 }
 
 type repository struct {
@@ -47,4 +50,31 @@ func (r *repository) List(ctx context.Context, params ListCategoriesParams) ([]C
 	}
 
 	return categories, total, nil
+}
+
+func (r *repository) Create(ctx context.Context, category *Category) error {
+	const query = `
+		INSERT INTO categories (name)
+		VALUES ($1)
+		RETURNING id, name, is_active, created_at, updated_at
+	`
+
+	err := r.db.QueryRowxContext(ctx, query, category.Name).
+		Scan(
+			&category.ID,
+			&category.Name,
+			&category.IsActive,
+			&category.CreatedAt,
+			&category.UpdatedAt,
+		)
+
+	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			return ErrCategoryAlreadyExists
+		}
+		return err
+	}
+
+	return nil
 }

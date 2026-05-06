@@ -19,3 +19,7 @@ type ListCategoriesResult struct {
 	Data  []Category
 	Total int
 }
+
+type CreateCategoryRequest struct {
+	Name string `json:"name" validate:"required,max=50"`
+}
