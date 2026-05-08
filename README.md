@@ -13,3 +13,16 @@ A production-ready REST API for IT Helpdesk management system built with Go, Ech
 - **Database Migration:** Goose
 - **Logging:** Structured logging (slog)
 - **Containerization:** Docker
+
+## Development (Hot Reload)
+
+Use Air for hot reload:
+
+```bash
+air
+```
+
+This project intentionally builds to `tmp/main.exe` in [.air.toml](.air.toml).
+
+- On Windows: CMD requires `.exe` to execute the binary.
+- On macOS/Linux: `.exe` is only a file name suffix, and the binary still runs normally.

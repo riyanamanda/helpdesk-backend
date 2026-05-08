@@ -19,9 +19,9 @@ type GetCategoryParams struct {
 }
 
 type CreateCategoryRequest struct {
-	Name string `json:"name" validate:"required,notblank,max=50"`
+	Name string `json:"name"`
 }
 
 type UpdateCategoryRequest struct {
-	Name string `json:"name" validate:"required,notblank,max=50"`
+	Name string `json:"name"`
 }

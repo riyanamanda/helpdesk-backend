@@ -7,10 +7,11 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main ./cmd/api"
+  # Keep .exe suffix so Windows CMD can execute it; macOS/Linux can still run this filename.
+  bin = "tmp/main.exe"
+  cmd = "go build -o tmp/main.exe ./cmd/api"
   delay = 1000
-  entrypoint = ["./tmp/main"]
+  entrypoint = ["tmp/main.exe"]
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
   exclude_regex = ["_test.go"]

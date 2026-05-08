@@ -6,7 +6,7 @@ import (
 	"errors"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
+	infraDB "github.com/riyanamanda/helpdesk-backend/internal/infra/database"
 )
 
 type CategoryRepository interface {
@@ -74,8 +74,7 @@ func (r *repository) Create(ctx context.Context, category *Category) error {
 		)
 
 	if err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+		if infraDB.IsUniqueViolation(err) {
 			return ErrCategoryAlreadyExists
 		}
 		return err
@@ -95,6 +94,9 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*Category, error) {
 	`
 
 	if err := r.db.GetContext(ctx, &category, query, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrCategoryNotFound
+		}
 		return nil, err
 	}
 
@@ -119,8 +121,10 @@ func (r *repository) Update(ctx context.Context, id int64, category *Category) e
 		)
 
 	if err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrCategoryNotFound
+		}
+		if infraDB.IsUniqueViolation(err) {
 			return ErrCategoryAlreadyExists
 		}
 		return err
@@ -146,7 +150,7 @@ func (r *repository) Delete(ctx context.Context, id int64) error {
 	}
 
 	if affected == 0 {
-		return sql.ErrNoRows
+		return ErrCategoryNotFound
 	}
 
 	return nil

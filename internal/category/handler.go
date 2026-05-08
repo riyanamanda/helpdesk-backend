@@ -44,9 +44,6 @@ func (h *handler) Create(c *echo.Context) error {
 		return response.Error(c, apperrors.BadRequest("invalid request format"))
 	}
 	req.Name = strings.TrimSpace(req.Name)
-	if err := c.Validate(&req); err != nil {
-		return response.Error(c, err)
-	}
 
 	category, err := h.svc.Create(c.Request().Context(), &req)
 	if err != nil {
@@ -81,9 +78,6 @@ func (h *handler) Update(c *echo.Context) error {
 		return response.Error(c, apperrors.BadRequest("invalid request format"))
 	}
 	req.Name = strings.TrimSpace(req.Name)
-	if err := c.Validate(&req); err != nil {
-		return response.Error(c, err)
-	}
 
 	category, err := h.svc.Update(c.Request().Context(), id, &req)
 	if err != nil {

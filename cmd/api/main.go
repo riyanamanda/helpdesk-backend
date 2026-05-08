@@ -15,26 +15,24 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/middleware"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 )
 
 func main() {
 	cfg := config.Load()
 
 	e := echo.New()
-	e.Validator = validation.New()
 	middleware.Register(e)
 
 	// health check route
 	e.GET("/", func(c *echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
 			"status": "healthy",
-			"name":   cfg.AppName,
+			"name":   cfg.App.Name,
 		})
 	})
 
 	// depencencies
-	db := database.NewPostgres(cfg.DBConnString())
+	db := database.NewPostgres(cfg.Database.ConnString())
 	defer db.Close()
 
 	// routes
@@ -42,7 +40,7 @@ func main() {
 	category.Register(api, db)
 
 	server := &http.Server{
-		Addr:    net.JoinHostPort(cfg.AppHost, cfg.AppPort),
+		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),
 		Handler: e,
 	}
 

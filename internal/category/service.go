@@ -2,7 +2,6 @@ package category
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"log/slog"
 
@@ -55,7 +54,7 @@ func (svc *service) Create(ctx context.Context, req *CreateCategoryRequest) (Cat
 func (svc *service) GetByID(ctx context.Context, id int64) (CategoryResponse, error) {
 	category, err := svc.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, ErrCategoryNotFound) {
 			return CategoryResponse{}, apperrors.NotFound("category")
 		}
 		return CategoryResponse{}, err
@@ -67,7 +66,7 @@ func (svc *service) GetByID(ctx context.Context, id int64) (CategoryResponse, er
 func (svc *service) Update(ctx context.Context, id int64, req *UpdateCategoryRequest) (CategoryResponse, error) {
 	category := Category{Name: req.Name}
 	if err := svc.repo.Update(ctx, id, &category); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, ErrCategoryNotFound) {
 			return CategoryResponse{}, apperrors.NotFound("category")
 		}
 		if errors.Is(err, ErrCategoryAlreadyExists) {
@@ -81,7 +80,7 @@ func (svc *service) Update(ctx context.Context, id int64, req *UpdateCategoryReq
 
 func (svc *service) Delete(ctx context.Context, id int64) error {
 	if err := svc.repo.Delete(ctx, id); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, ErrCategoryNotFound) {
 			return apperrors.NotFound("category")
 		}
 		return err

@@ -7,18 +7,16 @@ import (
 )
 
 const (
-	CODE_NOT_FOUND        = "NOT_FOUND"
-	CODE_ALREADY_EXISTS   = "ALREADY_EXISTS"
-	CODE_VALIDATION_ERROR = "VALIDATION_ERROR"
-	CODE_INTERNAL_ERROR   = "INTERNAL_SERVER_ERROR"
-	CODE_BAD_REQUEST      = "BAD_REQUEST"
-	CODE_FORBIDDEN        = "FORBIDDEN"
+	CODE_NOT_FOUND      = "NOT_FOUND"
+	CODE_ALREADY_EXISTS = "ALREADY_EXISTS"
+	CODE_INTERNAL_ERROR = "INTERNAL_SERVER_ERROR"
+	CODE_BAD_REQUEST    = "BAD_REQUEST"
+	CODE_FORBIDDEN      = "FORBIDDEN"
 )
 
 var (
 	ErrNotFound      = errors.New("resource not found")
 	ErrAlreadyExists = errors.New("resource already exists")
-	ErrValidation    = errors.New("validation error")
 	ErrInternal      = errors.New("internal server error")
 	ErrBadRequest    = errors.New("bad request")
 	ErrForbidden     = errors.New("forbidden")
@@ -72,15 +70,6 @@ func BadRequest(message string) *AppError {
 		Code:       CODE_BAD_REQUEST,
 		Message:    message,
 		StatusCode: http.StatusBadRequest,
-	}
-}
-
-func Validation(message string) *AppError {
-	return &AppError{
-		Err:        ErrValidation,
-		Code:       CODE_VALIDATION_ERROR,
-		Message:    message,
-		StatusCode: http.StatusUnprocessableEntity,
 	}
 }
 
