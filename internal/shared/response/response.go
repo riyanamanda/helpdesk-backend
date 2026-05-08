@@ -21,6 +21,7 @@ type ErrorResponse struct {
 type ErrorInfo struct {
 	Code    string `json:"code,omitempty"`
 	Message string `json:"message"`
+	Details any    `json:"details,omitempty"`
 }
 
 type Meta struct {
@@ -77,14 +78,12 @@ func Success[T any](c *echo.Context, statusCode int, data T) error {
 }
 
 func Error(c *echo.Context, err error) error {
-	appErr, ok := err.(*apperrors.AppError)
-	if !ok {
-		appErr = apperrors.Internal("internal server error")
-	}
+	appErr := apperrors.As(err)
 
 	errorInfo := ErrorInfo{
 		Code:    appErr.Code,
 		Message: appErr.Message,
+		Details: appErr.Details,
 	}
 
 	return c.JSON(appErr.StatusCode, ErrorResponse{

@@ -19,9 +19,9 @@ type GetCategoryParams struct {
 }
 
 type CreateCategoryRequest struct {
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required,min=3,max=50"`
 }
 
 type UpdateCategoryRequest struct {
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required,min=3,max=50"`
 }

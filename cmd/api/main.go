@@ -15,12 +15,14 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/middleware"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 )
 
 func main() {
 	cfg := config.Load()
 
 	e := echo.New()
+	e.Validator = validation.New()
 	middleware.Register(e)
 
 	// health check route

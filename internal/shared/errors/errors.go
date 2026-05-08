@@ -1,17 +1,21 @@
-package apperrors
+package apperror
 
 import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
+
+	"github.com/go-playground/validator/v10"
 )
 
 const (
-	CODE_NOT_FOUND      = "NOT_FOUND"
-	CODE_ALREADY_EXISTS = "ALREADY_EXISTS"
-	CODE_INTERNAL_ERROR = "INTERNAL_SERVER_ERROR"
-	CODE_BAD_REQUEST    = "BAD_REQUEST"
-	CODE_FORBIDDEN      = "FORBIDDEN"
+	CODE_NOT_FOUND        = "NOT_FOUND"
+	CODE_ALREADY_EXISTS   = "ALREADY_EXISTS"
+	CODE_VALIDATION_ERROR = "VALIDATION_ERROR"
+	CODE_INTERNAL_ERROR   = "INTERNAL_SERVER_ERROR"
+	CODE_BAD_REQUEST      = "BAD_REQUEST"
+	CODE_FORBIDDEN        = "FORBIDDEN"
 )
 
 var (
@@ -80,4 +84,48 @@ func Forbidden(message string) *AppError {
 		Message:    message,
 		StatusCode: http.StatusForbidden,
 	}
+}
+
+func Validation(details map[string]any) *AppError {
+	return &AppError{
+		Err:        ErrBadRequest,
+		Code:       CODE_VALIDATION_ERROR,
+		Message:    "validation failed",
+		StatusCode: http.StatusBadRequest,
+		Details:    details,
+	}
+}
+
+func ValidationErrors(err error) map[string]any {
+	errors := map[string]any{}
+
+	for _, err := range err.(validator.ValidationErrors) {
+		field := strings.ToLower(err.Field())
+
+		switch err.Tag() {
+
+		case "required":
+			errors[field] = field + " is required"
+		case "min":
+			errors[field] = field + " minimum length is " + err.Param()
+		case "max":
+			errors[field] = field + " maximum length is " + err.Param()
+		case "email":
+			errors[field] = "invalid email format"
+		default:
+			errors[field] = "invalid value"
+		}
+	}
+
+	return errors
+}
+
+func As(err error) *AppError {
+	var appErr *AppError
+
+	if errors.As(err, &appErr) {
+		return appErr
+	}
+
+	return Internal("internal server error")
 }

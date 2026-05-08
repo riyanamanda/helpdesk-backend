@@ -22,10 +22,6 @@ type Database struct {
 	SSLMode  string
 }
 
-func (c *Config) DBConnString() string {
-	return c.Database.ConnString()
-}
-
 func (d Database) ConnString() string {
 	return fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",

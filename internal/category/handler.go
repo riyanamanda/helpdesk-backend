@@ -2,10 +2,10 @@ package category
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/labstack/echo/v5"
-	apperrors "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
+	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 	sharedutils "github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 )
@@ -24,7 +24,7 @@ func (h *handler) ListCategories(c *echo.Context) error {
 	var params GetCategoryParams
 
 	if err := c.Bind(&params); err != nil {
-		return response.Error(c, apperrors.BadRequest("invalid query params"))
+		return response.Error(c, apperror.BadRequest("invalid query params"))
 	}
 
 	page, limit, _ := params.Normalize()
@@ -38,14 +38,12 @@ func (h *handler) ListCategories(c *echo.Context) error {
 }
 
 func (h *handler) Create(c *echo.Context) error {
-	var req CreateCategoryRequest
-
-	if err := c.Bind(&req); err != nil {
-		return response.Error(c, apperrors.BadRequest("invalid request format"))
+	req, err := request.BindAndValidate[CreateCategoryRequest](c)
+	if err != nil {
+		return response.Error(c, err)
 	}
-	req.Name = strings.TrimSpace(req.Name)
 
-	category, err := h.svc.Create(c.Request().Context(), &req)
+	category, err := h.svc.Create(c.Request().Context(), req)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -73,13 +71,12 @@ func (h *handler) Update(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	var req UpdateCategoryRequest
-	if err := c.Bind(&req); err != nil {
-		return response.Error(c, apperrors.BadRequest("invalid request format"))
+	req, err := request.BindAndValidate[UpdateCategoryRequest](c)
+	if err != nil {
+		return response.Error(c, err)
 	}
-	req.Name = strings.TrimSpace(req.Name)
 
-	category, err := h.svc.Update(c.Request().Context(), id, &req)
+	category, err := h.svc.Update(c.Request().Context(), id, req)
 	if err != nil {
 		return response.Error(c, err)
 	}
