@@ -2,6 +2,7 @@ package category
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 
@@ -11,6 +12,9 @@ import (
 type CategoryService interface {
 	GetCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int, error)
 	Create(ctx context.Context, req *CreateCategoryRequest) (CategoryResponse, error)
+	GetByID(ctx context.Context, id int64) (CategoryResponse, error)
+	Update(ctx context.Context, id int64, req *UpdateCategoryRequest) (CategoryResponse, error)
+	Delete(ctx context.Context, id int64) error
 }
 
 type service struct {
@@ -46,4 +50,42 @@ func (svc *service) Create(ctx context.Context, req *CreateCategoryRequest) (Cat
 	}
 
 	return toCategoryResponse(category), nil
+}
+
+func (svc *service) GetByID(ctx context.Context, id int64) (CategoryResponse, error) {
+	category, err := svc.repo.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return CategoryResponse{}, apperrors.NotFound("category")
+		}
+		return CategoryResponse{}, err
+	}
+
+	return toCategoryResponse(*category), nil
+}
+
+func (svc *service) Update(ctx context.Context, id int64, req *UpdateCategoryRequest) (CategoryResponse, error) {
+	category := Category{Name: req.Name}
+	if err := svc.repo.Update(ctx, id, &category); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return CategoryResponse{}, apperrors.NotFound("category")
+		}
+		if errors.Is(err, ErrCategoryAlreadyExists) {
+			return CategoryResponse{}, apperrors.AlreadyExists("category")
+		}
+		return CategoryResponse{}, err
+	}
+
+	return toCategoryResponse(category), nil
+}
+
+func (svc *service) Delete(ctx context.Context, id int64) error {
+	if err := svc.repo.Delete(ctx, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return apperrors.NotFound("category")
+		}
+		return err
+	}
+
+	return nil
 }

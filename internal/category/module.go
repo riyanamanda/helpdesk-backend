@@ -11,5 +11,8 @@ func Register(e *echo.Group, db *sqlx.DB) {
 	handler := NewCategoryHandler(svc)
 
 	e.GET("/categories", handler.ListCategories)
+	e.GET("/categories/:id", handler.GetByID)
 	e.POST("/categories", handler.Create)
+	e.PUT("/categories/:id", handler.Update)
+	e.DELETE("/categories/:id", handler.Delete)
 }
