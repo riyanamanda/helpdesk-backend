@@ -9,6 +9,7 @@ import (
 	infraDB "github.com/riyanamanda/helpdesk-backend/internal/infra/database"
 )
 
+//go:generate mockery --name CategoryRepository
 type CategoryRepository interface {
 	List(ctx context.Context, params GetCategoryParams) ([]Category, int, error)
 	Create(ctx context.Context, category *Category) error
