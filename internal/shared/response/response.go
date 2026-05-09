@@ -80,10 +80,15 @@ func Success[T any](c *echo.Context, statusCode int, data T) error {
 func Error(c *echo.Context, err error) error {
 	appErr := apperrors.As(err)
 
+	var details any
+	if appErr.Details != nil {
+		details = appErr.Details
+	}
+
 	errorInfo := ErrorInfo{
 		Code:    appErr.Code,
 		Message: appErr.Message,
-		Details: appErr.Details,
+		Details: details,
 	}
 
 	return c.JSON(appErr.StatusCode, ErrorResponse{

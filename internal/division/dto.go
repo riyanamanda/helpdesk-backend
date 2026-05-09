@@ -19,9 +19,9 @@ type GetDivisionParams struct {
 }
 
 type CreateDivisionRequest struct {
-	Name string `json:"name" validate:"required,min=3,max=50"`
+	Name string `json:"name" validate:"required,min=2,max=50"`
 }
 
 type UpdateDivisionRequest struct {
-	Name string `json:"name" validate:"required,min=3,max=50"`
+	Name string `json:"name" validate:"required,min=2,max=50"`
 }
