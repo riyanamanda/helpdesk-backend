@@ -1,7 +1,13 @@
 package category
 
 func toCategoryResponse(c Category) CategoryResponse {
-	return CategoryResponse(c)
+	return CategoryResponse{
+		ID:        c.ID,
+		Name:      c.Name,
+		IsActive:  c.IsActive,
+		CreatedAt: c.CreatedAt,
+		UpdatedAt: c.UpdatedAt,
+	}
 }
 
 func toCategoryResponses(categories []Category) []CategoryResponse {

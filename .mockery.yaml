@@ -1,0 +1,5 @@
+with-expecter: true
+dir: .
+output: ./mocks
+case: underscore
+outpkg: mocks

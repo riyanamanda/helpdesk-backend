@@ -12,6 +12,7 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
+	"github.com/riyanamanda/helpdesk-backend/internal/division"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/middleware"
@@ -40,6 +41,7 @@ func main() {
 	// routes
 	api := e.Group("/api/v1")
 	category.Register(api, db)
+	division.Register(api, db)
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),
