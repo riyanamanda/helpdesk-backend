@@ -27,14 +27,12 @@ func (h *handler) ListDivisions(c *echo.Context) error {
 		return response.Error(c, apperror.BadRequest("invalid query params"))
 	}
 
-	page, limit, _ := params.Normalize()
-
 	divisions, total, err := h.svc.GetDivisions(c.Request().Context(), &params)
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	return response.WithPagination(c, http.StatusOK, divisions, page, limit, total)
+	return response.WithPagination(c, http.StatusOK, divisions, params.Page, params.Limit, total)
 }
 
 func (h *handler) Create(c *echo.Context) error {

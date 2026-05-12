@@ -27,6 +27,14 @@ func NewCategoryService(repo CategoryRepository) CategoryService {
 }
 
 func (svc *service) GetCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int, error) {
+	if params == nil {
+		params = &GetCategoryParams{}
+	}
+
+	page, limit, _ := params.Normalize()
+	params.Page = page
+	params.Limit = limit
+
 	categories, total, err := svc.repo.List(ctx, *params)
 	if err != nil {
 		slog.Error("list category failed", "error", err)

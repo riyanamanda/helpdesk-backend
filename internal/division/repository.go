@@ -48,8 +48,8 @@ func (r *repository) List(ctx context.Context, params GetDivisionParams) ([]Divi
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
 	`
-	_, limit, offset := params.Normalize()
-	if err := r.db.SelectContext(ctx, &divisions, query, limit, offset); err != nil {
+	offset := (params.Page - 1) * params.Limit
+	if err := r.db.SelectContext(ctx, &divisions, query, params.Limit, offset); err != nil {
 		return nil, 0, err
 	}
 

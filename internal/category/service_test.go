@@ -14,6 +14,7 @@ import (
 	category "github.com/riyanamanda/helpdesk-backend/internal/category"
 	categorymocks "github.com/riyanamanda/helpdesk-backend/internal/category/mocks"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/pagination"
 	testingutil "github.com/riyanamanda/helpdesk-backend/internal/shared/testing"
 )
 
@@ -87,7 +88,7 @@ func TestService_GetCategories(t *testing.T) {
 			params: &category.GetCategoryParams{},
 			setupMock: func(repo *categorymocks.CategoryRepository) {
 				items := []category.Category{{ID: 1, Name: "Hardware"}, {ID: 2, Name: "Software"}}
-				repo.On("List", mock.Anything, category.GetCategoryParams{}).Return(items, 2, nil).Once()
+				repo.On("List", mock.Anything, category.GetCategoryParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, 2, nil).Once()
 			},
 			assertFn: func(t *testing.T, result []category.CategoryResponse, total int, err error) {
 				require.NoError(t, err)

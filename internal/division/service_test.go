@@ -14,6 +14,7 @@ import (
 	division "github.com/riyanamanda/helpdesk-backend/internal/division"
 	divisionmocks "github.com/riyanamanda/helpdesk-backend/internal/division/mocks"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/pagination"
 	testingutil "github.com/riyanamanda/helpdesk-backend/internal/shared/testing"
 )
 
@@ -87,7 +88,7 @@ func TestService_GetDivisions(t *testing.T) {
 			params: &division.GetDivisionParams{},
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
 				items := []division.Division{{ID: 1, Name: "IT"}, {ID: 2, Name: "HR"}}
-				repo.On("List", mock.Anything, division.GetDivisionParams{}).Return(items, 2, nil).Once()
+				repo.On("List", mock.Anything, division.GetDivisionParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, 2, nil).Once()
 			},
 			assertFn: func(t *testing.T, result []division.DivisionResponse, total int, err error) {
 				require.NoError(t, err)

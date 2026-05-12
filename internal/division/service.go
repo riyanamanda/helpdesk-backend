@@ -27,6 +27,14 @@ func NewDivisionService(repo DivisionRepository) DivisionService {
 }
 
 func (svc *service) GetDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int, error) {
+	if params == nil {
+		params = &GetDivisionParams{}
+	}
+
+	page, limit, _ := params.Normalize()
+	params.Page = page
+	params.Limit = limit
+
 	divisions, total, err := svc.repo.List(ctx, *params)
 	if err != nil {
 		slog.Error("list division failed", "error", err)
