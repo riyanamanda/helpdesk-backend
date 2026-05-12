@@ -34,7 +34,7 @@ func main() {
 		})
 	})
 
-	// depencencies
+	// dependencies
 	db := database.NewPostgres(cfg.Database.ConnString())
 	defer db.Close()
 
@@ -53,7 +53,7 @@ func main() {
 		slog.Info("server starting", "addr", server.Addr)
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("Error to start server", "addr", server.Addr, "error", err)
+			slog.Error("failed to start server", "addr", server.Addr, "error", err)
 		}
 	}()
 
