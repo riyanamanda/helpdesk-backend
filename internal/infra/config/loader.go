@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -25,12 +26,27 @@ func Load() *Config {
 			Password: getEnv("DB_PASSWORD", "postgres"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
+		Auth: Auth{
+			JWTSecret:            getEnv("JWT_SECRET", "this-is-the-secret"),
+			JWTExpirationMinutes: getIntEnv("JWT_EXP", getIntEnv("JWT_EXPIRED", 60)),
+		},
 	}
 }
 
 func getEnv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
+	}
+
+	return fallback
+}
+
+func getIntEnv(key string, fallback int) int {
+	if v := os.Getenv(key); v != "" {
+		parsed, err := strconv.Atoi(v)
+		if err == nil {
+			return parsed
+		}
 	}
 
 	return fallback

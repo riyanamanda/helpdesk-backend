@@ -5,6 +5,7 @@ import "fmt"
 type Config struct {
 	App      App
 	Database Database
+	Auth     Auth
 }
 
 type App struct {
@@ -20,6 +21,11 @@ type Database struct {
 	Username string
 	Password string
 	SSLMode  string
+}
+
+type Auth struct {
+	JWTSecret            string
+	JWTExpirationMinutes int
 }
 
 func (d Database) ConnString() string {

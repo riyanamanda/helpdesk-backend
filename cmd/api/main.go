@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
+	"github.com/riyanamanda/helpdesk-backend/internal/auth"
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
@@ -44,6 +45,7 @@ func main() {
 	category.Register(api, db)
 	division.Register(api, db)
 	user.Register(api, db)
+	auth.Register(api, db, cfg.Auth.JWTSecret, cfg.Auth.JWTExpirationMinutes)
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),
