@@ -71,7 +71,11 @@ func (r *repository) Create(ctx context.Context, user *User) error {
 			&user.Name,
 			&user.Email,
 			&user.Role,
+			&user.DivisionID,
+			&user.IsActive,
+			&user.CreatedBy,
 			&user.CreatedAt,
+			&user.UpdatedAt,
 		)
 
 	if err != nil {
