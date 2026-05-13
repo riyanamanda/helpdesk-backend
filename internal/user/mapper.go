@@ -7,6 +7,7 @@ func toUserResponse(u User) UserResponse {
 		Email:      u.Email,
 		AvatarKey:  u.AvatarKey,
 		Phone:      u.Phone,
+		Role:       u.Role,
 		DivisionID: u.DivisionID,
 		IsActive:   u.IsActive,
 		CreatedBy:  u.CreatedBy,
