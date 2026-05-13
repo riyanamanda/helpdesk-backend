@@ -6,7 +6,7 @@ import (
 	"errors"
 
 	"github.com/jmoiron/sqlx"
-	infraDB "github.com/riyanamanda/helpdesk-backend/internal/infra/database"
+	dberror "github.com/riyanamanda/helpdesk-backend/internal/infra/database"
 )
 
 //go:generate mockery --name CategoryRepository
@@ -75,7 +75,7 @@ func (r *repository) Create(ctx context.Context, category *Category) error {
 		)
 
 	if err != nil {
-		if infraDB.IsUniqueViolation(err) {
+		if dberror.IsUniqueViolation(err) {
 			return ErrCategoryAlreadyExists
 		}
 		return err
@@ -91,7 +91,6 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*Category, error) {
 		SELECT id, name, is_active, created_at, updated_at
 		FROM categories
 		WHERE id = $1 AND is_active = TRUE
-		LIMIT 1
 	`
 
 	if err := r.db.GetContext(ctx, &category, query, id); err != nil {
@@ -125,7 +124,7 @@ func (r *repository) Update(ctx context.Context, id int64, category *Category) e
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrCategoryNotFound
 		}
-		if infraDB.IsUniqueViolation(err) {
+		if dberror.IsUniqueViolation(err) {
 			return ErrCategoryAlreadyExists
 		}
 		return err

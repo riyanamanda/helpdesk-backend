@@ -17,6 +17,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
+	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
 func main() {
@@ -42,6 +43,7 @@ func main() {
 	api := e.Group("/api/v1")
 	category.Register(api, db)
 	division.Register(api, db)
+	user.Register(api, db)
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),
