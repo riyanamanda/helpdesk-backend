@@ -5,7 +5,6 @@ run:
 
 tidy:
 	go mod tidy
-	go mod vendor
 	
 test:
 	@echo "Running tests..."

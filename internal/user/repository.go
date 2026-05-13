@@ -10,6 +10,7 @@ import (
 	dberror "github.com/riyanamanda/helpdesk-backend/internal/infra/database"
 )
 
+//go:generate mockery --name UserRepository
 type UserRepository interface {
 	List(ctx context.Context, params GetUserParams) ([]User, int, error)
 	Create(ctx context.Context, user *User) error
