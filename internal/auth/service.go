@@ -46,7 +46,7 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (LoginResponse, 
 		return LoginResponse{}, apperror.BadRequest("invalid email or password")
 	}
 
-	token, err := utils.GenerateToken(currentUser.ID, currentUser.Role, s.jwtSecret, s.jwtExpiresIn)
+	token, err := utils.GenerateToken(currentUser.ID, string(currentUser.Role), s.jwtSecret, s.jwtExpiresIn)
 	if err != nil {
 		return LoginResponse{}, err
 	}

@@ -50,7 +50,7 @@ func TestService_Login(t *testing.T) {
 		claims, err := utils.ParseToken(result.AccessToken, secret)
 		require.NoError(t, err)
 		assert.Equal(t, userID.String(), claims.Subject)
-		assert.Equal(t, user.ADMIN, claims.Role)
+		assert.Equal(t, string(user.ADMIN), claims.Role)
 		require.NotNil(t, claims.ExpiresAt)
 		assert.WithinDuration(t, time.Now().Add(expiresIn), claims.ExpiresAt.Time, 2*time.Second)
 	})

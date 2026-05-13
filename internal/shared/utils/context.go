@@ -1,20 +1,21 @@
 package utils
 
 import (
+	"context"
+
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v5"
 )
 
-func GetUserIDFromJWT(c *echo.Context) (uuid.UUID, bool) {
-	claims, ok := c.Get("user").(*JWTCustomClaims)
-	if !ok {
-		return uuid.Nil, false
-	}
+type contextKey string
 
-	id, err := uuid.Parse(claims.Subject)
-	if err != nil {
-		return uuid.Nil, false
-	}
+const ContextUserIDKey contextKey = "user_id"
 
-	return id, true
+func SetUserIDToContext(ctx context.Context, userID uuid.UUID) context.Context {
+	return context.WithValue(ctx, ContextUserIDKey, userID)
+}
+
+func GetUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
+	userID, ok := ctx.Value(ContextUserIDKey).(uuid.UUID)
+
+	return userID, ok
 }

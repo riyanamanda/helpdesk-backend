@@ -6,15 +6,14 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
 type JWTCustomClaims struct {
-	Role user.UserRole `json:"role"`
+	Role string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID uuid.UUID, role user.UserRole, secret string, expiresIn time.Duration) (string, error) {
+func GenerateToken(userID uuid.UUID, role string, secret string, expiresIn time.Duration) (string, error) {
 	claims := JWTCustomClaims{
 		Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{

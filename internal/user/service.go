@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	apperrors "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -52,6 +53,11 @@ func (svc *service) Create(ctx context.Context, req *UserCreateRequest) (UserRes
 		return UserResponse{}, err
 	}
 
+	var createdBy *uuid.UUID
+	if currentUserID, ok := utils.GetUserIDFromContext(ctx); ok {
+		createdBy = &currentUserID
+	}
+
 	normalizedEmail := strings.TrimSpace(strings.ToLower(req.Email))
 
 	user := &User{
@@ -60,7 +66,7 @@ func (svc *service) Create(ctx context.Context, req *UserCreateRequest) (UserRes
 		Password:   string(hashedPassword),
 		Role:       req.Role,
 		DivisionID: req.DivisionID,
-		CreatedBy:  nil,
+		CreatedBy:  createdBy,
 	}
 
 	if err := svc.repo.Create(ctx, user); err != nil {
