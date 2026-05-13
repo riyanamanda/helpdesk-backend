@@ -26,6 +26,7 @@ func main() {
 
 	e := echo.New()
 	e.Validator = validation.New()
+
 	middleware.Register(e)
 
 	// health check route
@@ -40,12 +41,22 @@ func main() {
 	db := database.NewPostgres(cfg.Database.ConnString())
 	defer db.Close()
 
-	// routes
+	// api root
 	api := e.Group("/api/v1")
-	category.Register(api, db)
-	division.Register(api, db)
-	user.Register(api, db)
+
+	// public routes
 	auth.Register(api, db, cfg.Auth.JWTSecret, cfg.Auth.JWTExpirationMinutes)
+
+	// protected route
+	protected := api.Group("")
+	protected.Use(
+		middleware.AuthMiddleware(cfg.Auth.JWTSecret),
+	)
+
+	// protected modules
+	category.Register(protected, db)
+	division.Register(protected, db)
+	user.Register(protected, db)
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),
