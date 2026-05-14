@@ -71,6 +71,72 @@ func (_c *UserRepository_Create_Call) RunAndReturn(run func(context.Context, *us
 	return _c
 }
 
+// GetAll provides a mock function with given fields: ctx, params
+func (_m *UserRepository) GetAll(ctx context.Context, params user.GetUserParams) ([]user.User, int, error) {
+	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAll")
+	}
+
+	var r0 []user.User
+	var r1 int
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, user.GetUserParams) ([]user.User, int, error)); ok {
+		return rf(ctx, params)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, user.GetUserParams) []user.User); ok {
+		r0 = rf(ctx, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]user.User)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, user.GetUserParams) int); ok {
+		r1 = rf(ctx, params)
+	} else {
+		r1 = ret.Get(1).(int)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, user.GetUserParams) error); ok {
+		r2 = rf(ctx, params)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// UserRepository_GetAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAll'
+type UserRepository_GetAll_Call struct {
+	*mock.Call
+}
+
+// GetAll is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params user.GetUserParams
+func (_e *UserRepository_Expecter) GetAll(ctx interface{}, params interface{}) *UserRepository_GetAll_Call {
+	return &UserRepository_GetAll_Call{Call: _e.mock.On("GetAll", ctx, params)}
+}
+
+func (_c *UserRepository_GetAll_Call) Run(run func(ctx context.Context, params user.GetUserParams)) *UserRepository_GetAll_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(user.GetUserParams))
+	})
+	return _c
+}
+
+func (_c *UserRepository_GetAll_Call) Return(_a0 []user.User, _a1 int, _a2 error) *UserRepository_GetAll_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *UserRepository_GetAll_Call) RunAndReturn(run func(context.Context, user.GetUserParams) ([]user.User, int, error)) *UserRepository_GetAll_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetByEmail provides a mock function with given fields: ctx, email
 func (_m *UserRepository) GetByEmail(ctx context.Context, email string) (*user.User, error) {
 	ret := _m.Called(ctx, email)
@@ -185,72 +251,6 @@ func (_c *UserRepository_GetByID_Call) Return(_a0 *user.User, _a1 error) *UserRe
 }
 
 func (_c *UserRepository_GetByID_Call) RunAndReturn(run func(context.Context, uuid.UUID) (*user.User, error)) *UserRepository_GetByID_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// List provides a mock function with given fields: ctx, params
-func (_m *UserRepository) List(ctx context.Context, params user.GetUserParams) ([]user.User, int, error) {
-	ret := _m.Called(ctx, params)
-
-	if len(ret) == 0 {
-		panic("no return value specified for List")
-	}
-
-	var r0 []user.User
-	var r1 int
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, user.GetUserParams) ([]user.User, int, error)); ok {
-		return rf(ctx, params)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, user.GetUserParams) []user.User); ok {
-		r0 = rf(ctx, params)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]user.User)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, user.GetUserParams) int); ok {
-		r1 = rf(ctx, params)
-	} else {
-		r1 = ret.Get(1).(int)
-	}
-
-	if rf, ok := ret.Get(2).(func(context.Context, user.GetUserParams) error); ok {
-		r2 = rf(ctx, params)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// UserRepository_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
-type UserRepository_List_Call struct {
-	*mock.Call
-}
-
-// List is a helper method to define mock.On call
-//   - ctx context.Context
-//   - params user.GetUserParams
-func (_e *UserRepository_Expecter) List(ctx interface{}, params interface{}) *UserRepository_List_Call {
-	return &UserRepository_List_Call{Call: _e.mock.On("List", ctx, params)}
-}
-
-func (_c *UserRepository_List_Call) Run(run func(ctx context.Context, params user.GetUserParams)) *UserRepository_List_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(user.GetUserParams))
-	})
-	return _c
-}
-
-func (_c *UserRepository_List_Call) Return(_a0 []user.User, _a1 int, _a2 error) *UserRepository_List_Call {
-	_c.Call.Return(_a0, _a1, _a2)
-	return _c
-}
-
-func (_c *UserRepository_List_Call) RunAndReturn(run func(context.Context, user.GetUserParams) ([]user.User, int, error)) *UserRepository_List_Call {
 	_c.Call.Return(run)
 	return _c
 }

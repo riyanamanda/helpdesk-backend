@@ -18,7 +18,7 @@ import (
 	testingutil "github.com/riyanamanda/helpdesk-backend/internal/shared/testing"
 )
 
-func TestService_Create(t *testing.T) {
+func TestService_RegisterDivision(t *testing.T) {
 	testCases := []struct {
 		name      string
 		req       *division.CreateDivisionRequest
@@ -70,13 +70,13 @@ func TestService_Create(t *testing.T) {
 			svc := division.NewDivisionService(repo)
 			tc.setupMock(repo)
 
-			result, err := svc.Create(context.Background(), tc.req)
+			result, err := svc.RegisterDivision(context.Background(), tc.req)
 			tc.assertFn(t, result, err)
 		})
 	}
 }
 
-func TestService_GetDivisions(t *testing.T) {
+func TestService_FetchAllDivisions(t *testing.T) {
 	testCases := []struct {
 		name      string
 		params    *division.GetDivisionParams
@@ -88,7 +88,7 @@ func TestService_GetDivisions(t *testing.T) {
 			params: &division.GetDivisionParams{},
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
 				items := []division.Division{{ID: 1, Name: "IT"}, {ID: 2, Name: "HR"}}
-				repo.On("List", mock.Anything, division.GetDivisionParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, 2, nil).Once()
+				repo.On("GetAll", mock.Anything, division.GetDivisionParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, 2, nil).Once()
 			},
 			assertFn: func(t *testing.T, result []division.DivisionResponse, total int, err error) {
 				require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestService_GetDivisions(t *testing.T) {
 			name:   "repository error",
 			params: &division.GetDivisionParams{},
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
-				repo.On("List", mock.Anything, mock.Anything).Return(nil, 0, errors.New("database error")).Once()
+				repo.On("GetAll", mock.Anything, mock.Anything).Return(nil, 0, errors.New("database error")).Once()
 			},
 			assertFn: func(t *testing.T, result []division.DivisionResponse, total int, err error) {
 				require.Error(t, err)
@@ -118,13 +118,13 @@ func TestService_GetDivisions(t *testing.T) {
 			svc := division.NewDivisionService(repo)
 			tc.setupMock(repo)
 
-			result, total, err := svc.GetDivisions(context.Background(), tc.params)
+			result, total, err := svc.FetchAllDivisions(context.Background(), tc.params)
 			tc.assertFn(t, result, total, err)
 		})
 	}
 }
 
-func TestService_GetByID(t *testing.T) {
+func TestService_FindDivisionByID(t *testing.T) {
 	now := time.Now().UTC()
 
 	testCases := []struct {
@@ -178,13 +178,13 @@ func TestService_GetByID(t *testing.T) {
 			svc := division.NewDivisionService(repo)
 			tc.setupMock(repo)
 
-			result, err := svc.GetByID(context.Background(), tc.id)
+			result, err := svc.FindDivisionByID(context.Background(), tc.id)
 			tc.assertFn(t, result, err)
 		})
 	}
 }
 
-func TestService_Update(t *testing.T) {
+func TestService_EditDivision(t *testing.T) {
 	testCases := []struct {
 		name      string
 		id        int64
@@ -253,13 +253,13 @@ func TestService_Update(t *testing.T) {
 			svc := division.NewDivisionService(repo)
 			tc.setupMock(repo)
 
-			result, err := svc.Update(context.Background(), tc.id, tc.req)
+			result, err := svc.EditDivision(context.Background(), tc.id, tc.req)
 			tc.assertFn(t, result, err)
 		})
 	}
 }
 
-func TestService_Delete(t *testing.T) {
+func TestService_DeleteDivision(t *testing.T) {
 	testCases := []struct {
 		name      string
 		id        int64
@@ -306,7 +306,7 @@ func TestService_Delete(t *testing.T) {
 			svc := division.NewDivisionService(repo)
 			tc.setupMock(repo)
 
-			err := svc.Delete(context.Background(), tc.id)
+			err := svc.DeleteDivision(context.Background(), tc.id)
 			tc.assertFn(t, err)
 		})
 	}

@@ -117,6 +117,72 @@ func (_c *CategoryRepository_Delete_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// GetAll provides a mock function with given fields: ctx, params
+func (_m *CategoryRepository) GetAll(ctx context.Context, params category.GetCategoryParams) ([]category.Category, int, error) {
+	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAll")
+	}
+
+	var r0 []category.Category
+	var r1 int
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, category.GetCategoryParams) ([]category.Category, int, error)); ok {
+		return rf(ctx, params)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, category.GetCategoryParams) []category.Category); ok {
+		r0 = rf(ctx, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]category.Category)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, category.GetCategoryParams) int); ok {
+		r1 = rf(ctx, params)
+	} else {
+		r1 = ret.Get(1).(int)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, category.GetCategoryParams) error); ok {
+		r2 = rf(ctx, params)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// CategoryRepository_GetAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAll'
+type CategoryRepository_GetAll_Call struct {
+	*mock.Call
+}
+
+// GetAll is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params category.GetCategoryParams
+func (_e *CategoryRepository_Expecter) GetAll(ctx interface{}, params interface{}) *CategoryRepository_GetAll_Call {
+	return &CategoryRepository_GetAll_Call{Call: _e.mock.On("GetAll", ctx, params)}
+}
+
+func (_c *CategoryRepository_GetAll_Call) Run(run func(ctx context.Context, params category.GetCategoryParams)) *CategoryRepository_GetAll_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(category.GetCategoryParams))
+	})
+	return _c
+}
+
+func (_c *CategoryRepository_GetAll_Call) Return(_a0 []category.Category, _a1 int, _a2 error) *CategoryRepository_GetAll_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *CategoryRepository_GetAll_Call) RunAndReturn(run func(context.Context, category.GetCategoryParams) ([]category.Category, int, error)) *CategoryRepository_GetAll_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetByID provides a mock function with given fields: ctx, id
 func (_m *CategoryRepository) GetByID(ctx context.Context, id int64) (*category.Category, error) {
 	ret := _m.Called(ctx, id)
@@ -172,72 +238,6 @@ func (_c *CategoryRepository_GetByID_Call) Return(_a0 *category.Category, _a1 er
 }
 
 func (_c *CategoryRepository_GetByID_Call) RunAndReturn(run func(context.Context, int64) (*category.Category, error)) *CategoryRepository_GetByID_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// List provides a mock function with given fields: ctx, params
-func (_m *CategoryRepository) List(ctx context.Context, params category.GetCategoryParams) ([]category.Category, int, error) {
-	ret := _m.Called(ctx, params)
-
-	if len(ret) == 0 {
-		panic("no return value specified for List")
-	}
-
-	var r0 []category.Category
-	var r1 int
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, category.GetCategoryParams) ([]category.Category, int, error)); ok {
-		return rf(ctx, params)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, category.GetCategoryParams) []category.Category); ok {
-		r0 = rf(ctx, params)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]category.Category)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, category.GetCategoryParams) int); ok {
-		r1 = rf(ctx, params)
-	} else {
-		r1 = ret.Get(1).(int)
-	}
-
-	if rf, ok := ret.Get(2).(func(context.Context, category.GetCategoryParams) error); ok {
-		r2 = rf(ctx, params)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// CategoryRepository_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
-type CategoryRepository_List_Call struct {
-	*mock.Call
-}
-
-// List is a helper method to define mock.On call
-//   - ctx context.Context
-//   - params category.GetCategoryParams
-func (_e *CategoryRepository_Expecter) List(ctx interface{}, params interface{}) *CategoryRepository_List_Call {
-	return &CategoryRepository_List_Call{Call: _e.mock.On("List", ctx, params)}
-}
-
-func (_c *CategoryRepository_List_Call) Run(run func(ctx context.Context, params category.GetCategoryParams)) *CategoryRepository_List_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(category.GetCategoryParams))
-	})
-	return _c
-}
-
-func (_c *CategoryRepository_List_Call) Return(_a0 []category.Category, _a1 int, _a2 error) *CategoryRepository_List_Call {
-	_c.Call.Return(_a0, _a1, _a2)
-	return _c
-}
-
-func (_c *CategoryRepository_List_Call) RunAndReturn(run func(context.Context, category.GetCategoryParams) ([]category.Category, int, error)) *CategoryRepository_List_Call {
 	_c.Call.Return(run)
 	return _c
 }

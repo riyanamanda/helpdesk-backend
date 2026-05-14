@@ -17,10 +17,10 @@ import (
 )
 
 type UserService interface {
-	GetUser(ctx context.Context, params *GetUserParams) ([]UserResponse, int, error)
-	Create(ctx context.Context, req *UserCreateRequest) (UserResponse, error)
-	GetById(ctx context.Context, id *uuid.UUID) (UserResponse, error)
-	UpdateAvatar(ctx context.Context, file multipart.File, header *multipart.FileHeader) error
+	FetchAllUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int, error)
+	RegisterUser(ctx context.Context, req *UserCreateRequest) (UserResponse, error)
+	FindUserByID(ctx context.Context, id *uuid.UUID) (UserResponse, error)
+	UpdateUserAvatar(ctx context.Context, file multipart.File, header *multipart.FileHeader) error
 }
 
 type service struct {
@@ -35,7 +35,7 @@ func NewUserService(repo UserRepository, storage storage.Storage) UserService {
 	}
 }
 
-func (svc *service) GetUser(ctx context.Context, params *GetUserParams) ([]UserResponse, int, error) {
+func (svc *service) FetchAllUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int, error) {
 	if params == nil {
 		params = &GetUserParams{}
 	}
@@ -44,7 +44,7 @@ func (svc *service) GetUser(ctx context.Context, params *GetUserParams) ([]UserR
 	params.Page = page
 	params.Limit = limit
 
-	users, total, err := svc.repo.List(ctx, *params)
+	users, total, err := svc.repo.GetAll(ctx, *params)
 	if err != nil {
 		slog.Error("List user failed", "error", err)
 		return []UserResponse{}, 0, err
@@ -53,7 +53,7 @@ func (svc *service) GetUser(ctx context.Context, params *GetUserParams) ([]UserR
 	return toUserResponses(users, svc.storage), total, nil
 }
 
-func (svc *service) Create(ctx context.Context, req *UserCreateRequest) (UserResponse, error) {
+func (svc *service) RegisterUser(ctx context.Context, req *UserCreateRequest) (UserResponse, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return UserResponse{}, err
@@ -85,7 +85,7 @@ func (svc *service) Create(ctx context.Context, req *UserCreateRequest) (UserRes
 	return toUserResponse(*user, svc.storage), nil
 }
 
-func (svc *service) GetById(ctx context.Context, id *uuid.UUID) (UserResponse, error) {
+func (svc *service) FindUserByID(ctx context.Context, id *uuid.UUID) (UserResponse, error) {
 	user, err := svc.repo.GetByID(ctx, *id)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
@@ -97,7 +97,7 @@ func (svc *service) GetById(ctx context.Context, id *uuid.UUID) (UserResponse, e
 	return toUserResponse(*user, svc.storage), nil
 }
 
-func (svc *service) UpdateAvatar(ctx context.Context, file multipart.File, header *multipart.FileHeader) error {
+func (svc *service) UpdateUserAvatar(ctx context.Context, file multipart.File, header *multipart.FileHeader) error {
 	userID, ok := utils.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperror.Forbidden("unauthorized")

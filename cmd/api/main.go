@@ -19,6 +19,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
+	"github.com/riyanamanda/helpdesk-backend/internal/ticket"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -67,6 +68,7 @@ func main() {
 	category.Register(protected, db)
 	division.Register(protected, db)
 	user.Register(protected, db, storageService)
+	ticket.Register(protected, db)
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),

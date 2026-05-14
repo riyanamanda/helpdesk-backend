@@ -11,9 +11,9 @@ func toCategoryResponse(c Category) CategoryResponse {
 }
 
 func toCategoryResponses(categories []Category) []CategoryResponse {
-	result := make([]CategoryResponse, 0, len(categories))
-	for _, c := range categories {
-		result = append(result, toCategoryResponse(c))
+	result := make([]CategoryResponse, len(categories))
+	for i, c := range categories {
+		result[i] = toCategoryResponse(c)
 	}
 	return result
 }

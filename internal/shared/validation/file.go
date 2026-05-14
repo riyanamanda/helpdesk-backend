@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"fmt"
 	"mime/multipart"
 
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
@@ -13,8 +12,7 @@ func ValidateImage(header *multipart.FileHeader, maxSize int64, allowedTypes map
 	}
 
 	if header.Size > maxSize {
-		message := fmt.Sprintf("image size should not exceed %d", maxSize)
-		return apperror.BadRequest(message)
+		return apperror.BadRequest("file is too large")
 	}
 
 	contentType := header.Header.Get("Content-Type")

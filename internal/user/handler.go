@@ -21,14 +21,14 @@ func NewUserHandler(svc UserService) handler {
 	}
 }
 
-func (h *handler) ListUser(c *echo.Context) error {
+func (h *handler) ListUsers(c *echo.Context) error {
 	var params GetUserParams
 
 	if err := c.Bind(&params); err != nil {
 		return response.Error(c, apperror.BadRequest("invalid query params"))
 	}
 
-	users, total, err := h.svc.GetUser(c.Request().Context(), &params)
+	users, total, err := h.svc.FetchAllUsers(c.Request().Context(), &params)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -36,13 +36,13 @@ func (h *handler) ListUser(c *echo.Context) error {
 	return response.WithPagination(c, http.StatusOK, users, params.Page, params.Limit, total)
 }
 
-func (h *handler) Create(c *echo.Context) error {
+func (h *handler) CreateUser(c *echo.Context) error {
 	req, err := request.BindAndValidate[UserCreateRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	user, err := h.svc.Create(c.Request().Context(), req)
+	user, err := h.svc.RegisterUser(c.Request().Context(), req)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -50,13 +50,13 @@ func (h *handler) Create(c *echo.Context) error {
 	return response.Success(c, http.StatusCreated, user)
 }
 
-func (h *handler) GetByID(c *echo.Context) error {
+func (h *handler) GetUser(c *echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return response.Error(c, apperror.BadRequest("invalid user id"))
 	}
 
-	user, err := h.svc.GetById(c.Request().Context(), &id)
+	user, err := h.svc.FindUserByID(c.Request().Context(), &id)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -64,7 +64,7 @@ func (h *handler) GetByID(c *echo.Context) error {
 	return response.Success(c, http.StatusOK, user)
 }
 
-func (h *handler) UpdateAvatar(c *echo.Context) error {
+func (h *handler) UpdateUserAvatar(c *echo.Context) error {
 	fileHeader, err := c.FormFile("avatar")
 	if err != nil {
 		return response.Error(c, apperror.BadRequest("avatar is required"))
@@ -80,7 +80,7 @@ func (h *handler) UpdateAvatar(c *echo.Context) error {
 	}
 	defer file.Close()
 
-	if err := h.svc.UpdateAvatar(c.Request().Context(), file, fileHeader); err != nil {
+	if err := h.svc.UpdateUserAvatar(c.Request().Context(), file, fileHeader); err != nil {
 		return response.Error(c, err)
 	}
 

@@ -58,7 +58,7 @@ func newMockStorage() *MockStorage {
 	return store
 }
 
-func TestService_Create(t *testing.T) {
+func TestService_RegisterUser(t *testing.T) {
 	testCases := []struct {
 		name      string
 		req       *user.UserCreateRequest
@@ -173,13 +173,13 @@ func TestService_Create(t *testing.T) {
 			svc := user.NewUserService(repo, storage)
 			tc.setupMock(repo)
 
-			result, err := svc.Create(context.Background(), tc.req)
+			result, err := svc.RegisterUser(context.Background(), tc.req)
 			tc.assertFn(t, result, err)
 		})
 	}
 }
 
-func TestService_GetUser(t *testing.T) {
+func TestService_FetchAllUsers(t *testing.T) {
 	testCases := []struct {
 		name      string
 		params    *user.GetUserParams
@@ -194,7 +194,7 @@ func TestService_GetUser(t *testing.T) {
 					{ID: uuid.New(), Name: "Admin", Email: "admin@email.com", Role: user.ADMIN, DivisionID: 1, IsActive: true},
 					{ID: uuid.New(), Name: "Staff", Email: "staff@email.com", Role: user.EMPLOYEE, DivisionID: 2, IsActive: true},
 				}
-				repo.On("List", mock.Anything, user.GetUserParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, 2, nil).Once()
+				repo.On("GetAll", mock.Anything, user.GetUserParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, 2, nil).Once()
 			},
 			assertFn: func(t *testing.T, result []user.UserResponse, total int, err error) {
 				require.NoError(t, err)
@@ -207,7 +207,7 @@ func TestService_GetUser(t *testing.T) {
 			name:   "repository error",
 			params: &user.GetUserParams{},
 			setupMock: func(repo *usermocks.UserRepository) {
-				repo.On("List", mock.Anything, mock.Anything).Return(nil, 0, errors.New("database error")).Once()
+				repo.On("GetAll", mock.Anything, mock.Anything).Return(nil, 0, errors.New("database error")).Once()
 			},
 			assertFn: func(t *testing.T, result []user.UserResponse, total int, err error) {
 				require.Error(t, err)
@@ -225,13 +225,13 @@ func TestService_GetUser(t *testing.T) {
 			svc := user.NewUserService(repo, storage)
 			tc.setupMock(repo)
 
-			result, total, err := svc.GetUser(context.Background(), tc.params)
+			result, total, err := svc.FetchAllUsers(context.Background(), tc.params)
 			tc.assertFn(t, result, total, err)
 		})
 	}
 }
 
-func TestService_GetById(t *testing.T) {
+func TestService_FindUserByID(t *testing.T) {
 	now := time.Now().UTC()
 	id := uuid.New()
 
@@ -287,13 +287,13 @@ func TestService_GetById(t *testing.T) {
 			svc := user.NewUserService(repo, storage)
 			tc.setupMock(repo)
 
-			result, err := svc.GetById(context.Background(), tc.id)
+			result, err := svc.FindUserByID(context.Background(), tc.id)
 			tc.assertFn(t, result, err)
 		})
 	}
 }
 
-func TestService_UpdateAvatar(t *testing.T) {
+func TestService_UpdateUserAvatar(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := usermocks.NewUserRepository(t)
 		storage := newMockStorage()
@@ -316,7 +316,7 @@ func TestService_UpdateAvatar(t *testing.T) {
 			return strings.HasPrefix(key, "avatar/"+userID.String()+"/") && strings.HasSuffix(key, "-avatar.png")
 		})).Return(nil).Once()
 
-		err := svc.UpdateAvatar(ctx, testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
+		err := svc.UpdateUserAvatar(ctx, testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
 		require.NoError(t, err)
 	})
 
@@ -333,46 +333,59 @@ func TestService_UpdateAvatar(t *testing.T) {
 			},
 		}
 
-		err := svc.UpdateAvatar(context.Background(), testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
+		err := svc.UpdateUserAvatar(context.Background(), testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
 		require.Error(t, err)
 		testingutil.AssertAppError(t, err, apperror.CODE_FORBIDDEN, http.StatusForbidden, "unauthorized")
 	})
 
-	t.Run("invalid image format", func(t *testing.T) {
+	t.Run("storage upload error", func(t *testing.T) {
 		repo := usermocks.NewUserRepository(t)
 		storage := newMockStorage()
 		svc := user.NewUserService(repo, storage)
 
-		ctx := utils.SetUserIDToContext(context.Background(), uuid.New())
-		header := &multipart.FileHeader{
-			Filename: "avatar.gif",
-			Size:     1024,
-			Header: textproto.MIMEHeader{
-				"Content-Type": []string{"image/gif"},
-			},
-		}
-
-		err := svc.UpdateAvatar(ctx, testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
-		require.Error(t, err)
-		testingutil.AssertAppError(t, err, apperror.CODE_BAD_REQUEST, http.StatusBadRequest, "invalid image format")
-	})
-
-	t.Run("file too large", func(t *testing.T) {
-		repo := usermocks.NewUserRepository(t)
-		storage := newMockStorage()
-		svc := user.NewUserService(repo, storage)
-
-		ctx := utils.SetUserIDToContext(context.Background(), uuid.New())
+		userID := uuid.New()
+		ctx := utils.SetUserIDToContext(context.Background(), userID)
 		header := &multipart.FileHeader{
 			Filename: "avatar.png",
-			Size:     int64(2<<20 + 1),
+			Size:     1024,
 			Header: textproto.MIMEHeader{
 				"Content-Type": []string{"image/png"},
 			},
 		}
 
-		err := svc.UpdateAvatar(ctx, testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
+		storage.On("Upload", mock.Anything, mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "avatar/"+userID.String()+"/") && strings.HasSuffix(key, "-avatar.png")
+		}), mock.Anything, int64(1024), "image/png").Return(errors.New("storage error")).Once()
+
+		err := svc.UpdateUserAvatar(ctx, testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
 		require.Error(t, err)
-		testingutil.AssertAppError(t, err, apperror.CODE_BAD_REQUEST, http.StatusBadRequest, "file is too large")
+		assert.EqualError(t, err, "storage error")
+	})
+
+	t.Run("repository update avatar error", func(t *testing.T) {
+		repo := usermocks.NewUserRepository(t)
+		storage := newMockStorage()
+		svc := user.NewUserService(repo, storage)
+
+		userID := uuid.New()
+		ctx := utils.SetUserIDToContext(context.Background(), userID)
+		header := &multipart.FileHeader{
+			Filename: "avatar.png",
+			Size:     1024,
+			Header: textproto.MIMEHeader{
+				"Content-Type": []string{"image/png"},
+			},
+		}
+
+		storage.On("Upload", mock.Anything, mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "avatar/"+userID.String()+"/") && strings.HasSuffix(key, "-avatar.png")
+		}), mock.Anything, int64(1024), "image/png").Return(nil).Once()
+		repo.On("UpdateAvatar", mock.Anything, userID, mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "avatar/"+userID.String()+"/") && strings.HasSuffix(key, "-avatar.png")
+		})).Return(errors.New("repository error")).Once()
+
+		err := svc.UpdateUserAvatar(ctx, testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
+		require.Error(t, err)
+		assert.EqualError(t, err, "repository error")
 	})
 }

@@ -27,7 +27,7 @@ func (h *handler) ListCategories(c *echo.Context) error {
 		return response.Error(c, apperror.BadRequest("invalid query params"))
 	}
 
-	categories, total, err := h.svc.GetCategories(c.Request().Context(), &params)
+	categories, total, err := h.svc.FetchAllCategories(c.Request().Context(), &params)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -35,13 +35,13 @@ func (h *handler) ListCategories(c *echo.Context) error {
 	return response.WithPagination(c, http.StatusOK, categories, params.Page, params.Limit, total)
 }
 
-func (h *handler) Create(c *echo.Context) error {
+func (h *handler) CreateCategory(c *echo.Context) error {
 	req, err := request.BindAndValidate[CreateCategoryRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	category, err := h.svc.Create(c.Request().Context(), req)
+	category, err := h.svc.RegisterCategory(c.Request().Context(), req)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -49,13 +49,13 @@ func (h *handler) Create(c *echo.Context) error {
 	return response.Success(c, http.StatusCreated, category)
 }
 
-func (h *handler) GetByID(c *echo.Context) error {
+func (h *handler) GetCategory(c *echo.Context) error {
 	id, err := sharedutils.ParsePositiveInt64PathParam(c, "id", "category")
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	category, err := h.svc.GetByID(c.Request().Context(), id)
+	category, err := h.svc.FindCategoryByID(c.Request().Context(), id)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -63,7 +63,7 @@ func (h *handler) GetByID(c *echo.Context) error {
 	return response.Success(c, http.StatusOK, category)
 }
 
-func (h *handler) Update(c *echo.Context) error {
+func (h *handler) UpdateCategory(c *echo.Context) error {
 	id, err := sharedutils.ParsePositiveInt64PathParam(c, "id", "category")
 	if err != nil {
 		return response.Error(c, err)
@@ -74,7 +74,7 @@ func (h *handler) Update(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	category, err := h.svc.Update(c.Request().Context(), id, req)
+	category, err := h.svc.EditCategory(c.Request().Context(), id, req)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -82,13 +82,13 @@ func (h *handler) Update(c *echo.Context) error {
 	return response.Success(c, http.StatusOK, category)
 }
 
-func (h *handler) Delete(c *echo.Context) error {
+func (h *handler) DeleteCategory(c *echo.Context) error {
 	id, err := sharedutils.ParsePositiveInt64PathParam(c, "id", "category")
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	if err := h.svc.Delete(c.Request().Context(), id); err != nil {
+	if err := h.svc.DeleteCategory(c.Request().Context(), id); err != nil {
 		return response.Error(c, err)
 	}
 

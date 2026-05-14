@@ -11,8 +11,8 @@ func Register(e *echo.Group, db *sqlx.DB) {
 	handler := NewDivisionHandler(svc)
 
 	e.GET("/divisions", handler.ListDivisions)
-	e.GET("/divisions/:id", handler.GetByID)
-	e.POST("/divisions", handler.Create)
-	e.PATCH("/divisions/:id", handler.Update)
-	e.DELETE("/divisions/:id", handler.Delete)
+	e.GET("/divisions/:id", handler.GetDivision)
+	e.POST("/divisions", handler.CreateDivision)
+	e.PATCH("/divisions/:id", handler.UpdateDivision)
+	e.DELETE("/divisions/:id", handler.DeleteDivision)
 }

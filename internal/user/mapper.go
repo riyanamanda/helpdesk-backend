@@ -27,9 +27,9 @@ func toUserResponse(u User, storage storage.Storage) UserResponse {
 }
 
 func toUserResponses(users []User, storage storage.Storage) []UserResponse {
-	result := make([]UserResponse, 0, len(users))
-	for _, u := range users {
-		result = append(result, toUserResponse(u, storage))
+	result := make([]UserResponse, len(users))
+	for i, u := range users {
+		result[i] = toUserResponse(u, storage)
 	}
 	return result
 }

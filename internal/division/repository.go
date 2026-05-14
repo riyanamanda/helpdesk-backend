@@ -11,7 +11,7 @@ import (
 
 //go:generate mockery --name DivisionRepository
 type DivisionRepository interface {
-	List(ctx context.Context, params GetDivisionParams) ([]Division, int, error)
+	GetAll(ctx context.Context, params GetDivisionParams) ([]Division, int, error)
 	Create(ctx context.Context, division *Division) error
 	GetByID(ctx context.Context, id int64) (*Division, error)
 	Update(ctx context.Context, id int64, division *Division) error
@@ -28,7 +28,7 @@ func NewDivisionRepository(db *sqlx.DB) DivisionRepository {
 	}
 }
 
-func (r *repository) List(ctx context.Context, params GetDivisionParams) ([]Division, int, error) {
+func (r *repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Division, int, error) {
 	var divisions []Division
 	var total int
 

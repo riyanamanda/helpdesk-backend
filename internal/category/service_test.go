@@ -18,7 +18,7 @@ import (
 	testingutil "github.com/riyanamanda/helpdesk-backend/internal/shared/testing"
 )
 
-func TestService_Create(t *testing.T) {
+func TestService_RegisterCategory(t *testing.T) {
 	testCases := []struct {
 		name      string
 		req       *category.CreateCategoryRequest
@@ -70,13 +70,13 @@ func TestService_Create(t *testing.T) {
 			svc := category.NewCategoryService(repo)
 			tc.setupMock(repo)
 
-			result, err := svc.Create(context.Background(), tc.req)
+			result, err := svc.RegisterCategory(context.Background(), tc.req)
 			tc.assertFn(t, result, err)
 		})
 	}
 }
 
-func TestService_GetCategories(t *testing.T) {
+func TestService_FetchAllCategories(t *testing.T) {
 	testCases := []struct {
 		name      string
 		params    *category.GetCategoryParams
@@ -88,7 +88,7 @@ func TestService_GetCategories(t *testing.T) {
 			params: &category.GetCategoryParams{},
 			setupMock: func(repo *categorymocks.CategoryRepository) {
 				items := []category.Category{{ID: 1, Name: "Hardware"}, {ID: 2, Name: "Software"}}
-				repo.On("List", mock.Anything, category.GetCategoryParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, 2, nil).Once()
+				repo.On("GetAll", mock.Anything, category.GetCategoryParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, 2, nil).Once()
 			},
 			assertFn: func(t *testing.T, result []category.CategoryResponse, total int, err error) {
 				require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestService_GetCategories(t *testing.T) {
 			name:   "repository error",
 			params: &category.GetCategoryParams{},
 			setupMock: func(repo *categorymocks.CategoryRepository) {
-				repo.On("List", mock.Anything, mock.Anything).Return(nil, 0, errors.New("database error")).Once()
+				repo.On("GetAll", mock.Anything, mock.Anything).Return(nil, 0, errors.New("database error")).Once()
 			},
 			assertFn: func(t *testing.T, result []category.CategoryResponse, total int, err error) {
 				require.Error(t, err)
@@ -118,13 +118,13 @@ func TestService_GetCategories(t *testing.T) {
 			svc := category.NewCategoryService(repo)
 			tc.setupMock(repo)
 
-			result, total, err := svc.GetCategories(context.Background(), tc.params)
+			result, total, err := svc.FetchAllCategories(context.Background(), tc.params)
 			tc.assertFn(t, result, total, err)
 		})
 	}
 }
 
-func TestService_GetByID(t *testing.T) {
+func TestService_FindCategoryByID(t *testing.T) {
 	now := time.Now().UTC()
 
 	testCases := []struct {
@@ -178,13 +178,13 @@ func TestService_GetByID(t *testing.T) {
 			svc := category.NewCategoryService(repo)
 			tc.setupMock(repo)
 
-			result, err := svc.GetByID(context.Background(), tc.id)
+			result, err := svc.FindCategoryByID(context.Background(), tc.id)
 			tc.assertFn(t, result, err)
 		})
 	}
 }
 
-func TestService_Update(t *testing.T) {
+func TestService_EditCategory(t *testing.T) {
 	testCases := []struct {
 		name      string
 		id        int64
@@ -253,13 +253,13 @@ func TestService_Update(t *testing.T) {
 			svc := category.NewCategoryService(repo)
 			tc.setupMock(repo)
 
-			result, err := svc.Update(context.Background(), tc.id, tc.req)
+			result, err := svc.EditCategory(context.Background(), tc.id, tc.req)
 			tc.assertFn(t, result, err)
 		})
 	}
 }
 
-func TestService_Delete(t *testing.T) {
+func TestService_DeleteCategory(t *testing.T) {
 	testCases := []struct {
 		name      string
 		id        int64
@@ -306,7 +306,7 @@ func TestService_Delete(t *testing.T) {
 			svc := category.NewCategoryService(repo)
 			tc.setupMock(repo)
 
-			err := svc.Delete(context.Background(), tc.id)
+			err := svc.DeleteCategory(context.Background(), tc.id)
 			tc.assertFn(t, err)
 		})
 	}

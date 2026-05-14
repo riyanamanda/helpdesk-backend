@@ -12,7 +12,7 @@ import (
 
 //go:generate mockery --name UserRepository
 type UserRepository interface {
-	List(ctx context.Context, params GetUserParams) ([]User, int, error)
+	GetAll(ctx context.Context, params GetUserParams) ([]User, int, error)
 	Create(ctx context.Context, user *User) error
 	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
@@ -29,7 +29,7 @@ func NewUserRepository(db *sqlx.DB) UserRepository {
 	}
 }
 
-func (r *repository) List(ctx context.Context, params GetUserParams) ([]User, int, error) {
+func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]User, int, error) {
 	var users []User
 	var total int
 

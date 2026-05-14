@@ -9,11 +9,11 @@ import (
 )
 
 type DivisionService interface {
-	GetDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int, error)
-	Create(ctx context.Context, req *CreateDivisionRequest) (DivisionResponse, error)
-	GetByID(ctx context.Context, id int64) (DivisionResponse, error)
-	Update(ctx context.Context, id int64, req *UpdateDivisionRequest) (DivisionResponse, error)
-	Delete(ctx context.Context, id int64) error
+	FetchAllDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int, error)
+	RegisterDivision(ctx context.Context, req *CreateDivisionRequest) (DivisionResponse, error)
+	FindDivisionByID(ctx context.Context, id int64) (DivisionResponse, error)
+	EditDivision(ctx context.Context, id int64, req *UpdateDivisionRequest) (DivisionResponse, error)
+	DeleteDivision(ctx context.Context, id int64) error
 }
 
 type service struct {
@@ -26,7 +26,7 @@ func NewDivisionService(repo DivisionRepository) DivisionService {
 	}
 }
 
-func (svc *service) GetDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int, error) {
+func (svc *service) FetchAllDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int, error) {
 	if params == nil {
 		params = &GetDivisionParams{}
 	}
@@ -35,7 +35,7 @@ func (svc *service) GetDivisions(ctx context.Context, params *GetDivisionParams)
 	params.Page = page
 	params.Limit = limit
 
-	divisions, total, err := svc.repo.List(ctx, *params)
+	divisions, total, err := svc.repo.GetAll(ctx, *params)
 	if err != nil {
 		slog.Error("list division failed", "error", err)
 		return []DivisionResponse{}, 0, err
@@ -44,7 +44,7 @@ func (svc *service) GetDivisions(ctx context.Context, params *GetDivisionParams)
 	return toDivisionResponses(divisions), total, nil
 }
 
-func (svc *service) Create(ctx context.Context, req *CreateDivisionRequest) (DivisionResponse, error) {
+func (svc *service) RegisterDivision(ctx context.Context, req *CreateDivisionRequest) (DivisionResponse, error) {
 	division := Division{
 		Name: req.Name,
 	}
@@ -59,7 +59,7 @@ func (svc *service) Create(ctx context.Context, req *CreateDivisionRequest) (Div
 	return toDivisionResponse(division), nil
 }
 
-func (svc *service) GetByID(ctx context.Context, id int64) (DivisionResponse, error) {
+func (svc *service) FindDivisionByID(ctx context.Context, id int64) (DivisionResponse, error) {
 	division, err := svc.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {
@@ -71,7 +71,7 @@ func (svc *service) GetByID(ctx context.Context, id int64) (DivisionResponse, er
 	return toDivisionResponse(*division), nil
 }
 
-func (svc *service) Update(ctx context.Context, id int64, req *UpdateDivisionRequest) (DivisionResponse, error) {
+func (svc *service) EditDivision(ctx context.Context, id int64, req *UpdateDivisionRequest) (DivisionResponse, error) {
 	division := Division{Name: req.Name}
 	if err := svc.repo.Update(ctx, id, &division); err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {
@@ -86,7 +86,7 @@ func (svc *service) Update(ctx context.Context, id int64, req *UpdateDivisionReq
 	return toDivisionResponse(division), nil
 }
 
-func (svc *service) Delete(ctx context.Context, id int64) error {
+func (svc *service) DeleteDivision(ctx context.Context, id int64) error {
 	if err := svc.repo.Delete(ctx, id); err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {
 			return apperrors.NotFound("division")

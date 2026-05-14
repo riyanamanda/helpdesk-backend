@@ -27,7 +27,7 @@ func (h *handler) ListDivisions(c *echo.Context) error {
 		return response.Error(c, apperror.BadRequest("invalid query params"))
 	}
 
-	divisions, total, err := h.svc.GetDivisions(c.Request().Context(), &params)
+	divisions, total, err := h.svc.FetchAllDivisions(c.Request().Context(), &params)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -35,13 +35,13 @@ func (h *handler) ListDivisions(c *echo.Context) error {
 	return response.WithPagination(c, http.StatusOK, divisions, params.Page, params.Limit, total)
 }
 
-func (h *handler) Create(c *echo.Context) error {
+func (h *handler) CreateDivision(c *echo.Context) error {
 	req, err := request.BindAndValidate[CreateDivisionRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	division, err := h.svc.Create(c.Request().Context(), req)
+	division, err := h.svc.RegisterDivision(c.Request().Context(), req)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -49,13 +49,13 @@ func (h *handler) Create(c *echo.Context) error {
 	return response.Success(c, http.StatusCreated, division)
 }
 
-func (h *handler) GetByID(c *echo.Context) error {
+func (h *handler) GetDivision(c *echo.Context) error {
 	id, err := sharedutils.ParsePositiveInt64PathParam(c, "id", "division")
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	division, err := h.svc.GetByID(c.Request().Context(), id)
+	division, err := h.svc.FindDivisionByID(c.Request().Context(), id)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -63,7 +63,7 @@ func (h *handler) GetByID(c *echo.Context) error {
 	return response.Success(c, http.StatusOK, division)
 }
 
-func (h *handler) Update(c *echo.Context) error {
+func (h *handler) UpdateDivision(c *echo.Context) error {
 	id, err := sharedutils.ParsePositiveInt64PathParam(c, "id", "division")
 	if err != nil {
 		return response.Error(c, err)
@@ -74,7 +74,7 @@ func (h *handler) Update(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	division, err := h.svc.Update(c.Request().Context(), id, req)
+	division, err := h.svc.EditDivision(c.Request().Context(), id, req)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -82,13 +82,13 @@ func (h *handler) Update(c *echo.Context) error {
 	return response.Success(c, http.StatusOK, division)
 }
 
-func (h *handler) Delete(c *echo.Context) error {
+func (h *handler) DeleteDivision(c *echo.Context) error {
 	id, err := sharedutils.ParsePositiveInt64PathParam(c, "id", "division")
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	if err := h.svc.Delete(c.Request().Context(), id); err != nil {
+	if err := h.svc.DeleteDivision(c.Request().Context(), id); err != nil {
 		return response.Error(c, err)
 	}
 

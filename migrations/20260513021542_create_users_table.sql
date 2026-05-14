@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique
 ON users (LOWER(email));
 
-CREATE INDEX IF NOT EXISTS users_active_created_at
+CREATE INDEX IF NOT EXISTS users_google_active_created_at
 ON users (google_id, is_active, created_at DESC);
 -- +goose StatementEnd
 

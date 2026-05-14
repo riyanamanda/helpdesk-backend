@@ -116,6 +116,72 @@ func (_c *DivisionRepository_Delete_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// GetAll provides a mock function with given fields: ctx, params
+func (_m *DivisionRepository) GetAll(ctx context.Context, params division.GetDivisionParams) ([]division.Division, int, error) {
+	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAll")
+	}
+
+	var r0 []division.Division
+	var r1 int
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, division.GetDivisionParams) ([]division.Division, int, error)); ok {
+		return rf(ctx, params)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, division.GetDivisionParams) []division.Division); ok {
+		r0 = rf(ctx, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]division.Division)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, division.GetDivisionParams) int); ok {
+		r1 = rf(ctx, params)
+	} else {
+		r1 = ret.Get(1).(int)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, division.GetDivisionParams) error); ok {
+		r2 = rf(ctx, params)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// DivisionRepository_GetAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAll'
+type DivisionRepository_GetAll_Call struct {
+	*mock.Call
+}
+
+// GetAll is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params division.GetDivisionParams
+func (_e *DivisionRepository_Expecter) GetAll(ctx interface{}, params interface{}) *DivisionRepository_GetAll_Call {
+	return &DivisionRepository_GetAll_Call{Call: _e.mock.On("GetAll", ctx, params)}
+}
+
+func (_c *DivisionRepository_GetAll_Call) Run(run func(ctx context.Context, params division.GetDivisionParams)) *DivisionRepository_GetAll_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(division.GetDivisionParams))
+	})
+	return _c
+}
+
+func (_c *DivisionRepository_GetAll_Call) Return(_a0 []division.Division, _a1 int, _a2 error) *DivisionRepository_GetAll_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *DivisionRepository_GetAll_Call) RunAndReturn(run func(context.Context, division.GetDivisionParams) ([]division.Division, int, error)) *DivisionRepository_GetAll_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetByID provides a mock function with given fields: ctx, id
 func (_m *DivisionRepository) GetByID(ctx context.Context, id int64) (*division.Division, error) {
 	ret := _m.Called(ctx, id)
@@ -171,72 +237,6 @@ func (_c *DivisionRepository_GetByID_Call) Return(_a0 *division.Division, _a1 er
 }
 
 func (_c *DivisionRepository_GetByID_Call) RunAndReturn(run func(context.Context, int64) (*division.Division, error)) *DivisionRepository_GetByID_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// List provides a mock function with given fields: ctx, params
-func (_m *DivisionRepository) List(ctx context.Context, params division.GetDivisionParams) ([]division.Division, int, error) {
-	ret := _m.Called(ctx, params)
-
-	if len(ret) == 0 {
-		panic("no return value specified for List")
-	}
-
-	var r0 []division.Division
-	var r1 int
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, division.GetDivisionParams) ([]division.Division, int, error)); ok {
-		return rf(ctx, params)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, division.GetDivisionParams) []division.Division); ok {
-		r0 = rf(ctx, params)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]division.Division)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, division.GetDivisionParams) int); ok {
-		r1 = rf(ctx, params)
-	} else {
-		r1 = ret.Get(1).(int)
-	}
-
-	if rf, ok := ret.Get(2).(func(context.Context, division.GetDivisionParams) error); ok {
-		r2 = rf(ctx, params)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// DivisionRepository_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
-type DivisionRepository_List_Call struct {
-	*mock.Call
-}
-
-// List is a helper method to define mock.On call
-//   - ctx context.Context
-//   - params division.GetDivisionParams
-func (_e *DivisionRepository_Expecter) List(ctx interface{}, params interface{}) *DivisionRepository_List_Call {
-	return &DivisionRepository_List_Call{Call: _e.mock.On("List", ctx, params)}
-}
-
-func (_c *DivisionRepository_List_Call) Run(run func(ctx context.Context, params division.GetDivisionParams)) *DivisionRepository_List_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(division.GetDivisionParams))
-	})
-	return _c
-}
-
-func (_c *DivisionRepository_List_Call) Return(_a0 []division.Division, _a1 int, _a2 error) *DivisionRepository_List_Call {
-	_c.Call.Return(_a0, _a1, _a2)
-	return _c
-}
-
-func (_c *DivisionRepository_List_Call) RunAndReturn(run func(context.Context, division.GetDivisionParams) ([]division.Division, int, error)) *DivisionRepository_List_Call {
 	_c.Call.Return(run)
 	return _c
 }

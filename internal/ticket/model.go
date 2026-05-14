@@ -1,0 +1,24 @@
+package ticket
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type Ticket struct {
+	ID          int64      `db:"id"`
+	Title       string     `db:"title"`
+	Description string     `db:"description"`
+	CategoryID  int        `db:"category_id"`
+	Status      string     `db:"status"`
+	Priority    string     `db:"priority"`
+	CreatedBy   uuid.UUID  `db:"created_by"`
+	AssignedTo  *uuid.UUID `db:"assigned_to"`
+	AssignedAt  *time.Time `db:"assigned_at"`
+	ResolvedAt  *time.Time `db:"resolved_at"`
+	ClosedAt    *time.Time `db:"closed_at"`
+	ClosedBy    *uuid.UUID `db:"closed_by"`
+	CreatedAt   time.Time  `db:"created_at"`
+	UpdatedAt   time.Time  `db:"updated_at"`
+}

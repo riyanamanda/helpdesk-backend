@@ -11,9 +11,9 @@ func toDivisionResponse(d Division) DivisionResponse {
 }
 
 func toDivisionResponses(divisions []Division) []DivisionResponse {
-	result := make([]DivisionResponse, 0, len(divisions))
-	for _, d := range divisions {
-		result = append(result, toDivisionResponse(d))
+	result := make([]DivisionResponse, len(divisions))
+	for i, d := range divisions {
+		result[i] = toDivisionResponse(d)
 	}
 	return result
 }
