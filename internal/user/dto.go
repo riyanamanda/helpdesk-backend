@@ -7,13 +7,6 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/pagination"
 )
 
-type UserRole string
-
-const (
-	ADMIN    UserRole = "ADMIN"
-	EMPLOYEE UserRole = "EMPLOYEE"
-)
-
 type UserResponse struct {
 	ID         uuid.UUID  `json:"id"`
 	Name       string     `json:"name"`

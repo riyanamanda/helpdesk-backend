@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/uuid"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
-	apperrors "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 	"golang.org/x/crypto/bcrypt"
@@ -78,7 +77,7 @@ func (svc *service) Create(ctx context.Context, req *UserCreateRequest) (UserRes
 
 	if err := svc.repo.Create(ctx, user); err != nil {
 		if errors.Is(err, ErrUserAlreadyExists) {
-			return UserResponse{}, apperrors.AlreadyExists("user")
+			return UserResponse{}, apperror.AlreadyExists("user")
 		}
 		return UserResponse{}, err
 	}
@@ -105,15 +104,6 @@ func (svc *service) UpdateAvatar(ctx context.Context, file multipart.File, heade
 	}
 
 	contentType := header.Header.Get("Content-Type")
-	if contentType != "image/jpeg" && contentType != "image/jpg" && contentType != "image/png" {
-		return apperror.BadRequest("invalid image format")
-	}
-
-	const maxFileSize = 2 << 20 // 2MB
-	if header.Size > maxFileSize {
-		return apperror.BadRequest("file is too large")
-	}
-
 	objectKey := fmt.Sprintf("avatar/%s/%d-%s", userID.String(), time.Now().Unix(), header.Filename)
 	if err := svc.storage.Upload(ctx, objectKey, file, header.Size, contentType); err != nil {
 		return err

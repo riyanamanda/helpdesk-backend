@@ -8,6 +8,7 @@ import (
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 )
 
 type handler struct {
@@ -67,6 +68,10 @@ func (h *handler) UpdateAvatar(c *echo.Context) error {
 	fileHeader, err := c.FormFile("avatar")
 	if err != nil {
 		return response.Error(c, apperror.BadRequest("avatar is required"))
+	}
+
+	if err := validation.ValidateImage(fileHeader, maxAvatarSize, AllowedAvatarTypes); err != nil {
+		return response.Error(c, err)
 	}
 
 	file, err := fileHeader.Open()
