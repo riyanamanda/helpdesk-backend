@@ -62,17 +62,9 @@ func (r *repository) Create(ctx context.Context, category *Category) error {
 	const query = `
 		INSERT INTO categories (name)
 		VALUES ($1)
-		RETURNING id, name, is_active, created_at, updated_at
 	`
 
-	err := r.db.QueryRowxContext(ctx, query, category.Name).
-		Scan(
-			&category.ID,
-			&category.Name,
-			&category.IsActive,
-			&category.CreatedAt,
-			&category.UpdatedAt,
-		)
+	_, err := r.db.ExecContext(ctx, query, category.Name)
 
 	if err != nil {
 		if dberror.IsUniqueViolation(err) {
@@ -108,26 +100,24 @@ func (r *repository) Update(ctx context.Context, id int64, category *Category) e
 		UPDATE categories
 		SET name = $1, updated_at = NOW()
 		WHERE id = $2 AND is_active = TRUE
-		RETURNING id, name, is_active, created_at, updated_at
 	`
 
-	err := r.db.QueryRowxContext(ctx, query, category.Name, id).
-		Scan(
-			&category.ID,
-			&category.Name,
-			&category.IsActive,
-			&category.CreatedAt,
-			&category.UpdatedAt,
-		)
+	result, err := r.db.ExecContext(ctx, query, category.Name, id)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrCategoryNotFound
-		}
 		if dberror.IsUniqueViolation(err) {
 			return ErrCategoryAlreadyExists
 		}
 		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return ErrCategoryNotFound
 	}
 
 	return nil

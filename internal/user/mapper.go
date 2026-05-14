@@ -14,6 +14,7 @@ func toUserResponse(u User, storage storage.Storage) UserResponse {
 		ID:         u.ID,
 		Name:       u.Name,
 		Email:      u.Email,
+		GoogleID:   u.GoogleID,
 		AvatarURL:  avatarURL,
 		Phone:      u.Phone,
 		Role:       u.Role,

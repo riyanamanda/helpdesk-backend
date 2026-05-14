@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(50) NOT NULL,
     email VARCHAR(50) NOT NULL,
     password VARCHAR(100) NOT NULL,
+    google_id VARCHAR(100) UNIQUE,
     avatar_key TEXT,
     phone VARCHAR(20),
     role VARCHAR(20) NOT NULL,
@@ -19,7 +20,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique
 ON users (LOWER(email));
 
 CREATE INDEX IF NOT EXISTS users_active_created_at
-ON users (is_active, created_at DESC);
+ON users (google_id, is_active, created_at DESC);
 -- +goose StatementEnd
 
 -- +goose Down

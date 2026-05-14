@@ -44,7 +44,7 @@ func (r *repository) List(ctx context.Context, params GetUserParams) ([]User, in
 	}
 
 	const query = `
-		SELECT id, name, email, avatar_key, phone, role, division_id, is_active, created_by, created_at, updated_at
+		SELECT id, name, email, google_id, avatar_key, phone, role, division_id, is_active, created_by, created_at, updated_at
 		FROM users
 		WHERE is_active = TRUE
 		ORDER BY created_at DESC
@@ -63,21 +63,9 @@ func (r *repository) Create(ctx context.Context, user *User) error {
 	const query = `
 		INSERT INTO users (name, email, password, role, division_id, created_by)
 		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, name, email, role, division_id, is_active, created_by, created_at, updated_at
 	`
 
-	err := r.db.QueryRowxContext(ctx, query, user.Name, user.Email, user.Password, user.Role, user.DivisionID, user.CreatedBy).
-		Scan(
-			&user.ID,
-			&user.Name,
-			&user.Email,
-			&user.Role,
-			&user.DivisionID,
-			&user.IsActive,
-			&user.CreatedBy,
-			&user.CreatedAt,
-			&user.UpdatedAt,
-		)
+	_, err := r.db.ExecContext(ctx, query, user.Name, user.Email, user.Password, user.Role, user.DivisionID, user.CreatedBy)
 
 	if err != nil {
 		if dberror.IsUniqueViolation(err) {
@@ -93,7 +81,7 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*User, error) {
 	var user User
 
 	const query = `
-		SELECT id, name, email, avatar_key, phone, role, division_id, is_active, created_by, created_at, updated_at
+		SELECT id, name, email, google_id, avatar_key, phone, role, division_id, is_active, created_by, created_at, updated_at
 		FROM users
 		WHERE id = $1
 		AND is_active = TRUE
@@ -113,7 +101,7 @@ func (r *repository) GetByEmail(ctx context.Context, email string) (*User, error
 	var user User
 
 	const query = `
-		SELECT id, name, email, password, avatar_key, phone, role, division_id, is_active, created_by, created_at, updated_at
+		SELECT id, name, email, password, google_id, avatar_key, phone, role, division_id, is_active, created_by, created_at, updated_at
 		FROM users
 		WHERE LOWER(email) = LOWER($1)
 	`

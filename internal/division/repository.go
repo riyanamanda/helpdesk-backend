@@ -60,16 +60,8 @@ func (r *repository) Create(ctx context.Context, division *Division) error {
 	const query = `
 		INSERT INTO divisions (name)
 		VALUES ($1)
-		RETURNING id, name, is_active, created_at, updated_at
 	`
-	err := r.db.QueryRowxContext(ctx, query, division.Name).
-		Scan(
-			&division.ID,
-			&division.Name,
-			&division.IsActive,
-			&division.CreatedAt,
-			&division.UpdatedAt,
-		)
+	_, err := r.db.ExecContext(ctx, query, division.Name)
 	if err != nil {
 		if dberror.IsUniqueViolation(err) {
 			return ErrDivisionAlreadyExists
@@ -104,26 +96,24 @@ func (r *repository) Update(ctx context.Context, id int64, division *Division) e
 		UPDATE divisions
 		SET name = $1, updated_at = NOW()
 		WHERE id = $2 AND is_active = TRUE
-		RETURNING id, name, is_active, created_at, updated_at
 	`
 
-	err := r.db.QueryRowxContext(ctx, query, division.Name, id).
-		Scan(
-			&division.ID,
-			&division.Name,
-			&division.IsActive,
-			&division.CreatedAt,
-			&division.UpdatedAt,
-		)
+	result, err := r.db.ExecContext(ctx, query, division.Name, id)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrDivisionNotFound
-		}
 		if dberror.IsUniqueViolation(err) {
 			return ErrDivisionAlreadyExists
 		}
 		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return ErrDivisionNotFound
 	}
 
 	return nil
