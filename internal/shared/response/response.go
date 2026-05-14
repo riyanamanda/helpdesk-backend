@@ -71,6 +71,13 @@ func WithPagination[T any](c *echo.Context, statusCode int, data T, page, limit,
 	})
 }
 
+func Message(c *echo.Context, statusCode int, message string) error {
+	return c.JSON(statusCode, Response[any]{
+		Message: &message,
+		Meta:    *buildMeta(c, nil),
+	})
+}
+
 func Success[T any](c *echo.Context, statusCode int, data T) error {
 	return c.JSON(statusCode, Response[T]{
 		Data: data,

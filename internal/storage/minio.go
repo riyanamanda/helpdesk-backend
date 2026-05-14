@@ -34,6 +34,6 @@ func (m *minioStorage) Delete(ctx context.Context, key string) error {
 	return m.client.RemoveObject(ctx, m.bucketName, key, minio.RemoveObjectOptions{})
 }
 
-func (m *minioStorage) GetUrl(key string) string {
+func (m *minioStorage) GetURL(key string) string {
 	return fmt.Sprintf("%s/%s/%s", m.publicURL, m.bucketName, key)
 }

@@ -49,7 +49,7 @@ func main() {
 		slog.Error("load storage failed", "error", err)
 		os.Exit(1)
 	}
-	storage.NewMinioStorage(minioClient, cfg.Storage.Bucket, cfg.Storage.PublicURL)
+	storageService := storage.NewMinioStorage(minioClient, cfg.Storage.Bucket, cfg.Storage.PublicURL)
 
 	// api root
 	api := e.Group("/api/v1")
@@ -66,7 +66,7 @@ func main() {
 	// protected modules
 	category.Register(protected, db)
 	division.Register(protected, db)
-	user.Register(protected, db)
+	user.Register(protected, db, storageService)
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),

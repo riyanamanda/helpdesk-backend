@@ -3,13 +3,17 @@ package user
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"mime/multipart"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	apperrors "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
+	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -17,15 +21,18 @@ type UserService interface {
 	GetUser(ctx context.Context, params *GetUserParams) ([]UserResponse, int, error)
 	Create(ctx context.Context, req *UserCreateRequest) (UserResponse, error)
 	GetById(ctx context.Context, id *uuid.UUID) (UserResponse, error)
+	UpdateAvatar(ctx context.Context, file multipart.File, header *multipart.FileHeader) error
 }
 
 type service struct {
-	repo UserRepository
+	repo    UserRepository
+	storage storage.Storage
 }
 
-func NewUserService(repo UserRepository) UserService {
+func NewUserService(repo UserRepository, storage storage.Storage) UserService {
 	return &service{
-		repo: repo,
+		repo:    repo,
+		storage: storage,
 	}
 }
 
@@ -44,7 +51,7 @@ func (svc *service) GetUser(ctx context.Context, params *GetUserParams) ([]UserR
 		return []UserResponse{}, 0, err
 	}
 
-	return toUserResponses(users), total, nil
+	return toUserResponses(users, svc.storage), total, nil
 }
 
 func (svc *service) Create(ctx context.Context, req *UserCreateRequest) (UserResponse, error) {
@@ -76,7 +83,7 @@ func (svc *service) Create(ctx context.Context, req *UserCreateRequest) (UserRes
 		return UserResponse{}, err
 	}
 
-	return toUserResponse(*user), nil
+	return toUserResponse(*user, svc.storage), nil
 }
 
 func (svc *service) GetById(ctx context.Context, id *uuid.UUID) (UserResponse, error) {
@@ -88,5 +95,33 @@ func (svc *service) GetById(ctx context.Context, id *uuid.UUID) (UserResponse, e
 		return UserResponse{}, err
 	}
 
-	return toUserResponse(*user), nil
+	return toUserResponse(*user, svc.storage), nil
+}
+
+func (svc *service) UpdateAvatar(ctx context.Context, file multipart.File, header *multipart.FileHeader) error {
+	userID, ok := utils.GetUserIDFromContext(ctx)
+	if !ok {
+		return apperror.Forbidden("unauthorized")
+	}
+
+	contentType := header.Header.Get("Content-Type")
+	if contentType != "image/jpeg" && contentType != "image/jpg" && contentType != "image/png" {
+		return apperror.BadRequest("invalid image format")
+	}
+
+	const maxFileSize = 2 << 20 // 2MB
+	if header.Size > maxFileSize {
+		return apperror.BadRequest("file is too large")
+	}
+
+	objectKey := fmt.Sprintf("avatar/%s/%d-%s", userID.String(), time.Now().Unix(), header.Filename)
+	if err := svc.storage.Upload(ctx, objectKey, file, header.Size, contentType); err != nil {
+		return err
+	}
+
+	if err := svc.repo.UpdateAvatar(ctx, userID, objectKey); err != nil {
+		return err
+	}
+
+	return nil
 }

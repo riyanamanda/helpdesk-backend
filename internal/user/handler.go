@@ -62,3 +62,22 @@ func (h *handler) GetByID(c *echo.Context) error {
 
 	return response.Success(c, http.StatusOK, user)
 }
+
+func (h *handler) UpdateAvatar(c *echo.Context) error {
+	fileHeader, err := c.FormFile("avatar")
+	if err != nil {
+		return response.Error(c, apperror.BadRequest("avatar is required"))
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return response.Error(c, apperror.Internal("failed to open uploaded file"))
+	}
+	defer file.Close()
+
+	if err := h.svc.UpdateAvatar(c.Request().Context(), file, fileHeader); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Message(c, http.StatusOK, "update avatar successfully")
+}

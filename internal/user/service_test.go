@@ -3,7 +3,10 @@ package user_test
 import (
 	"context"
 	"errors"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"strings"
 	"testing"
 	"time"
@@ -17,9 +20,43 @@ import (
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/pagination"
 	testingutil "github.com/riyanamanda/helpdesk-backend/internal/shared/testing"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	user "github.com/riyanamanda/helpdesk-backend/internal/user"
 	usermocks "github.com/riyanamanda/helpdesk-backend/internal/user/mocks"
 )
+
+// MockStorage provides a no-op implementation of storage.Storage for testing
+type MockStorage struct {
+	mock.Mock
+}
+
+type testMultipartFile struct {
+	*strings.Reader
+}
+
+func (f testMultipartFile) Close() error {
+	return nil
+}
+
+func (m *MockStorage) Upload(ctx context.Context, key string, reader io.Reader, size int64, contentType string) error {
+	args := m.Called(ctx, key, reader, size, contentType)
+	return args.Error(0)
+}
+
+func (m *MockStorage) Delete(ctx context.Context, key string) error {
+	args := m.Called(ctx, key)
+	return args.Error(0)
+}
+
+func (m *MockStorage) GetURL(key string) string {
+	args := m.Called(key)
+	return args.String(0)
+}
+
+func newMockStorage() *MockStorage {
+	store := new(MockStorage)
+	return store
+}
 
 func TestService_Create(t *testing.T) {
 	testCases := []struct {
@@ -132,7 +169,8 @@ func TestService_Create(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := usermocks.NewUserRepository(t)
-			svc := user.NewUserService(repo)
+			storage := newMockStorage()
+			svc := user.NewUserService(repo, storage)
 			tc.setupMock(repo)
 
 			result, err := svc.Create(context.Background(), tc.req)
@@ -183,7 +221,8 @@ func TestService_GetUser(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := usermocks.NewUserRepository(t)
-			svc := user.NewUserService(repo)
+			storage := newMockStorage()
+			svc := user.NewUserService(repo, storage)
 			tc.setupMock(repo)
 
 			result, total, err := svc.GetUser(context.Background(), tc.params)
@@ -244,11 +283,96 @@ func TestService_GetById(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := usermocks.NewUserRepository(t)
-			svc := user.NewUserService(repo)
+			storage := newMockStorage()
+			svc := user.NewUserService(repo, storage)
 			tc.setupMock(repo)
 
 			result, err := svc.GetById(context.Background(), tc.id)
 			tc.assertFn(t, result, err)
 		})
 	}
+}
+
+func TestService_UpdateAvatar(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		repo := usermocks.NewUserRepository(t)
+		storage := newMockStorage()
+		svc := user.NewUserService(repo, storage)
+
+		userID := uuid.New()
+		ctx := utils.SetUserIDToContext(context.Background(), userID)
+		header := &multipart.FileHeader{
+			Filename: "avatar.png",
+			Size:     1024,
+			Header: textproto.MIMEHeader{
+				"Content-Type": []string{"image/png"},
+			},
+		}
+
+		storage.On("Upload", mock.Anything, mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "avatar/"+userID.String()+"/") && strings.HasSuffix(key, "-avatar.png")
+		}), mock.Anything, int64(1024), "image/png").Return(nil).Once()
+		repo.On("UpdateAvatar", mock.Anything, userID, mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "avatar/"+userID.String()+"/") && strings.HasSuffix(key, "-avatar.png")
+		})).Return(nil).Once()
+
+		err := svc.UpdateAvatar(ctx, testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
+		require.NoError(t, err)
+	})
+
+	t.Run("unauthorized when user id not in context", func(t *testing.T) {
+		repo := usermocks.NewUserRepository(t)
+		storage := newMockStorage()
+		svc := user.NewUserService(repo, storage)
+
+		header := &multipart.FileHeader{
+			Filename: "avatar.png",
+			Size:     1024,
+			Header: textproto.MIMEHeader{
+				"Content-Type": []string{"image/png"},
+			},
+		}
+
+		err := svc.UpdateAvatar(context.Background(), testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
+		require.Error(t, err)
+		testingutil.AssertAppError(t, err, apperror.CODE_FORBIDDEN, http.StatusForbidden, "unauthorized")
+	})
+
+	t.Run("invalid image format", func(t *testing.T) {
+		repo := usermocks.NewUserRepository(t)
+		storage := newMockStorage()
+		svc := user.NewUserService(repo, storage)
+
+		ctx := utils.SetUserIDToContext(context.Background(), uuid.New())
+		header := &multipart.FileHeader{
+			Filename: "avatar.gif",
+			Size:     1024,
+			Header: textproto.MIMEHeader{
+				"Content-Type": []string{"image/gif"},
+			},
+		}
+
+		err := svc.UpdateAvatar(ctx, testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
+		require.Error(t, err)
+		testingutil.AssertAppError(t, err, apperror.CODE_BAD_REQUEST, http.StatusBadRequest, "invalid image format")
+	})
+
+	t.Run("file too large", func(t *testing.T) {
+		repo := usermocks.NewUserRepository(t)
+		storage := newMockStorage()
+		svc := user.NewUserService(repo, storage)
+
+		ctx := utils.SetUserIDToContext(context.Background(), uuid.New())
+		header := &multipart.FileHeader{
+			Filename: "avatar.png",
+			Size:     int64(2<<20 + 1),
+			Header: textproto.MIMEHeader{
+				"Content-Type": []string{"image/png"},
+			},
+		}
+
+		err := svc.UpdateAvatar(ctx, testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
+		require.Error(t, err)
+		testingutil.AssertAppError(t, err, apperror.CODE_BAD_REQUEST, http.StatusBadRequest, "file is too large")
+	})
 }

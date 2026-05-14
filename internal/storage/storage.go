@@ -8,5 +8,5 @@ import (
 type Storage interface {
 	Upload(ctx context.Context, key string, reader io.Reader, size int64, contentType string) error
 	Delete(ctx context.Context, key string) error
-	GetUrl(key string) string
+	GetURL(key string) string
 }
