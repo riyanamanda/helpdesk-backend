@@ -18,6 +18,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
+	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -38,8 +39,17 @@ func main() {
 	})
 
 	// dependencies
+	// postgres init
 	db := database.NewPostgres(cfg.Database.ConnString())
 	defer db.Close()
+
+	// minio storage init
+	minioClient, err := storage.NewMinioClient(cfg.Storage.Endpoint, cfg.Storage.AccessKey, cfg.Storage.SecretKey, cfg.Storage.UseSSL)
+	if err != nil {
+		slog.Error("load storage failed", "error", err)
+		os.Exit(1)
+	}
+	storage.NewMinioStorage(minioClient, cfg.Storage.Bucket, cfg.Storage.PublicURL)
 
 	// api root
 	api := e.Group("/api/v1")

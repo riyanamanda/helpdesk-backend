@@ -2,37 +2,38 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-type MinioStorage struct {
-	client *minio.Client
-	bucket string
+type minioStorage struct {
+	client     *minio.Client
+	bucketName string
+	publicURL  string
 }
 
-func NewMinioStorage() (*MinioStorage, error) {
-	client, err := minio.New("localhost:9000", &minio.Options{
-		Creds:  credentials.NewStaticV4("minioadmin", "minioadmin", ""),
-		Secure: false,
-	})
-
-	if err != nil {
-		return nil, err
+func NewMinioStorage(client *minio.Client, bucketName, publicURL string) Storage {
+	return &minioStorage{
+		client:     client,
+		bucketName: bucketName,
+		publicURL:  publicURL,
 	}
-
-	return &MinioStorage{
-		client: client,
-		bucket: "helpdesk-dev",
-	}, nil
 }
 
-func (s *MinioStorage) Upload(ctx context.Context, key string, reader io.Reader, size int64, contentType string) error {
-	_, err := s.client.PutObject(ctx, s.bucket, key, reader, size, minio.PutObjectOptions{
+func (m *minioStorage) Upload(ctx context.Context, key string, reader io.Reader, size int64, contentType string) error {
+	_, err := m.client.PutObject(ctx, m.bucketName, key, reader, size, minio.PutObjectOptions{
 		ContentType: contentType,
 	})
 
 	return err
+}
+
+func (m *minioStorage) Delete(ctx context.Context, key string) error {
+	return m.client.RemoveObject(ctx, m.bucketName, key, minio.RemoveObjectOptions{})
+}
+
+func (m *minioStorage) GetUrl(key string) string {
+	return fmt.Sprintf("%s/%s/%s", m.publicURL, m.bucketName, key)
 }

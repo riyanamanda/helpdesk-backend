@@ -6,6 +6,7 @@ type Config struct {
 	App      App
 	Database Database
 	Auth     Auth
+	Storage  Storage
 }
 
 type App struct {
@@ -26,6 +27,15 @@ type Database struct {
 type Auth struct {
 	JWTSecret            string
 	JWTExpirationMinutes int
+}
+
+type Storage struct {
+	Endpoint  string
+	AccessKey string
+	SecretKey string
+	Bucket    string
+	UseSSL    bool
+	PublicURL string
 }
 
 func (d Database) ConnString() string {
