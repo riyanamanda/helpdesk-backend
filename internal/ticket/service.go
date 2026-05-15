@@ -80,6 +80,7 @@ func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, 
 			}
 
 			if err := s.repo.CreateAttachment(ctx, attachment); err != nil {
+
 				_ = s.storage.Delete(ctx, objectKey)
 
 				slog.ErrorContext(

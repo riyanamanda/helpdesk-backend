@@ -1,13 +1,7 @@
 package division
 
 func toDivisionResponse(d Division) DivisionResponse {
-	return DivisionResponse{
-		ID:        d.ID,
-		Name:      d.Name,
-		IsActive:  d.IsActive,
-		CreatedAt: d.CreatedAt,
-		UpdatedAt: d.UpdatedAt,
-	}
+	return DivisionResponse(d)
 }
 
 func toDivisionResponses(divisions []Division) []DivisionResponse {

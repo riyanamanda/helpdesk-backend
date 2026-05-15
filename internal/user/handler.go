@@ -1,6 +1,7 @@
 package user
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -77,7 +78,11 @@ func (h *handler) UpdateUserAvatar(c *echo.Context) error {
 	if err != nil {
 		return response.Error(c, apperror.Internal("failed to open uploaded file"))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			slog.Error("failed to close file", "error", err)
+		}
+	}()
 
 	if err := h.svc.UpdateUserAvatar(c.Request().Context(), file, fileHeader); err != nil {
 		return response.Error(c, err)

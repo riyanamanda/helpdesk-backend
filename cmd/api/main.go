@@ -42,7 +42,11 @@ func main() {
 	// dependencies
 	// postgres init
 	db := database.NewPostgres(cfg.Database.ConnString())
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			slog.Error("failed to close database", "error", err)
+		}
+	}()
 
 	// minio storage init
 	minioClient, err := storage.NewMinioClient(cfg.Storage.Endpoint, cfg.Storage.AccessKey, cfg.Storage.SecretKey, cfg.Storage.UseSSL)

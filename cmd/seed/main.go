@@ -14,7 +14,11 @@ func main() {
 
 	cfg := config.Load()
 	db := database.NewPostgres(cfg.Database.ConnString())
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			slog.Error("failed to close database", "error", err)
+		}
+	}()
 
 	if err := seed.Run(db); err != nil {
 		slog.Error("database seeding failed", "error", err)

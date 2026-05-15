@@ -2,6 +2,7 @@ package ticket
 
 import (
 	"errors"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 
@@ -62,7 +63,11 @@ func (h *handler) CreateTicket(c *echo.Context) error {
 		if err != nil {
 			return response.Error(c, apperror.Internal("failed to open uploaded attachment"))
 		}
-		defer file.Close()
+		defer func() {
+			if err := file.Close(); err != nil {
+				slog.Error("failed to close file", "error", err)
+			}
+		}()
 	}
 
 	if err := h.service.RegisterTicket(c.Request().Context(), req, file, fileHeader); err != nil {

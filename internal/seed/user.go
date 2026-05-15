@@ -30,6 +30,9 @@ func SeedUserAdmin(db *sqlx.DB) error {
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
 
 	const queryInsert = `
 		INSERT INTO users (name, email, password, role, division_id)
