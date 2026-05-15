@@ -3,6 +3,7 @@ package ticket
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"mime/multipart"
 	"time"
 
@@ -68,20 +69,28 @@ func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, 
 		contentType := fileHeader.Header.Get("Content-Type")
 
 		err := s.storage.Upload(ctx, objectKey, file, fileHeader.Size, contentType)
-		if err != nil {
-			return err
-		}
 
-		attachment := TicketAttachment{
-			TicketID:       ticketID,
-			FileKey:        objectKey,
-			AttachmentType: string(REPORT),
-			UploadedBy:     createdBy,
-		}
+		// keep success response even though attachment error but remove uploaded file
+		if err == nil {
+			attachment := TicketAttachment{
+				TicketID:       ticketID,
+				FileKey:        objectKey,
+				AttachmentType: string(REPORT),
+				UploadedBy:     createdBy,
+			}
 
-		if err := s.repo.CreateAttachment(ctx, attachment); err != nil {
-			_ = s.storage.Delete(ctx, objectKey)
-			return err
+			if err := s.repo.CreateAttachment(ctx, attachment); err != nil {
+				_ = s.storage.Delete(ctx, objectKey)
+
+				slog.ErrorContext(
+					ctx,
+					"failed to create ticket attachment",
+					"ticket_id", ticketID,
+					"error", err,
+				)
+			}
+		} else {
+			slog.ErrorContext(ctx, "failed to upload ticket attachment", "ticket_id", ticketID, "error", err)
 		}
 
 	}
