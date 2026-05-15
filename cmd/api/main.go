@@ -68,7 +68,7 @@ func main() {
 	category.Register(protected, db)
 	division.Register(protected, db)
 	user.Register(protected, db, storageService)
-	ticket.Register(protected, db)
+	ticket.Register(protected, db, storageService)
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),

@@ -8,7 +8,7 @@ import (
 
 func ValidateImage(header *multipart.FileHeader, maxSize int64, allowedTypes map[string]bool) error {
 	if header == nil {
-		return apperror.BadRequest("image is required")
+		return nil
 	}
 
 	if header.Size > maxSize {

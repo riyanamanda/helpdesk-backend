@@ -28,7 +28,7 @@ func toUserResponse(u UserProjection, storage storage.Storage) UserResponse {
 		GoogleID:  u.GoogleID,
 		AvatarURL: avatarURL,
 		Phone:     u.Phone,
-		Role:      u.Role,
+		Role:      UserRole(u.Role),
 		Division: division.DivisionBrief{
 			ID:   u.DivisionID,
 			Name: u.DivisionName,

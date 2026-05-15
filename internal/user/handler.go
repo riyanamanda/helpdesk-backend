@@ -33,7 +33,7 @@ func (h *handler) ListUsers(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.WithPagination(c, http.StatusOK, users, params.Page, params.Limit, total)
+	return response.WithPagination(c, http.StatusOK, users, params.Page, params.Limit, int64(total))
 }
 
 func (h *handler) CreateUser(c *echo.Context) error {
