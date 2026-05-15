@@ -8,7 +8,7 @@ import (
 
 //go:generate mockery --name TicketRepository
 type TicketRepository interface {
-	GetAll(ctx context.Context, params GetTicketParams) ([]Ticket, int64, error)
+	GetAll(ctx context.Context, params GetTicketParams) ([]TicketProjection, int64, error)
 	Create(ctx context.Context, ticket Ticket) (int64, error)
 	CreateAttachment(ctx context.Context, attachment TicketAttachment) error
 }
@@ -23,8 +23,8 @@ func NewTicketRepository(db *sqlx.DB) TicketRepository {
 	}
 }
 
-func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Ticket, int64, error) {
-	var tickets []Ticket
+func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]TicketProjection, int64, error) {
+	var tickets []TicketProjection
 	var total int64
 
 	const queryTotal = `
@@ -38,10 +38,36 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 	}
 
 	const query = `
-		SELECT id, title, description, category_id, status, priority, created_by, assigned_to, assigned_at, resolved_at, closed_at, closed_by, created_at, updated_at
-		FROM tickets
-		WHERE status = 'OPEN'
-		ORDER BY created_at DESC
+		SELECT
+			t.id,
+			t.title,
+			t.description,
+			c.id AS category_id,
+			c.name AS category_name,
+			t.status,
+			t.priority,
+			u.id AS created_by_id,
+			u.name AS created_by_name,
+			uat.id AS assigned_to_id,
+			uat.name AS assigned_to_name,
+			t.assigned_at,
+			t.resolved_at,
+			t.closed_at,
+			ucb.id AS closed_by_id,
+			ucb.name AS closed_by_name,
+			t.created_at,
+			t.updated_at
+		FROM tickets t
+		JOIN categories c
+			ON c.id = t.category_id
+		JOIN users u
+			ON u.id = t.created_by
+		LEFT JOIN users uat
+			ON uat.id = t.assigned_to
+		LEFT JOIN users ucb
+			ON ucb.id = t.closed_by
+		WHERE t.status = 'OPEN'
+		ORDER BY t.created_at DESC
 		LIMIT $1 OFFSET $2
 	`
 
