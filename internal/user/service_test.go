@@ -63,7 +63,7 @@ func TestService_RegisterUser(t *testing.T) {
 		name      string
 		req       *user.UserCreateRequest
 		setupMock func(*usermocks.UserRepository)
-		assertFn  func(*testing.T, user.UserResponse, error)
+		assertFn  func(*testing.T, error)
 	}{
 		{
 			name: "success",
@@ -105,10 +105,8 @@ func TestService_RegisterUser(t *testing.T) {
 					data.IsActive = true
 				}).Return(nil).Once()
 			},
-			assertFn: func(t *testing.T, result user.UserResponse, err error) {
+			assertFn: func(t *testing.T, err error) {
 				require.NoError(t, err)
-				assert.Equal(t, "Admin", result.Name)
-				assert.Equal(t, "admin@email.com", result.Email)
 			},
 		},
 		{
@@ -123,9 +121,8 @@ func TestService_RegisterUser(t *testing.T) {
 			setupMock: func(repo *usermocks.UserRepository) {
 				repo.On("Create", mock.Anything, mock.Anything).Return(user.ErrUserAlreadyExists).Once()
 			},
-			assertFn: func(t *testing.T, result user.UserResponse, err error) {
+			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.Equal(t, user.UserResponse{}, result)
 				testingutil.AssertAppError(t, err, apperror.CODE_ALREADY_EXISTS, http.StatusConflict, "user already exists")
 			},
 		},
@@ -141,9 +138,8 @@ func TestService_RegisterUser(t *testing.T) {
 			setupMock: func(repo *usermocks.UserRepository) {
 				repo.On("Create", mock.Anything, mock.Anything).Return(errors.New("database error")).Once()
 			},
-			assertFn: func(t *testing.T, result user.UserResponse, err error) {
+			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.Equal(t, user.UserResponse{}, result)
 				assert.EqualError(t, err, "database error")
 			},
 		},
@@ -158,9 +154,8 @@ func TestService_RegisterUser(t *testing.T) {
 			},
 			setupMock: func(repo *usermocks.UserRepository) {
 			},
-			assertFn: func(t *testing.T, result user.UserResponse, err error) {
+			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.Equal(t, user.UserResponse{}, result)
 				assert.Contains(t, err.Error(), "password")
 			},
 		},
@@ -173,8 +168,8 @@ func TestService_RegisterUser(t *testing.T) {
 			svc := user.NewUserService(repo, storage)
 			tc.setupMock(repo)
 
-			result, err := svc.RegisterUser(context.Background(), tc.req)
-			tc.assertFn(t, result, err)
+			err := svc.RegisterUser(context.Background(), tc.req)
+			tc.assertFn(t, err)
 		})
 	}
 }

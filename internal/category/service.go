@@ -12,7 +12,7 @@ type CategoryService interface {
 	FetchAllCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int, error)
 	RegisterCategory(ctx context.Context, req *CreateCategoryRequest) (CategoryResponse, error)
 	FindCategoryByID(ctx context.Context, id int64) (CategoryResponse, error)
-	EditCategory(ctx context.Context, id int64, req *UpdateCategoryRequest) (CategoryResponse, error)
+	EditCategory(ctx context.Context, id int64, req *UpdateCategoryRequest) error
 	DeleteCategory(ctx context.Context, id int64) error
 }
 
@@ -71,19 +71,19 @@ func (svc *service) FindCategoryByID(ctx context.Context, id int64) (CategoryRes
 	return toCategoryResponse(*category), nil
 }
 
-func (svc *service) EditCategory(ctx context.Context, id int64, req *UpdateCategoryRequest) (CategoryResponse, error) {
+func (svc *service) EditCategory(ctx context.Context, id int64, req *UpdateCategoryRequest) error {
 	category := Category{Name: req.Name}
 	if err := svc.repo.Update(ctx, id, &category); err != nil {
 		if errors.Is(err, ErrCategoryNotFound) {
-			return CategoryResponse{}, apperrors.NotFound("category")
+			return apperrors.NotFound("category")
 		}
 		if errors.Is(err, ErrCategoryAlreadyExists) {
-			return CategoryResponse{}, apperrors.AlreadyExists("category")
+			return apperrors.AlreadyExists("category")
 		}
-		return CategoryResponse{}, err
+		return err
 	}
 
-	return toCategoryResponse(category), nil
+	return nil
 }
 
 func (svc *service) DeleteCategory(ctx context.Context, id int64) error {

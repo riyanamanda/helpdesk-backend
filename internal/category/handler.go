@@ -74,12 +74,11 @@ func (h *handler) UpdateCategory(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	category, err := h.svc.EditCategory(c.Request().Context(), id, req)
-	if err != nil {
+	if err := h.svc.EditCategory(c.Request().Context(), id, req); err != nil {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, category)
+	return response.Message(c, http.StatusOK, "category updated successfully")
 }
 
 func (h *handler) DeleteCategory(c *echo.Context) error {

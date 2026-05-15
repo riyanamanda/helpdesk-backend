@@ -190,7 +190,7 @@ func TestService_EditDivision(t *testing.T) {
 		id        int64
 		req       *division.UpdateDivisionRequest
 		setupMock func(*divisionmocks.DivisionRepository)
-		assertFn  func(*testing.T, division.DivisionResponse, error)
+		assertFn  func(*testing.T, error)
 	}{
 		{
 			name: "success",
@@ -201,9 +201,8 @@ func TestService_EditDivision(t *testing.T) {
 					return data != nil && data.Name == "Finance"
 				})).Return(nil).Once()
 			},
-			assertFn: func(t *testing.T, result division.DivisionResponse, err error) {
+			assertFn: func(t *testing.T, err error) {
 				require.NoError(t, err)
-				assert.Equal(t, "Finance", result.Name)
 			},
 		},
 		{
@@ -213,9 +212,8 @@ func TestService_EditDivision(t *testing.T) {
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
 				repo.On("Update", mock.Anything, int64(21), mock.Anything).Return(division.ErrDivisionNotFound).Once()
 			},
-			assertFn: func(t *testing.T, result division.DivisionResponse, err error) {
+			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.Equal(t, division.DivisionResponse{}, result)
 				testingutil.AssertAppError(t, err, apperror.CODE_NOT_FOUND, http.StatusNotFound, "division not found")
 			},
 		},
@@ -226,9 +224,8 @@ func TestService_EditDivision(t *testing.T) {
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
 				repo.On("Update", mock.Anything, int64(22), mock.Anything).Return(division.ErrDivisionAlreadyExists).Once()
 			},
-			assertFn: func(t *testing.T, result division.DivisionResponse, err error) {
+			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.Equal(t, division.DivisionResponse{}, result)
 				testingutil.AssertAppError(t, err, apperror.CODE_ALREADY_EXISTS, http.StatusConflict, "division already exists")
 			},
 		},
@@ -239,9 +236,8 @@ func TestService_EditDivision(t *testing.T) {
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
 				repo.On("Update", mock.Anything, int64(23), mock.Anything).Return(errors.New("database error")).Once()
 			},
-			assertFn: func(t *testing.T, result division.DivisionResponse, err error) {
+			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.Equal(t, division.DivisionResponse{}, result)
 				assert.EqualError(t, err, "database error")
 			},
 		},
@@ -253,8 +249,8 @@ func TestService_EditDivision(t *testing.T) {
 			svc := division.NewDivisionService(repo)
 			tc.setupMock(repo)
 
-			result, err := svc.EditDivision(context.Background(), tc.id, tc.req)
-			tc.assertFn(t, result, err)
+			err := svc.EditDivision(context.Background(), tc.id, tc.req)
+			tc.assertFn(t, err)
 		})
 	}
 }

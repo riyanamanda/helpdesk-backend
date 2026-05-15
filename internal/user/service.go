@@ -18,7 +18,7 @@ import (
 
 type UserService interface {
 	FetchAllUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int, error)
-	RegisterUser(ctx context.Context, req *UserCreateRequest) (UserResponse, error)
+	RegisterUser(ctx context.Context, req *UserCreateRequest) error
 	FindUserByID(ctx context.Context, id *uuid.UUID) (UserResponse, error)
 	UpdateUserAvatar(ctx context.Context, file multipart.File, header *multipart.FileHeader) error
 }
@@ -53,10 +53,10 @@ func (svc *service) FetchAllUsers(ctx context.Context, params *GetUserParams) ([
 	return toUserResponses(users, svc.storage), total, nil
 }
 
-func (svc *service) RegisterUser(ctx context.Context, req *UserCreateRequest) (UserResponse, error) {
+func (svc *service) RegisterUser(ctx context.Context, req *UserCreateRequest) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return UserResponse{}, err
+		return err
 	}
 
 	var createdBy *uuid.UUID
@@ -77,12 +77,12 @@ func (svc *service) RegisterUser(ctx context.Context, req *UserCreateRequest) (U
 
 	if err := svc.repo.Create(ctx, user); err != nil {
 		if errors.Is(err, ErrUserAlreadyExists) {
-			return UserResponse{}, apperror.AlreadyExists("user")
+			return apperror.AlreadyExists("user")
 		}
-		return UserResponse{}, err
+		return err
 	}
 
-	return toUserResponse(*user, svc.storage), nil
+	return nil
 }
 
 func (svc *service) FindUserByID(ctx context.Context, id *uuid.UUID) (UserResponse, error) {

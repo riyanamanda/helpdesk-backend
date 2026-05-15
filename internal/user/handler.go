@@ -42,12 +42,11 @@ func (h *handler) CreateUser(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	user, err := h.svc.RegisterUser(c.Request().Context(), req)
-	if err != nil {
+	if err := h.svc.RegisterUser(c.Request().Context(), req); err != nil {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusCreated, user)
+	return response.Message(c, http.StatusCreated, "user created successfully")
 }
 
 func (h *handler) GetUser(c *echo.Context) error {

@@ -74,12 +74,11 @@ func (h *handler) UpdateDivision(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	division, err := h.svc.EditDivision(c.Request().Context(), id, req)
-	if err != nil {
+	if err := h.svc.EditDivision(c.Request().Context(), id, req); err != nil {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, division)
+	return response.Message(c, http.StatusOK, "division updated successfully")
 }
 
 func (h *handler) DeleteDivision(c *echo.Context) error {

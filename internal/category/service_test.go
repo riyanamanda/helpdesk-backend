@@ -190,7 +190,7 @@ func TestService_EditCategory(t *testing.T) {
 		id        int64
 		req       *category.UpdateCategoryRequest
 		setupMock func(*categorymocks.CategoryRepository)
-		assertFn  func(*testing.T, category.CategoryResponse, error)
+		assertFn  func(*testing.T, error)
 	}{
 		{
 			name: "success",
@@ -201,9 +201,8 @@ func TestService_EditCategory(t *testing.T) {
 					return data != nil && data.Name == "Peripheral"
 				})).Return(nil).Once()
 			},
-			assertFn: func(t *testing.T, result category.CategoryResponse, err error) {
+			assertFn: func(t *testing.T, err error) {
 				require.NoError(t, err)
-				assert.Equal(t, "Peripheral", result.Name)
 			},
 		},
 		{
@@ -213,9 +212,8 @@ func TestService_EditCategory(t *testing.T) {
 			setupMock: func(repo *categorymocks.CategoryRepository) {
 				repo.On("Update", mock.Anything, int64(21), mock.Anything).Return(category.ErrCategoryNotFound).Once()
 			},
-			assertFn: func(t *testing.T, result category.CategoryResponse, err error) {
+			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.Equal(t, category.CategoryResponse{}, result)
 				testingutil.AssertAppError(t, err, apperror.CODE_NOT_FOUND, http.StatusNotFound, "category not found")
 			},
 		},
@@ -226,9 +224,8 @@ func TestService_EditCategory(t *testing.T) {
 			setupMock: func(repo *categorymocks.CategoryRepository) {
 				repo.On("Update", mock.Anything, int64(22), mock.Anything).Return(category.ErrCategoryAlreadyExists).Once()
 			},
-			assertFn: func(t *testing.T, result category.CategoryResponse, err error) {
+			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.Equal(t, category.CategoryResponse{}, result)
 				testingutil.AssertAppError(t, err, apperror.CODE_ALREADY_EXISTS, http.StatusConflict, "category already exists")
 			},
 		},
@@ -239,9 +236,8 @@ func TestService_EditCategory(t *testing.T) {
 			setupMock: func(repo *categorymocks.CategoryRepository) {
 				repo.On("Update", mock.Anything, int64(23), mock.Anything).Return(errors.New("database error")).Once()
 			},
-			assertFn: func(t *testing.T, result category.CategoryResponse, err error) {
+			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.Equal(t, category.CategoryResponse{}, result)
 				assert.EqualError(t, err, "database error")
 			},
 		},
@@ -253,8 +249,8 @@ func TestService_EditCategory(t *testing.T) {
 			svc := category.NewCategoryService(repo)
 			tc.setupMock(repo)
 
-			result, err := svc.EditCategory(context.Background(), tc.id, tc.req)
-			tc.assertFn(t, result, err)
+			err := svc.EditCategory(context.Background(), tc.id, tc.req)
+			tc.assertFn(t, err)
 		})
 	}
 }

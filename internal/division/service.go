@@ -12,7 +12,7 @@ type DivisionService interface {
 	FetchAllDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int, error)
 	RegisterDivision(ctx context.Context, req *CreateDivisionRequest) (DivisionResponse, error)
 	FindDivisionByID(ctx context.Context, id int64) (DivisionResponse, error)
-	EditDivision(ctx context.Context, id int64, req *UpdateDivisionRequest) (DivisionResponse, error)
+	EditDivision(ctx context.Context, id int64, req *UpdateDivisionRequest) error
 	DeleteDivision(ctx context.Context, id int64) error
 }
 
@@ -71,19 +71,19 @@ func (svc *service) FindDivisionByID(ctx context.Context, id int64) (DivisionRes
 	return toDivisionResponse(*division), nil
 }
 
-func (svc *service) EditDivision(ctx context.Context, id int64, req *UpdateDivisionRequest) (DivisionResponse, error) {
+func (svc *service) EditDivision(ctx context.Context, id int64, req *UpdateDivisionRequest) error {
 	division := Division{Name: req.Name}
 	if err := svc.repo.Update(ctx, id, &division); err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {
-			return DivisionResponse{}, apperrors.NotFound("division")
+			return apperrors.NotFound("division")
 		}
 		if errors.Is(err, ErrDivisionAlreadyExists) {
-			return DivisionResponse{}, apperrors.AlreadyExists("division")
+			return apperrors.AlreadyExists("division")
 		}
-		return DivisionResponse{}, err
+		return err
 	}
 
-	return toDivisionResponse(division), nil
+	return nil
 }
 
 func (svc *service) DeleteDivision(ctx context.Context, id int64) error {
