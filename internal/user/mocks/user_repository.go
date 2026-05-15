@@ -72,24 +72,24 @@ func (_c *UserRepository_Create_Call) RunAndReturn(run func(context.Context, *us
 }
 
 // GetAll provides a mock function with given fields: ctx, params
-func (_m *UserRepository) GetAll(ctx context.Context, params user.GetUserParams) ([]user.User, int, error) {
+func (_m *UserRepository) GetAll(ctx context.Context, params user.GetUserParams) ([]user.UserProjection, int, error) {
 	ret := _m.Called(ctx, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAll")
 	}
 
-	var r0 []user.User
+	var r0 []user.UserProjection
 	var r1 int
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, user.GetUserParams) ([]user.User, int, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, user.GetUserParams) ([]user.UserProjection, int, error)); ok {
 		return rf(ctx, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, user.GetUserParams) []user.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, user.GetUserParams) []user.UserProjection); ok {
 		r0 = rf(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]user.User)
+			r0 = ret.Get(0).([]user.UserProjection)
 		}
 	}
 
@@ -127,12 +127,12 @@ func (_c *UserRepository_GetAll_Call) Run(run func(ctx context.Context, params u
 	return _c
 }
 
-func (_c *UserRepository_GetAll_Call) Return(_a0 []user.User, _a1 int, _a2 error) *UserRepository_GetAll_Call {
+func (_c *UserRepository_GetAll_Call) Return(_a0 []user.UserProjection, _a1 int, _a2 error) *UserRepository_GetAll_Call {
 	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *UserRepository_GetAll_Call) RunAndReturn(run func(context.Context, user.GetUserParams) ([]user.User, int, error)) *UserRepository_GetAll_Call {
+func (_c *UserRepository_GetAll_Call) RunAndReturn(run func(context.Context, user.GetUserParams) ([]user.UserProjection, int, error)) *UserRepository_GetAll_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -197,23 +197,23 @@ func (_c *UserRepository_GetByEmail_Call) RunAndReturn(run func(context.Context,
 }
 
 // GetByID provides a mock function with given fields: ctx, id
-func (_m *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*user.User, error) {
+func (_m *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*user.UserProjection, error) {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByID")
 	}
 
-	var r0 *user.User
+	var r0 *user.UserProjection
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*user.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*user.UserProjection, error)); ok {
 		return rf(ctx, id)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *user.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *user.UserProjection); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*user.User)
+			r0 = ret.Get(0).(*user.UserProjection)
 		}
 	}
 
@@ -245,12 +245,12 @@ func (_c *UserRepository_GetByID_Call) Run(run func(ctx context.Context, id uuid
 	return _c
 }
 
-func (_c *UserRepository_GetByID_Call) Return(_a0 *user.User, _a1 error) *UserRepository_GetByID_Call {
+func (_c *UserRepository_GetByID_Call) Return(_a0 *user.UserProjection, _a1 error) *UserRepository_GetByID_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *UserRepository_GetByID_Call) RunAndReturn(run func(context.Context, uuid.UUID) (*user.User, error)) *UserRepository_GetByID_Call {
+func (_c *UserRepository_GetByID_Call) RunAndReturn(run func(context.Context, uuid.UUID) (*user.UserProjection, error)) *UserRepository_GetByID_Call {
 	_c.Call.Return(run)
 	return _c
 }

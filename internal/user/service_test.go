@@ -185,9 +185,9 @@ func TestService_FetchAllUsers(t *testing.T) {
 			name:   "success with default pagination",
 			params: nil,
 			setupMock: func(repo *usermocks.UserRepository) {
-				items := []user.User{
-					{ID: uuid.New(), Name: "Admin", Email: "admin@email.com", Role: user.ADMIN, DivisionID: 1, IsActive: true},
-					{ID: uuid.New(), Name: "Staff", Email: "staff@email.com", Role: user.EMPLOYEE, DivisionID: 2, IsActive: true},
+				items := []user.UserProjection{
+					{ID: uuid.New(), Name: "Admin", Email: "admin@email.com", Role: user.ADMIN, DivisionID: 1, DivisionName: "IT", IsActive: true},
+					{ID: uuid.New(), Name: "Staff", Email: "staff@email.com", Role: user.EMPLOYEE, DivisionID: 2, DivisionName: "HR", IsActive: true},
 				}
 				repo.On("GetAll", mock.Anything, user.GetUserParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, 2, nil).Once()
 			},
@@ -240,7 +240,7 @@ func TestService_FindUserByID(t *testing.T) {
 			name: "success",
 			id:   &id,
 			setupMock: func(repo *usermocks.UserRepository) {
-				item := &user.User{ID: id, Name: "Admin", Email: "admin@email.com", Role: user.ADMIN, DivisionID: 1, IsActive: true, CreatedAt: now, UpdatedAt: now}
+				item := &user.UserProjection{ID: id, Name: "Admin", Email: "admin@email.com", Role: user.ADMIN, DivisionID: 1, DivisionName: "IT", IsActive: true, CreatedAt: now, UpdatedAt: now}
 				repo.On("GetByID", mock.Anything, id).Return(item, nil).Once()
 			},
 			assertFn: func(t *testing.T, result user.UserResponse, err error) {

@@ -33,15 +33,19 @@ func requestLogger() echo.MiddlewareFunc {
 				level = slog.LevelWarn
 			}
 
-			if v.Error != nil {
-				slog.Log(c.Request().Context(), level, "http request failed",
+			// Log all 5xx status codes or if there's an error
+			if v.Status >= 500 || v.Error != nil {
+				fields := []any{
 					"request_id", v.RequestID,
 					"method", v.Method,
 					"uri", v.URI,
 					"status", v.Status,
 					"latency", v.Latency,
-					"error", v.Error,
-				)
+				}
+				if v.Error != nil {
+					fields = append(fields, "error", v.Error)
+				}
+				slog.Log(c.Request().Context(), level, "http request failed", fields...)
 				return nil
 			}
 

@@ -12,9 +12,9 @@ import (
 
 //go:generate mockery --name UserRepository
 type UserRepository interface {
-	GetAll(ctx context.Context, params GetUserParams) ([]User, int, error)
+	GetAll(ctx context.Context, params GetUserParams) ([]UserProjection, int, error)
 	Create(ctx context.Context, user *User) error
-	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*UserProjection, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error
 }
@@ -29,8 +29,8 @@ func NewUserRepository(db *sqlx.DB) UserRepository {
 	}
 }
 
-func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]User, int, error) {
-	var users []User
+func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]UserProjection, int, error) {
+	var users []UserProjection
 	var total int
 
 	const queryTotal = `
@@ -44,10 +44,28 @@ func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]User, 
 	}
 
 	const query = `
-		SELECT id, name, email, google_id, avatar_key, phone, role, division_id, is_active, created_by, created_at, updated_at
-		FROM users
-		WHERE is_active = TRUE
-		ORDER BY created_at DESC
+		SELECT
+			u.id,
+			u.name,
+			u.email,
+			u.google_id,
+			u.avatar_key,
+			u.phone,
+			u.role,
+			d.id as division_id,
+			d.name as division_name,
+			u.is_active,
+			cb.id as created_by_id,
+			cb.name as created_by_name,
+			u.created_at,
+			u.updated_at
+		FROM users u
+		LEFT JOIN divisions d
+			ON d.id = u.division_id
+		LEFT JOIN users cb
+			ON cb.id = u.created_by
+		WHERE u.is_active = TRUE
+		ORDER BY u.created_at DESC
 		LIMIT $1 OFFSET $2
 	`
 
@@ -77,14 +95,31 @@ func (r *repository) Create(ctx context.Context, user *User) error {
 	return nil
 }
 
-func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*User, error) {
-	var user User
+func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*UserProjection, error) {
+	var user UserProjection
 
 	const query = `
-		SELECT id, name, email, google_id, avatar_key, phone, role, division_id, is_active, created_by, created_at, updated_at
-		FROM users
-		WHERE id = $1
-		AND is_active = TRUE
+		SELECT
+			u.id,
+			u.name,
+			u.email,
+			u.google_id,
+			u.avatar_key,
+			u.phone,
+			u.role,
+			d.id as division_id,
+			d.name as division_name,
+			u.is_active,
+			cb.id as created_by_id,
+			cb.name as created_by_name,
+			u.created_at,
+			u.updated_at
+		FROM users u
+		LEFT JOIN divisions d
+			ON d.id = u.division_id
+		LEFT JOIN users cb
+			ON cb.id = u.created_by
+		WHERE u.id = $1
 	`
 
 	if err := r.db.GetContext(ctx, &user, query, id); err != nil {
