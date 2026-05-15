@@ -2,7 +2,6 @@ package ticket
 
 import (
 	"context"
-	"log/slog"
 )
 
 type TicketService interface {
@@ -30,7 +29,6 @@ func (s *service) FetchAllTickets(ctx context.Context, params *GetTicketParams) 
 
 	tickets, total, err := s.repo.GetAll(ctx, *params)
 	if err != nil {
-		slog.Error("list tickets failed", "error", err)
 		return []TicketResponse{}, 0, err
 	}
 

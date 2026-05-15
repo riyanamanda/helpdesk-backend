@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"mime/multipart"
 	"strings"
 	"time"
@@ -46,7 +45,6 @@ func (svc *service) FetchAllUsers(ctx context.Context, params *GetUserParams) ([
 
 	users, total, err := svc.repo.GetAll(ctx, *params)
 	if err != nil {
-		slog.Error("List user failed", "error", err)
 		return []UserResponse{}, 0, err
 	}
 

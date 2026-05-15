@@ -3,7 +3,6 @@ package division
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	apperrors "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 )
@@ -37,7 +36,6 @@ func (svc *service) FetchAllDivisions(ctx context.Context, params *GetDivisionPa
 
 	divisions, total, err := svc.repo.GetAll(ctx, *params)
 	if err != nil {
-		slog.Error("list division failed", "error", err)
 		return []DivisionResponse{}, 0, err
 	}
 

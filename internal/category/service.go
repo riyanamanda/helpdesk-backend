@@ -3,7 +3,6 @@ package category
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	apperrors "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 )
@@ -37,7 +36,6 @@ func (svc *service) FetchAllCategories(ctx context.Context, params *GetCategoryP
 
 	categories, total, err := svc.repo.GetAll(ctx, *params)
 	if err != nil {
-		slog.Error("list category failed", "error", err)
 		return []CategoryResponse{}, 0, err
 	}
 

@@ -1,7 +1,6 @@
 package response
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -87,16 +86,6 @@ func Success[T any](c *echo.Context, statusCode int, data T) error {
 
 func Error(c *echo.Context, err error) error {
 	appErr := apperrors.As(err)
-
-	if appErr.StatusCode >= 500 {
-		slog.ErrorContext(c.Request().Context(), "request failed",
-			"request_id", getRequestID(c),
-			"method", c.Request().Method,
-			"uri", c.Request().URL.Path,
-			"status", appErr.StatusCode,
-			"error", err,
-		)
-	}
 
 	var details any
 	if appErr.Details != nil {
