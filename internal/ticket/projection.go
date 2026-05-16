@@ -26,3 +26,13 @@ type TicketProjection struct {
 	CreatedAt      time.Time  `db:"created_at"`
 	UpdatedAt      time.Time  `db:"updated_at"`
 }
+
+type TicketAttachmentProjection struct {
+	ID             int64     `db:"id"`
+	TicketID       int64     `db:"ticket_id"`
+	FileKey        string    `db:"file_key"`
+	AttachmentType string    `db:"attachment_type"`
+	UploadedByID   uuid.UUID `db:"uploaded_by_id"`
+	UploadedByName string    `db:"uploaded_by_name"`
+	CreatedAt      time.Time `db:"created_at"`
+}

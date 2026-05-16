@@ -25,6 +25,20 @@ type TicketResponse struct {
 	UpdatedAt   time.Time              `json:"updated_at"`
 }
 
+type TicketDetailResponse struct {
+	TicketResponse
+	Attachment *TicketAttachmentResponse `json:"attachment"`
+}
+
+type TicketAttachmentResponse struct {
+	ID             int64          `json:"id"`
+	TicketID       int64          `json:"ticket_id"`
+	FileURL        string         `json:"file_url"`
+	AttachmentType string         `json:"attachment_type"`
+	UploadedBy     user.UserBrief `json:"uploaded_by"`
+	CreatedAt      time.Time      `json:"created_at"`
+}
+
 type GetTicketParams struct {
 	pagination.Params
 }

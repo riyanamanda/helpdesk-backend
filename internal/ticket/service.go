@@ -2,12 +2,14 @@ package ticket
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"mime/multipart"
 	"time"
 
 	"github.com/google/uuid"
+	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 )
@@ -15,6 +17,7 @@ import (
 type TicketService interface {
 	FetchAllTickets(ctx context.Context, params *GetTicketParams) ([]TicketResponse, int64, error)
 	RegisterTicket(ctx context.Context, req *TicketCreateRequest, file multipart.File, fileHeader *multipart.FileHeader) error
+	FindTicketByID(ctx context.Context, id int64) (TicketDetailResponse, error)
 }
 
 type service struct {
@@ -97,4 +100,21 @@ func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, 
 	}
 
 	return nil
+}
+
+func (s *service) FindTicketByID(ctx context.Context, id int64) (TicketDetailResponse, error) {
+	ticket, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, ErrTicketNotFound) {
+			return TicketDetailResponse{}, apperror.NotFound("ticket")
+		}
+		return TicketDetailResponse{}, err
+	}
+
+	attachment, err := s.repo.GetAttachmentByTicketID(ctx, id)
+	if err != nil {
+		return TicketDetailResponse{}, err
+	}
+
+	return toTicketDetailResponse(*ticket, attachment, s.storage), nil
 }

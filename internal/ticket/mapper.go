@@ -2,6 +2,7 @@ package ticket
 
 import (
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
+	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -49,10 +50,37 @@ func toTicketResponse(t TicketProjection) TicketResponse {
 	}
 }
 
+func toTicketAttachmentResponse(ta TicketAttachmentProjection, storage storage.Storage) TicketAttachmentResponse {
+	return TicketAttachmentResponse{
+		ID:             ta.ID,
+		TicketID:       ta.TicketID,
+		FileURL:        storage.GetURL(ta.FileKey),
+		AttachmentType: ta.AttachmentType,
+		UploadedBy: user.UserBrief{
+			ID:   ta.UploadedByID,
+			Name: ta.UploadedByName,
+		},
+		CreatedAt: ta.CreatedAt,
+	}
+}
+
 func toTicketResponses(tickets []TicketProjection) []TicketResponse {
 	responses := make([]TicketResponse, len(tickets))
 	for i, t := range tickets {
 		responses[i] = toTicketResponse(t)
 	}
 	return responses
+}
+
+func toTicketDetailResponse(ticket TicketProjection, attachment *TicketAttachmentProjection, storageService storage.Storage) TicketDetailResponse {
+	var attachmentResponse *TicketAttachmentResponse
+	if attachment != nil {
+		mappedAttachment := toTicketAttachmentResponse(*attachment, storageService)
+		attachmentResponse = &mappedAttachment
+	}
+
+	return TicketDetailResponse{
+		TicketResponse: toTicketResponse(ticket),
+		Attachment:     attachmentResponse,
+	}
 }

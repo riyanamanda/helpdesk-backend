@@ -10,6 +10,7 @@ import (
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 )
 
@@ -75,4 +76,18 @@ func (h *handler) CreateTicket(c *echo.Context) error {
 	}
 
 	return response.Message(c, http.StatusCreated, "ticket created successfully")
+}
+
+func (h *handler) GetTicket(c *echo.Context) error {
+	id, err := utils.ParsePositiveInt64PathParam(c, "id", "ticket")
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	ticket, err := h.service.FindTicketByID(c.Request().Context(), id)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, http.StatusOK, ticket)
 }
