@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"mime/multipart"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v5"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
@@ -50,9 +51,14 @@ func (h *handler) CreateTicket(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	fileHeader, err = c.FormFile("attachment")
-	if err != nil && !errors.Is(err, http.ErrMissingFile) {
-		return response.Error(c, err)
+	contentType := c.Request().Header.Get(echo.HeaderContentType)
+	isMultipart := strings.HasPrefix(contentType, echo.MIMEMultipartForm)
+
+	if isMultipart {
+		fileHeader, err = c.FormFile("attachment")
+		if err != nil && !errors.Is(err, http.ErrMissingFile) {
+			return response.Error(c, err)
+		}
 	}
 
 	if fileHeader != nil {

@@ -44,7 +44,7 @@ type GetTicketParams struct {
 }
 
 type TicketCreateRequest struct {
-	Title       string `form:"title" validate:"required,min=5,max=100"`
-	Description string `form:"description" validate:"required,min=5,max=255"`
-	CategoryID  int    `form:"category_id" validate:"required,gt=0"`
+	Title       string `json:"title" form:"title" validate:"required,min=5,max=100"`
+	Description string `json:"description" form:"description" validate:"required,min=5,max=255"`
+	CategoryID  int    `json:"category_id" form:"category_id" validate:"required,gt=0"`
 }
