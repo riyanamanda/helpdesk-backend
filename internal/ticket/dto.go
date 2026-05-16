@@ -3,6 +3,7 @@ package ticket
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/pagination"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
@@ -56,6 +57,10 @@ type TicketCreateRequest struct {
 	Title       string `json:"title" form:"title" validate:"required,min=5,max=100"`
 	Description string `json:"description" form:"description" validate:"required,min=5,max=255"`
 	CategoryID  int    `json:"category_id" form:"category_id" validate:"required,gt=0"`
+}
+
+type TicketAssignRequest struct {
+	AssignedTo uuid.UUID `json:"assigned_to" validate:"required"`
 }
 
 type TicketResolutionCreateRequest struct {

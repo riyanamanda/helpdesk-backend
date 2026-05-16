@@ -7,8 +7,14 @@ import (
 )
 
 const uniqueViolationCode = "23505"
+const foreignKeyViolationCode = "23503"
 
 func IsUniqueViolation(err error) bool {
 	var pqErr *pq.Error
 	return errors.As(err, &pqErr) && string(pqErr.Code) == uniqueViolationCode
+}
+
+func IsForeignKeyViolation(err error) bool {
+	var pqErr *pq.Error
+	return errors.As(err, &pqErr) && string(pqErr.Code) == foreignKeyViolationCode
 }

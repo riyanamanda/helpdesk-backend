@@ -92,6 +92,24 @@ func (h *handler) GetTicket(c *echo.Context) error {
 	return response.Success(c, http.StatusOK, ticket)
 }
 
+func (h *handler) AssignTicket(c *echo.Context) error {
+	ticketID, err := utils.ParsePositiveInt64PathParam(c, "id", "ticker")
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	req, err := request.BindAndValidate[TicketAssignRequest](c)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	if err := h.service.AssignTicket(c.Request().Context(), ticketID, *req); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Message(c, http.StatusOK, "ticket assigned successfully")
+}
+
 func (h *handler) CreateTicketResolution(c *echo.Context) error {
 	var (
 		file       multipart.File

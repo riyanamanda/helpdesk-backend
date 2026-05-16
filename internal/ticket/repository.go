@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/database"
+	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
 //go:generate mockery --name TicketRepository
@@ -20,6 +22,8 @@ type TicketRepository interface {
 
 	CreateResolution(ctx context.Context, resolution TicketResolution) error
 	GetResolutionByTicketID(ctx context.Context, ticketID int64) (*TicketResolutionProjection, error)
+
+	Assign(ctx context.Context, ticketID int64, userID uuid.UUID) error
 }
 
 type repository struct {
@@ -39,7 +43,7 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 	const queryTotal = `
 		SELECT COUNT(*)
 		FROM tickets
-		WHERE status = 'OPEN'
+		WHERE status != 'CLOSED'
 	`
 
 	if err := r.db.GetContext(ctx, &total, queryTotal); err != nil {
@@ -75,7 +79,7 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 			ON uat.id = t.assigned_to
 		LEFT JOIN users ucb
 			ON ucb.id = t.closed_by
-		WHERE t.status = 'OPEN'
+		WHERE t.status != 'CLOSED'
 		ORDER BY t.created_at DESC
 		LIMIT $1 OFFSET $2
 	`
@@ -192,6 +196,36 @@ func (r *repository) GetAttachmentByTicketID(ctx context.Context, ticketID int64
 	}
 
 	return &attachment, nil
+}
+
+func (r *repository) Assign(ctx context.Context, ticketID int64, userID uuid.UUID) error {
+	const query = `
+		UPDATE tickets
+		SET assigned_to = $2,
+			assigned_at = NOW(),
+			status = 'IN_PROGRESS',
+			updated_at = NOW()
+		WHERE id = $1
+	`
+
+	result, err := r.db.ExecContext(ctx, query, ticketID, userID)
+	if err != nil {
+		if database.IsForeignKeyViolation(err) {
+			return user.ErrUserNotFound
+		}
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return ErrTicketNotFound
+	}
+
+	return nil
 }
 
 func (r *repository) CreateResolution(ctx context.Context, resolution TicketResolution) (err error) {

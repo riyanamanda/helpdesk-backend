@@ -17,6 +17,7 @@ type TicketService interface {
 	FetchAllTickets(ctx context.Context, params *GetTicketParams) ([]TicketResponse, int64, error)
 	RegisterTicket(ctx context.Context, req *TicketCreateRequest, file multipart.File, fileHeader *multipart.FileHeader) error
 	FindTicketByID(ctx context.Context, id int64) (TicketDetailResponse, error)
+	AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error
 
 	RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionCreateRequest, file multipart.File, fileHeader *multipart.FileHeader) error
 	FindResolutionByTicketID(ctx context.Context, ticketID int64) (*TicketResolutionResponse, error)
@@ -119,6 +120,15 @@ func (s *service) FindTicketByID(ctx context.Context, id int64) (TicketDetailRes
 	}
 
 	return toTicketDetailResponse(*ticket, attachment, s.storage), nil
+}
+
+func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error {
+
+	if err := s.repo.Assign(ctx, ticketID, req.AssignedTo); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionCreateRequest, file multipart.File, fileHeader *multipart.FileHeader) error {
