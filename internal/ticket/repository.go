@@ -14,9 +14,12 @@ type TicketRepository interface {
 	GetAll(ctx context.Context, params GetTicketParams) ([]TicketProjection, int64, error)
 	Create(ctx context.Context, ticket Ticket) (int64, error)
 	GetByID(ctx context.Context, id int64) (*TicketProjection, error)
+
 	CreateAttachment(ctx context.Context, attachment TicketAttachment) error
 	GetAttachmentByTicketID(ctx context.Context, ticketID int64, attachmentType AttachmentType) (*TicketAttachmentProjection, error)
+
 	CreateResolution(ctx context.Context, resolution TicketResolution) error
+	GetResolutionByTicketID(ctx context.Context, ticketID int64) (*TicketResolutionProjection, error)
 }
 
 type repository struct {
@@ -191,18 +194,73 @@ func (r *repository) GetAttachmentByTicketID(ctx context.Context, ticketID int64
 	return &attachment, nil
 }
 
-func (r *repository) CreateResolution(ctx context.Context, resolution TicketResolution) error {
-	const query = `
+func (r *repository) CreateResolution(ctx context.Context, resolution TicketResolution) (err error) {
+	const insertResolutionQuery = `
 		INSERT INTO ticket_resolutions (ticket_id, resolved_by, resolution)
 		VALUES ($1, $2, $3)
 	`
 
-	_, err := r.db.ExecContext(ctx, query, resolution.TicketID, resolution.ResolvedBy, resolution.Resolution)
+	const updateTicketQuery = `
+		UPDATE tickets
+		SET
+			status = 'RESOLVED',
+			resolved_at = NOW(),
+			updated_at = NOW()
+		WHERE id = $1
+	`
+
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, insertResolutionQuery, resolution.TicketID, resolution.ResolvedBy, resolution.Resolution)
 	if err != nil {
 		if database.IsUniqueViolation(err) {
 			return ErrTicketResolutionAlreadyExists
 		}
+
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, updateTicketQuery, resolution.TicketID)
+	if err != nil {
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
 	}
 
 	return nil
+}
+
+func (r *repository) GetResolutionByTicketID(ctx context.Context, ticketID int64) (*TicketResolutionProjection, error) {
+	var resolution TicketResolutionProjection
+
+	const query = `
+		SELECT
+			r.id,
+			r.ticket_id,
+			ru.id AS resolved_by_id,
+			ru.name AS resolved_by_name,
+			r.resolution,
+			r.created_at,
+			r.updated_at
+		FROM ticket_resolutions r
+		JOIN users ru
+			ON ru.id = r.resolved_by
+		WHERE r.ticket_id = $1
+	`
+
+	if err := r.db.GetContext(ctx, &resolution, query, ticketID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &resolution, nil
 }

@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"mime/multipart"
 	"net/http"
-	"strings"
 
 	"github.com/labstack/echo/v5"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
@@ -51,14 +50,9 @@ func (h *handler) CreateTicket(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	contentType := c.Request().Header.Get(echo.HeaderContentType)
-	isMultipart := strings.HasPrefix(contentType, echo.MIMEMultipartForm)
-
-	if isMultipart {
-		fileHeader, err = c.FormFile("attachment")
-		if err != nil && !errors.Is(err, http.ErrMissingFile) {
-			return response.Error(c, err)
-		}
+	fileHeader, err = c.FormFile("attachment")
+	if err != nil && !errors.Is(err, http.ErrMissingFile) && !errors.Is(err, http.ErrNotMultipart) {
+		return response.Error(c, err)
 	}
 
 	if fileHeader != nil {
@@ -114,14 +108,9 @@ func (h *handler) CreateTicketResolution(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	contentType := c.Request().Header.Get(echo.HeaderContentType)
-	isMultipart := strings.HasPrefix(contentType, echo.MIMEMultipartForm)
-
-	if isMultipart {
-		fileHeader, err = c.FormFile("attachment")
-		if err != nil && !errors.Is(err, http.ErrMissingFile) {
-			return response.Error(c, err)
-		}
+	fileHeader, err = c.FormFile("attachment")
+	if err != nil && !errors.Is(err, http.ErrMissingFile) && !errors.Is(err, http.ErrNotMultipart) {
+		return response.Error(c, err)
 	}
 
 	if fileHeader != nil {
@@ -145,4 +134,18 @@ func (h *handler) CreateTicketResolution(c *echo.Context) error {
 	}
 
 	return response.Message(c, http.StatusCreated, "resolution created successfully")
+}
+
+func (h *handler) GetResolutionByTicketID(c *echo.Context) error {
+	id, err := utils.ParsePositiveInt64PathParam(c, "id", "resolution")
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	resolution, err := h.service.FindResolutionByTicketID(c.Request().Context(), id)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, http.StatusOK, resolution)
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"mime/multipart"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
@@ -102,7 +101,7 @@ func (svc *service) UpdateUserAvatar(ctx context.Context, file multipart.File, h
 	}
 
 	contentType := header.Header.Get("Content-Type")
-	objectKey := fmt.Sprintf("avatar/%s/%d-%s", userID.String(), time.Now().Unix(), header.Filename)
+	objectKey := fmt.Sprintf("avatars/%s/avatar", userID.String())
 	if err := svc.storage.Upload(ctx, objectKey, file, header.Size, contentType); err != nil {
 		return err
 	}

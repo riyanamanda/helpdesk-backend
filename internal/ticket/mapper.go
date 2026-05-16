@@ -84,3 +84,17 @@ func toTicketDetailResponse(ticket TicketProjection, attachment *TicketAttachmen
 		Attachment:     attachmentResponse,
 	}
 }
+
+func toTicketResolutionResponse(r TicketResolutionProjection) TicketResolutionResponse {
+	return TicketResolutionResponse{
+		ID:       r.ID,
+		TicketID: r.TicketID,
+		ResolvedBy: user.UserBrief{
+			ID:   r.ResolvedByID,
+			Name: r.ResolvedByName,
+		},
+		Resolution: r.Resolution,
+		CreatedAt:  r.CreatedAt,
+		UpdatedAt:  r.UpdatedAt,
+	}
+}

@@ -40,12 +40,12 @@ type TicketAttachmentResponse struct {
 }
 
 type TicketResolutionResponse struct {
-	ID         int64     `json:"id"`
-	TicketID   int64     `json:"ticket_id"`
-	ResolvedBy user.User `json:"resolved_by"`
-	Resolution string    `json:"resolution"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID         int64          `json:"id"`
+	TicketID   int64          `json:"ticket_id"`
+	ResolvedBy user.UserBrief `json:"resolved_by"`
+	Resolution string         `json:"resolution"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
 }
 
 type GetTicketParams struct {

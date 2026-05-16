@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"mime/multipart"
-	"time"
 
 	"github.com/google/uuid"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
@@ -20,6 +19,7 @@ type TicketService interface {
 	FindTicketByID(ctx context.Context, id int64) (TicketDetailResponse, error)
 
 	RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionCreateRequest, file multipart.File, fileHeader *multipart.FileHeader) error
+	FindResolutionByTicketID(ctx context.Context, ticketID int64) (*TicketResolutionResponse, error)
 }
 
 type service struct {
@@ -70,7 +70,7 @@ func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, 
 	}
 
 	if file != nil && fileHeader != nil {
-		objectKey := fmt.Sprintf("tickets/%d/report/%d-%s", ticketID, time.Now().Unix(), fileHeader.Filename)
+		objectKey := utils.GenerateObjectKey(fmt.Sprintf("tickets/%d/report", ticketID), fileHeader.Filename)
 		contentType := fileHeader.Header.Get("Content-Type")
 
 		err := s.storage.Upload(ctx, objectKey, file, fileHeader.Size, contentType)
@@ -133,10 +133,15 @@ func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req Ti
 		Resolution: req.Resolution,
 	}
 
-	s.repo.CreateResolution(ctx, ticketResolution)
+	if err := s.repo.CreateResolution(ctx, ticketResolution); err != nil {
+		if errors.Is(err, ErrTicketResolutionAlreadyExists) {
+			return apperror.AlreadyExists("ticket resolution")
+		}
+		return err
+	}
 
 	if file != nil && fileHeader != nil {
-		objectKey := fmt.Sprintf("tickets/%d/resolution/%d-%s", ticketID, time.Now().Unix(), fileHeader.Filename)
+		objectKey := utils.GenerateObjectKey(fmt.Sprintf("tickets/%d/resolution", ticketID), fileHeader.Filename)
 		contentType := fileHeader.Header.Get("Content-Type")
 
 		err := s.storage.Upload(ctx, objectKey, file, fileHeader.Size, contentType)
@@ -159,4 +164,18 @@ func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req Ti
 	}
 
 	return nil
+}
+
+func (s *service) FindResolutionByTicketID(ctx context.Context, ticketID int64) (*TicketResolutionResponse, error) {
+	resolution, err := s.repo.GetResolutionByTicketID(ctx, ticketID)
+	if err != nil {
+		return nil, err
+	}
+
+	if resolution == nil {
+		return nil, nil
+	}
+
+	response := toTicketResolutionResponse(*resolution)
+	return &response, nil
 }
