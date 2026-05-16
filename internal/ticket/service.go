@@ -18,6 +18,8 @@ type TicketService interface {
 	FetchAllTickets(ctx context.Context, params *GetTicketParams) ([]TicketResponse, int64, error)
 	RegisterTicket(ctx context.Context, req *TicketCreateRequest, file multipart.File, fileHeader *multipart.FileHeader) error
 	FindTicketByID(ctx context.Context, id int64) (TicketDetailResponse, error)
+
+	RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionCreateRequest, file multipart.File, fileHeader *multipart.FileHeader) error
 }
 
 type service struct {
@@ -111,10 +113,50 @@ func (s *service) FindTicketByID(ctx context.Context, id int64) (TicketDetailRes
 		return TicketDetailResponse{}, err
 	}
 
-	attachment, err := s.repo.GetAttachmentByTicketID(ctx, id)
+	attachment, err := s.repo.GetAttachmentByTicketID(ctx, id, REPORT)
 	if err != nil {
 		return TicketDetailResponse{}, err
 	}
 
 	return toTicketDetailResponse(*ticket, attachment, s.storage), nil
+}
+
+func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionCreateRequest, file multipart.File, fileHeader *multipart.FileHeader) error {
+	var userID uuid.UUID
+	if currentUser, ok := utils.GetUserIDFromContext(ctx); ok {
+		userID = currentUser
+	}
+
+	ticketResolution := TicketResolution{
+		TicketID:   ticketID,
+		ResolvedBy: userID,
+		Resolution: req.Resolution,
+	}
+
+	s.repo.CreateResolution(ctx, ticketResolution)
+
+	if file != nil && fileHeader != nil {
+		objectKey := fmt.Sprintf("tickets/%d/resolution/%d-%s", ticketID, time.Now().Unix(), fileHeader.Filename)
+		contentType := fileHeader.Header.Get("Content-Type")
+
+		err := s.storage.Upload(ctx, objectKey, file, fileHeader.Size, contentType)
+		if err == nil {
+			attachment := TicketAttachment{
+				TicketID:       ticketID,
+				FileKey:        objectKey,
+				AttachmentType: string(RESOLUTION),
+				UploadedBy:     userID,
+			}
+
+			if err := s.repo.CreateAttachment(ctx, attachment); err != nil {
+				_ = s.storage.Delete(ctx, objectKey)
+
+				slog.ErrorContext(ctx, "failed to create resolution attachment", "ticket_id", ticketID, "error", err)
+			}
+		} else {
+			slog.ErrorContext(ctx, "failed to create resolution attachment", "ticket_id", ticketID, "error", err)
+		}
+	}
+
+	return nil
 }

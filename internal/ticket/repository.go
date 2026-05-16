@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/riyanamanda/helpdesk-backend/internal/infra/database"
 )
 
 //go:generate mockery --name TicketRepository
@@ -14,7 +15,8 @@ type TicketRepository interface {
 	Create(ctx context.Context, ticket Ticket) (int64, error)
 	GetByID(ctx context.Context, id int64) (*TicketProjection, error)
 	CreateAttachment(ctx context.Context, attachment TicketAttachment) error
-	GetAttachmentByTicketID(ctx context.Context, ticketID int64) (*TicketAttachmentProjection, error)
+	GetAttachmentByTicketID(ctx context.Context, ticketID int64, attachmentType AttachmentType) (*TicketAttachmentProjection, error)
+	CreateResolution(ctx context.Context, resolution TicketResolution) error
 }
 
 type repository struct {
@@ -159,7 +161,7 @@ func (r *repository) CreateAttachment(ctx context.Context, attachment TicketAtta
 	return nil
 }
 
-func (r *repository) GetAttachmentByTicketID(ctx context.Context, ticketID int64) (*TicketAttachmentProjection, error) {
+func (r *repository) GetAttachmentByTicketID(ctx context.Context, ticketID int64, attachmentType AttachmentType) (*TicketAttachmentProjection, error) {
 	var attachment TicketAttachmentProjection
 
 	const query = `
@@ -175,10 +177,11 @@ func (r *repository) GetAttachmentByTicketID(ctx context.Context, ticketID int64
 		JOIN users au
 			ON au.id = a.uploaded_by
 		WHERE a.ticket_id = $1
+		AND attachment_type = $2
 		LIMIT 1
 	`
 
-	if err := r.db.GetContext(ctx, &attachment, query, ticketID); err != nil {
+	if err := r.db.GetContext(ctx, &attachment, query, ticketID, attachmentType); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
@@ -186,4 +189,20 @@ func (r *repository) GetAttachmentByTicketID(ctx context.Context, ticketID int64
 	}
 
 	return &attachment, nil
+}
+
+func (r *repository) CreateResolution(ctx context.Context, resolution TicketResolution) error {
+	const query = `
+		INSERT INTO ticket_resolutions (ticket_id, resolved_by, resolution)
+		VALUES ($1, $2, $3)
+	`
+
+	_, err := r.db.ExecContext(ctx, query, resolution.TicketID, resolution.ResolvedBy, resolution.Resolution)
+	if err != nil {
+		if database.IsUniqueViolation(err) {
+			return ErrTicketResolutionAlreadyExists
+		}
+	}
+
+	return nil
 }

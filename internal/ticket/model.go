@@ -31,3 +31,12 @@ type TicketAttachment struct {
 	UploadedBy     uuid.UUID `db:"uploaded_by"`
 	CreatedAt      time.Time `db:"created_at"`
 }
+
+type TicketResolution struct {
+	ID         int64     `db:"id"`
+	TicketID   int64     `db:"ticket_id"`
+	ResolvedBy uuid.UUID `db:"resolved_by"`
+	Resolution string    `db:"resolution"`
+	CreatedAt  time.Time `db:"created_at"`
+	UpdatedAt  time.Time `db:"updated_at"`
+}

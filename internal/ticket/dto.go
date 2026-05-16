@@ -39,6 +39,15 @@ type TicketAttachmentResponse struct {
 	CreatedAt      time.Time      `json:"created_at"`
 }
 
+type TicketResolutionResponse struct {
+	ID         int64     `json:"id"`
+	TicketID   int64     `json:"ticket_id"`
+	ResolvedBy user.User `json:"resolved_by"`
+	Resolution string    `json:"resolution"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
 type GetTicketParams struct {
 	pagination.Params
 }
@@ -47,4 +56,8 @@ type TicketCreateRequest struct {
 	Title       string `json:"title" form:"title" validate:"required,min=5,max=100"`
 	Description string `json:"description" form:"description" validate:"required,min=5,max=255"`
 	CategoryID  int    `json:"category_id" form:"category_id" validate:"required,gt=0"`
+}
+
+type TicketResolutionCreateRequest struct {
+	Resolution string `json:"resolution" form:"resolution" validate:"required,max=1000"`
 }
