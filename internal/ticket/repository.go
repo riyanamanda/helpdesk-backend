@@ -18,11 +18,12 @@ type TicketRepository interface {
 	GetByID(ctx context.Context, id int64) (*TicketProjection, error)
 
 	CreateAttachment(ctx context.Context, tx *sqlx.Tx, attachment TicketAttachment) error
-	GetAttachmentByTicketID(ctx context.Context, ticketID int64, attachmentType AttachmentType) (*TicketAttachmentProjection, error)
+	GetAttachmentsByTicketID(ctx context.Context, ticketID int64) (*[]TicketAttachmentProjection, error)
 
 	Assign(ctx context.Context, ticketID int64, userID uuid.UUID) error
 	UpdatePriority(ctx context.Context, ticketID int64, priority TicketPriority) error
 	UpdateResolution(ctx context.Context, tx *sqlx.Tx, ticketID int64, userID uuid.UUID, resolution string) error
+	CloseTicket(ctx context.Context, ticketID int64, userID uuid.UUID) error
 }
 
 type repository struct {
@@ -177,8 +178,8 @@ func (r *repository) CreateAttachment(ctx context.Context, tx *sqlx.Tx, attachme
 	return nil
 }
 
-func (r *repository) GetAttachmentByTicketID(ctx context.Context, ticketID int64, attachmentType AttachmentType) (*TicketAttachmentProjection, error) {
-	var attachment TicketAttachmentProjection
+func (r *repository) GetAttachmentsByTicketID(ctx context.Context, ticketID int64) (*[]TicketAttachmentProjection, error) {
+	var attachment []TicketAttachmentProjection
 
 	const query = `
 		SELECT
@@ -193,11 +194,9 @@ func (r *repository) GetAttachmentByTicketID(ctx context.Context, ticketID int64
 		JOIN users au
 			ON au.id = a.uploaded_by
 		WHERE a.ticket_id = $1
-		AND attachment_type = $2
-		LIMIT 1
 	`
 
-	if err := r.db.GetContext(ctx, &attachment, query, ticketID, attachmentType); err != nil {
+	if err := r.db.SelectContext(ctx, &attachment, query, ticketID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
@@ -275,6 +274,34 @@ func (r *repository) UpdateResolution(ctx context.Context, tx *sqlx.Tx, ticketID
 	`
 
 	result, err := tx.ExecContext(ctx, query, ticketID, userID, resolution)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return ErrTicketNotFound
+	}
+
+	return nil
+}
+
+func (r *repository) CloseTicket(ctx context.Context, ticketID int64, userID uuid.UUID) error {
+	const query = `
+		UPDATE tickets
+		SET status = 'CLOSED',
+			closed_by = $2,
+			closed_at = NOW(),
+			updated_at = NOW()
+		WHERE id = $1
+		AND status != 'CLOSED'
+	`
+
+	result, err := r.db.ExecContext(ctx, query, ticketID, userID)
 	if err != nil {
 		return err
 	}

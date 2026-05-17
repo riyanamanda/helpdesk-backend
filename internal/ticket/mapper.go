@@ -74,6 +74,14 @@ func toTicketAttachmentResponse(ta TicketAttachmentProjection, storage storage.S
 	}
 }
 
+func toTicketAttachmentResponses(attachments []TicketAttachmentProjection, storage storage.Storage) []TicketAttachmentResponse {
+	responses := make([]TicketAttachmentResponse, len(attachments))
+	for i, a := range attachments {
+		responses[i] = toTicketAttachmentResponse(a, storage)
+	}
+	return responses
+}
+
 func toTicketResponses(tickets []TicketProjection) []TicketResponse {
 	responses := make([]TicketResponse, len(tickets))
 	for i, t := range tickets {
@@ -82,15 +90,15 @@ func toTicketResponses(tickets []TicketProjection) []TicketResponse {
 	return responses
 }
 
-func toTicketDetailResponse(ticket TicketProjection, attachment *TicketAttachmentProjection, storageService storage.Storage) TicketDetailResponse {
-	var attachmentResponse *TicketAttachmentResponse
-	if attachment != nil {
-		mappedAttachment := toTicketAttachmentResponse(*attachment, storageService)
-		attachmentResponse = &mappedAttachment
+func toTicketDetailResponse(ticket TicketProjection, attachments *[]TicketAttachmentProjection, storage storage.Storage) TicketDetailResponse {
+	var attachmentResponses *[]TicketAttachmentResponse
+	if attachments != nil {
+		mappedAttachment := toTicketAttachmentResponses(*attachments, storage)
+		attachmentResponses = &mappedAttachment
 	}
 
 	return TicketDetailResponse{
 		TicketResponse: toTicketResponse(ticket),
-		Attachment:     attachmentResponse,
+		Attachments:    attachmentResponses,
 	}
 }

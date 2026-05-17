@@ -17,4 +17,5 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage) {
 	e.PATCH("/tickets/:id/assign", handler.AssignTicket)
 	e.PATCH("/tickets/:id/priority", handler.SetPriority)
 	e.PATCH("/tickets/:id/resolution", handler.CreateResolution)
+	e.PATCH("/tickets/:id/close", handler.CloseTicket)
 }

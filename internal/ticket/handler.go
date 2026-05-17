@@ -171,3 +171,16 @@ func (h *handler) CreateResolution(c *echo.Context) error {
 
 	return response.Message(c, http.StatusCreated, "resolution created successfully")
 }
+
+func (h *handler) CloseTicket(c *echo.Context) error {
+	ticketID, err := utils.ParsePositiveInt64PathParam(c, "id", "ticket")
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	if err := h.service.CloseTicket(c.Request().Context(), ticketID); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Message(c, http.StatusOK, "ticket closed successfully")
+}

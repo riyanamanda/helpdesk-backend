@@ -22,6 +22,7 @@ type TicketService interface {
 	AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error
 	SetPriority(ctx context.Context, ticketID int64, req TicketPriorityRequest) error
 	RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file multipart.File, fileHeader *multipart.FileHeader) error
+	CloseTicket(ctx context.Context, ticketID int64) error
 }
 
 type service struct {
@@ -133,12 +134,12 @@ func (s *service) FindTicketByID(ctx context.Context, id int64) (TicketDetailRes
 		return TicketDetailResponse{}, err
 	}
 
-	attachment, err := s.repo.GetAttachmentByTicketID(ctx, id, REPORT)
+	attachments, err := s.repo.GetAttachmentsByTicketID(ctx, id)
 	if err != nil {
 		return TicketDetailResponse{}, err
 	}
 
-	return toTicketDetailResponse(*ticket, attachment, s.storage), nil
+	return toTicketDetailResponse(*ticket, attachments, s.storage), nil
 }
 
 func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error {
@@ -203,7 +204,7 @@ func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req Ti
 			attachment := TicketAttachment{
 				TicketID:       ticketID,
 				FileKey:        objectKey,
-				AttachmentType: string(REPORT),
+				AttachmentType: string(RESOLUTION),
 				UploadedBy:     userID,
 			}
 
@@ -225,6 +226,22 @@ func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req Ti
 
 	err = tx.Commit()
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
+	var userID uuid.UUID
+	if currentUser, ok := utils.GetUserIDFromContext(ctx); ok {
+		userID = currentUser
+	}
+
+	if err := s.repo.CloseTicket(ctx, ticketID, userID); err != nil {
+		if errors.Is(err, ErrTicketNotFound) {
+			return apperror.NotFound("ticker")
+		}
 		return err
 	}
 

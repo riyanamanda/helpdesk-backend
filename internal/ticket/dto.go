@@ -30,7 +30,7 @@ type TicketResponse struct {
 
 type TicketDetailResponse struct {
 	TicketResponse
-	Attachment *TicketAttachmentResponse `json:"attachment"`
+	Attachments *[]TicketAttachmentResponse `json:"attachment"`
 }
 
 type TicketAttachmentResponse struct {
