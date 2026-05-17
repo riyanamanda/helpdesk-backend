@@ -14,14 +14,15 @@ import (
 //go:generate mockery --name TicketRepository
 type TicketRepository interface {
 	GetAll(ctx context.Context, params GetTicketParams) ([]TicketProjection, int64, error)
-	Create(ctx context.Context, ticket Ticket) (int64, error)
+	Create(ctx context.Context, tx *sqlx.Tx, ticket Ticket) (int64, error)
 	GetByID(ctx context.Context, id int64) (*TicketProjection, error)
 
-	CreateAttachment(ctx context.Context, attachment TicketAttachment) error
+	CreateAttachment(ctx context.Context, tx *sqlx.Tx, attachment TicketAttachment) error
 	GetAttachmentByTicketID(ctx context.Context, ticketID int64, attachmentType AttachmentType) (*TicketAttachmentProjection, error)
 
 	Assign(ctx context.Context, ticketID int64, userID uuid.UUID) error
 	UpdatePriority(ctx context.Context, ticketID int64, priority TicketPriority) error
+	UpdateResolution(ctx context.Context, tx *sqlx.Tx, ticketID int64, userID uuid.UUID, resolution string) error
 }
 
 type repository struct {
@@ -95,7 +96,7 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 	return tickets, total, nil
 }
 
-func (r *repository) Create(ctx context.Context, ticket Ticket) (int64, error) {
+func (r *repository) Create(ctx context.Context, tx *sqlx.Tx, ticket Ticket) (int64, error) {
 	const query = `
 		INSERT INTO tickets (title, description, category_id, created_by)
 		VALUES ($1, $2, $3, $4)
@@ -103,7 +104,7 @@ func (r *repository) Create(ctx context.Context, ticket Ticket) (int64, error) {
 	`
 
 	var id int64
-	err := r.db.QueryRowxContext(ctx, query, ticket.Title, ticket.Description, ticket.CategoryID, ticket.CreatedBy).
+	err := tx.QueryRowxContext(ctx, query, ticket.Title, ticket.Description, ticket.CategoryID, ticket.CreatedBy).
 		Scan(&id)
 	if err != nil {
 		return 0, err
@@ -162,13 +163,13 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*TicketProjection, 
 	return &ticket, nil
 }
 
-func (r *repository) CreateAttachment(ctx context.Context, attachment TicketAttachment) error {
+func (r *repository) CreateAttachment(ctx context.Context, tx *sqlx.Tx, attachment TicketAttachment) error {
 	const query = `
 		INSERT INTO ticket_attachments (ticket_id, file_key, attachment_type, uploaded_by)
 		VALUES ($1, $2, $3, $4)
 	`
 
-	_, err := r.db.ExecContext(ctx, query, attachment.TicketID, attachment.FileKey, attachment.AttachmentType, attachment.UploadedBy)
+	_, err := tx.ExecContext(ctx, query, attachment.TicketID, attachment.FileKey, attachment.AttachmentType, attachment.UploadedBy)
 	if err != nil {
 		return err
 	}
@@ -245,6 +246,35 @@ func (r *repository) UpdatePriority(ctx context.Context, ticketID int64, priorit
 	`
 
 	result, err := r.db.ExecContext(ctx, query, ticketID, priority)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return ErrTicketNotFound
+	}
+
+	return nil
+}
+
+func (r *repository) UpdateResolution(ctx context.Context, tx *sqlx.Tx, ticketID int64, userID uuid.UUID, resolution string) error {
+	const query = `
+		UPDATE tickets
+		SET resolution = $3,
+			resolved_by = $2,
+			resolved_at = NOW(),
+			status = 'RESOLVED',
+			updated_at = NOW()
+		WHERE id = $1
+		AND status not in ('RESOLVED','CLOSED')
+	`
+
+	result, err := tx.ExecContext(ctx, query, ticketID, userID, resolution)
 	if err != nil {
 		return err
 	}

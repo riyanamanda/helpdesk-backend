@@ -8,6 +8,7 @@ import (
 	"mime/multipart"
 
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
@@ -20,15 +21,18 @@ type TicketService interface {
 	FindTicketByID(ctx context.Context, id int64) (TicketDetailResponse, error)
 	AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error
 	SetPriority(ctx context.Context, ticketID int64, req TicketPriorityRequest) error
+	RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file multipart.File, fileHeader *multipart.FileHeader) error
 }
 
 type service struct {
+	db      *sqlx.DB
 	repo    TicketRepository
 	storage storage.Storage
 }
 
-func NewTicketService(repo TicketRepository, storage storage.Storage) TicketService {
+func NewTicketService(db *sqlx.DB, repo TicketRepository, storage storage.Storage) TicketService {
 	return &service{
+		db:      db,
 		repo:    repo,
 		storage: storage,
 	}
@@ -64,7 +68,18 @@ func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, 
 		CreatedBy:   createdBy,
 	}
 
-	ticketID, err := s.repo.Create(ctx, ticket)
+	tx, err := s.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	ticketID, err := s.repo.Create(ctx, tx, ticket)
 	if err != nil {
 		return err
 	}
@@ -84,7 +99,7 @@ func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, 
 				UploadedBy:     createdBy,
 			}
 
-			if err := s.repo.CreateAttachment(ctx, attachment); err != nil {
+			if err := s.repo.CreateAttachment(ctx, tx, attachment); err != nil {
 
 				_ = s.storage.Delete(ctx, objectKey)
 
@@ -99,6 +114,11 @@ func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, 
 			slog.ErrorContext(ctx, "failed to upload ticket attachment", "ticket_id", ticketID, "error", err)
 		}
 
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -142,6 +162,69 @@ func (s *service) SetPriority(ctx context.Context, ticketID int64, req TicketPri
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperror.NotFound("ticket")
 		}
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file multipart.File, fileHeader *multipart.FileHeader) error {
+	tx, err := s.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	var userID uuid.UUID
+	if currentUserID, ok := utils.GetUserIDFromContext(ctx); ok {
+		userID = currentUserID
+	}
+
+	if err := s.repo.UpdateResolution(ctx, tx, ticketID, userID, req.Resolution); err != nil {
+		if errors.Is(err, ErrTicketNotFound) {
+			return apperror.NotFound("ticket")
+		}
+		return err
+	}
+
+	if file != nil && fileHeader != nil {
+		objectKey := utils.GenerateObjectKey(fmt.Sprintf("tickets/%d/resolution", ticketID), fileHeader.Filename)
+		contentType := fileHeader.Header.Get("Content-Type")
+
+		err := s.storage.Upload(ctx, objectKey, file, fileHeader.Size, contentType)
+
+		// keep success response even though attachment error but remove uploaded file
+		if err == nil {
+			attachment := TicketAttachment{
+				TicketID:       ticketID,
+				FileKey:        objectKey,
+				AttachmentType: string(REPORT),
+				UploadedBy:     userID,
+			}
+
+			if err := s.repo.CreateAttachment(ctx, tx, attachment); err != nil {
+
+				_ = s.storage.Delete(ctx, objectKey)
+
+				slog.ErrorContext(
+					ctx,
+					"failed to create ticket attachment",
+					"ticket_id", ticketID,
+					"error", err,
+				)
+			}
+		} else {
+			slog.ErrorContext(ctx, "failed to upload ticket attachment", "ticket_id", ticketID, "error", err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
 		return err
 	}
 

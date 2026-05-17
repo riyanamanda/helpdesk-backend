@@ -59,3 +59,7 @@ type TicketAssignRequest struct {
 type TicketPriorityRequest struct {
 	Priority TicketPriority `json:"priority" validate:"required,oneof=LOW MEDIUM HIGH URGENT"`
 }
+
+type TicketResolutionRequest struct {
+	Resolution string `json:"resolution" form:"resolution" validate:"required,max=1000"`
+}

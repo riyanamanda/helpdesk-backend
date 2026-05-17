@@ -8,7 +8,7 @@ import (
 
 func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage) {
 	repo := NewTicketRepository(db)
-	svc := NewTicketService(repo, storageService)
+	svc := NewTicketService(db, repo, storageService)
 	handler := NewTicketHandler(svc)
 
 	e.GET("/tickets", handler.ListTickets)
@@ -16,4 +16,5 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage) {
 	e.GET("/tickets/:id", handler.GetTicket)
 	e.PATCH("/tickets/:id/assign", handler.AssignTicket)
 	e.PATCH("/tickets/:id/priority", handler.SetPriority)
+	e.PATCH("/tickets/:id/resolution", handler.CreateResolution)
 }
