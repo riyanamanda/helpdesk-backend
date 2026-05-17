@@ -15,4 +15,5 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage) {
 	e.POST("/tickets", handler.CreateTicket)
 	e.GET("/tickets/:id", handler.GetTicket)
 	e.PATCH("/tickets/:id/assign", handler.AssignTicket)
+	e.PATCH("/tickets/:id/priority", handler.SetPriority)
 }

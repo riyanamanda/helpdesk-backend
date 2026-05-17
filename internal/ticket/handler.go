@@ -109,3 +109,21 @@ func (h *handler) AssignTicket(c *echo.Context) error {
 
 	return response.Message(c, http.StatusOK, "ticket assigned successfully")
 }
+
+func (h *handler) SetPriority(c *echo.Context) error {
+	ticketID, err := utils.ParsePositiveInt64PathParam(c, "id", "ticket")
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	req, err := request.BindAndValidate[TicketPriorityRequest](c)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	if err := h.service.SetPriority(c.Request().Context(), ticketID, *req); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Message(c, http.StatusOK, "priority has been set successfully")
+}

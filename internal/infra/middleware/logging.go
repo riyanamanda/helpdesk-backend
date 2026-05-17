@@ -9,9 +9,9 @@ func requestID() echo.MiddlewareFunc {
 	return middleware.RequestID()
 }
 
-func recoverMiddleware() echo.MiddlewareFunc {
-	return middleware.Recover()
-}
+// func recoverMiddleware() echo.MiddlewareFunc {
+// 	return middleware.Recover()
+// }
 
 // func requestLogger() echo.MiddlewareFunc {
 // 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{

@@ -19,7 +19,9 @@ type TicketRepository interface {
 
 	CreateAttachment(ctx context.Context, attachment TicketAttachment) error
 	GetAttachmentByTicketID(ctx context.Context, ticketID int64, attachmentType AttachmentType) (*TicketAttachmentProjection, error)
+
 	Assign(ctx context.Context, ticketID int64, userID uuid.UUID) error
+	UpdatePriority(ctx context.Context, ticketID int64, priority TicketPriority) error
 }
 
 type repository struct {
@@ -219,6 +221,31 @@ func (r *repository) Assign(ctx context.Context, ticketID int64, userID uuid.UUI
 		if database.IsForeignKeyViolation(err) {
 			return user.ErrUserNotFound
 		}
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return ErrTicketNotFound
+	}
+
+	return nil
+}
+
+func (r *repository) UpdatePriority(ctx context.Context, ticketID int64, priority TicketPriority) error {
+	const query = `
+		UPDATE tickets
+		SET priority = $2,
+			updated_at = NOW()
+		WHERE id = $1
+	`
+
+	result, err := r.db.ExecContext(ctx, query, ticketID, priority)
+	if err != nil {
 		return err
 	}
 

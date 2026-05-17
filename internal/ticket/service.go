@@ -19,6 +19,7 @@ type TicketService interface {
 	RegisterTicket(ctx context.Context, req *TicketCreateRequest, file multipart.File, fileHeader *multipart.FileHeader) error
 	FindTicketByID(ctx context.Context, id int64) (TicketDetailResponse, error)
 	AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error
+	SetPriority(ctx context.Context, ticketID int64, req TicketPriorityRequest) error
 }
 
 type service struct {
@@ -128,6 +129,18 @@ func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAs
 		}
 		if errors.Is(err, user.ErrUserNotFound) {
 			return apperror.NotFound("user")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) SetPriority(ctx context.Context, ticketID int64, req TicketPriorityRequest) error {
+	err := s.repo.UpdatePriority(ctx, ticketID, req.Priority)
+	if err != nil {
+		if errors.Is(err, ErrTicketNotFound) {
+			return apperror.NotFound("ticket")
 		}
 		return err
 	}

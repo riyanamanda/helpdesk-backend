@@ -55,3 +55,7 @@ type TicketCreateRequest struct {
 type TicketAssignRequest struct {
 	AssignedTo uuid.UUID `json:"assigned_to" validate:"required"`
 }
+
+type TicketPriorityRequest struct {
+	Priority TicketPriority `json:"priority" validate:"required,oneof=LOW MEDIUM HIGH URGENT"`
+}
