@@ -2,17 +2,26 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS tickets (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
     title VARCHAR(200) NOT NULL,
     description TEXT NOT NULL,
-    category_id INTEGER NOT NULL REFERENCES categories(id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+
+    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+
     status VARCHAR(20) NOT NULL DEFAULT 'OPEN',
     priority VARCHAR(20),
-    created_by UUID NOT NULL REFERENCES users(id) ON UPDATE RESTRICT ON DELETE RESTRICT,
-    assigned_to UUID REFERENCES users(id) ON UPDATE RESTRICT ON DELETE SET NULL,
+
+    created_by UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
+    resolved_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    closed_by UUID REFERENCES users(id) ON DELETE SET NULL,
+
+    resolution TEXT,
+
     assigned_at TIMESTAMPTZ,
     resolved_at TIMESTAMPTZ,
     closed_at TIMESTAMPTZ,
-    closed_by UUID REFERENCES users(id) ON UPDATE RESTRICT ON DELETE SET NULL,
+    
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 

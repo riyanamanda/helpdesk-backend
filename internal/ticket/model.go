@@ -15,10 +15,12 @@ type Ticket struct {
 	Priority    *string    `db:"priority"`
 	CreatedBy   uuid.UUID  `db:"created_by"`
 	AssignedTo  *uuid.UUID `db:"assigned_to"`
+	ResolvedBy  *uuid.UUID `db:"resolved_by"`
+	ClosedBy    *uuid.UUID `db:"closed_by"`
+	Resolution  *string    `db:"resolution"`
 	AssignedAt  *time.Time `db:"assigned_at"`
 	ResolvedAt  *time.Time `db:"resolved_at"`
 	ClosedAt    *time.Time `db:"closed_at"`
-	ClosedBy    *uuid.UUID `db:"closed_by"`
 	CreatedAt   time.Time  `db:"created_at"`
 	UpdatedAt   time.Time  `db:"updated_at"`
 }
@@ -30,13 +32,4 @@ type TicketAttachment struct {
 	AttachmentType string    `db:"attachment_type"`
 	UploadedBy     uuid.UUID `db:"uploaded_by"`
 	CreatedAt      time.Time `db:"created_at"`
-}
-
-type TicketResolution struct {
-	ID         int64     `db:"id"`
-	TicketID   int64     `db:"ticket_id"`
-	ResolvedBy uuid.UUID `db:"resolved_by"`
-	Resolution string    `db:"resolution"`
-	CreatedAt  time.Time `db:"created_at"`
-	UpdatedAt  time.Time `db:"updated_at"`
 }

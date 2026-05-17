@@ -93,7 +93,7 @@ func (h *handler) GetTicket(c *echo.Context) error {
 }
 
 func (h *handler) AssignTicket(c *echo.Context) error {
-	ticketID, err := utils.ParsePositiveInt64PathParam(c, "id", "ticker")
+	ticketID, err := utils.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -108,62 +108,4 @@ func (h *handler) AssignTicket(c *echo.Context) error {
 	}
 
 	return response.Message(c, http.StatusOK, "ticket assigned successfully")
-}
-
-func (h *handler) CreateTicketResolution(c *echo.Context) error {
-	var (
-		file       multipart.File
-		fileHeader *multipart.FileHeader
-	)
-
-	ticketID, err := utils.ParsePositiveInt64PathParam(c, "id", "ticket")
-	if err != nil {
-		return response.Error(c, err)
-	}
-
-	req, err := request.BindAndValidate[TicketResolutionCreateRequest](c)
-	if err != nil {
-		return response.Error(c, err)
-	}
-
-	fileHeader, err = c.FormFile("attachment")
-	if err != nil && !errors.Is(err, http.ErrMissingFile) && !errors.Is(err, http.ErrNotMultipart) {
-		return response.Error(c, err)
-	}
-
-	if fileHeader != nil {
-		if err := validation.ValidateImage(fileHeader, maxTicketAttachmentSize, AllowedTicketAttachmentTypes); err != nil {
-			return response.Error(c, err)
-		}
-
-		file, err = fileHeader.Open()
-		if err != nil {
-			return response.Error(c, apperror.Internal("failed to open uploaded attachment"))
-		}
-		defer func() {
-			if err := file.Close(); err != nil {
-				slog.Error("failed to close file", "error", err)
-			}
-		}()
-	}
-
-	if err := h.service.RegisterResolution(c.Request().Context(), ticketID, *req, file, fileHeader); err != nil {
-		return response.Error(c, err)
-	}
-
-	return response.Message(c, http.StatusCreated, "resolution created successfully")
-}
-
-func (h *handler) GetResolutionByTicketID(c *echo.Context) error {
-	id, err := utils.ParsePositiveInt64PathParam(c, "id", "resolution")
-	if err != nil {
-		return response.Error(c, err)
-	}
-
-	resolution, err := h.service.FindResolutionByTicketID(c.Request().Context(), id)
-	if err != nil {
-		return response.Error(c, err)
-	}
-
-	return response.Success(c, http.StatusOK, resolution)
 }

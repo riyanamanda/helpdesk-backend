@@ -18,11 +18,14 @@ type TicketProjection struct {
 	CreatedByName  string     `db:"created_by_name"`
 	AssignedToID   *uuid.UUID `db:"assigned_to_id"`
 	AssignedToName *string    `db:"assigned_to_name"`
+	ResolvedByID   *uuid.UUID `db:"resolved_by_id"`
+	ResolvedByName *string    `db:"resolved_by_name"`
+	ClosedByID     *uuid.UUID `db:"closed_by_id"`
+	ClosedByName   *string    `db:"closed_by_name"`
+	Resolution     *string    `db:"resolution"`
 	AssignedAt     *time.Time `db:"assigned_at"`
 	ResolvedAt     *time.Time `db:"resolved_at"`
 	ClosedAt       *time.Time `db:"closed_at"`
-	ClosedByID     *uuid.UUID `db:"closed_by_id"`
-	ClosedByName   *string    `db:"closed_by_name"`
 	CreatedAt      time.Time  `db:"created_at"`
 	UpdatedAt      time.Time  `db:"updated_at"`
 }

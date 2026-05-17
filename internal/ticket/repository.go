@@ -19,10 +19,6 @@ type TicketRepository interface {
 
 	CreateAttachment(ctx context.Context, attachment TicketAttachment) error
 	GetAttachmentByTicketID(ctx context.Context, ticketID int64, attachmentType AttachmentType) (*TicketAttachmentProjection, error)
-
-	CreateResolution(ctx context.Context, resolution TicketResolution) error
-	GetResolutionByTicketID(ctx context.Context, ticketID int64) (*TicketResolutionProjection, error)
-
 	Assign(ctx context.Context, ticketID int64, userID uuid.UUID) error
 }
 
@@ -63,11 +59,14 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 			u.name AS created_by_name,
 			uat.id AS assigned_to_id,
 			uat.name AS assigned_to_name,
+			urb.id AS resolved_by_id,
+			urb.name AS resolved_by_name,
+			ucb.id AS closed_by_id,
+			ucb.name AS closed_by_name,
+			t.resolution,
 			t.assigned_at,
 			t.resolved_at,
 			t.closed_at,
-			ucb.id AS closed_by_id,
-			ucb.name AS closed_by_name,
 			t.created_at,
 			t.updated_at
 		FROM tickets t
@@ -77,6 +76,8 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 			ON u.id = t.created_by
 		LEFT JOIN users uat
 			ON uat.id = t.assigned_to
+		LEFT JOIN users urb
+			ON urb.id = t.resolved_by
 		LEFT JOIN users ucb
 			ON ucb.id = t.closed_by
 		WHERE t.status != 'CLOSED'
@@ -125,11 +126,14 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*TicketProjection, 
 			u.name AS created_by_name,
 			uat.id AS assigned_to_id,
 			uat.name AS assigned_to_name,
+			urb.id AS resolved_by_id,
+			urb.name AS resolved_by_name,
+			ucb.id AS closed_by_id,
+			ucb.name AS closed_by_name,
+			t.resolution,
 			t.assigned_at,
 			t.resolved_at,
 			t.closed_at,
-			ucb.id AS closed_by_id,
-			ucb.name AS closed_by_name,
 			t.created_at,
 			t.updated_at
 		FROM tickets t
@@ -139,6 +143,8 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*TicketProjection, 
 			ON u.id = t.created_by
 		LEFT JOIN users uat
 			ON uat.id = t.assigned_to
+		LEFT JOIN users urb
+			ON urb.id = t.resolved_by
 		LEFT JOIN users ucb
 			ON ucb.id = t.closed_by
 		WHERE t.id = $1
@@ -226,75 +232,4 @@ func (r *repository) Assign(ctx context.Context, ticketID int64, userID uuid.UUI
 	}
 
 	return nil
-}
-
-func (r *repository) CreateResolution(ctx context.Context, resolution TicketResolution) (err error) {
-	const insertResolutionQuery = `
-		INSERT INTO ticket_resolutions (ticket_id, resolved_by, resolution)
-		VALUES ($1, $2, $3)
-	`
-
-	const updateTicketQuery = `
-		UPDATE tickets
-		SET
-			status = 'RESOLVED',
-			resolved_at = NOW(),
-			updated_at = NOW()
-		WHERE id = $1
-	`
-
-	tx, err := r.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	defer tx.Rollback()
-
-	_, err = tx.ExecContext(ctx, insertResolutionQuery, resolution.TicketID, resolution.ResolvedBy, resolution.Resolution)
-	if err != nil {
-		if database.IsUniqueViolation(err) {
-			return ErrTicketResolutionAlreadyExists
-		}
-
-		return err
-	}
-
-	_, err = tx.ExecContext(ctx, updateTicketQuery, resolution.TicketID)
-	if err != nil {
-		return err
-	}
-
-	if err = tx.Commit(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *repository) GetResolutionByTicketID(ctx context.Context, ticketID int64) (*TicketResolutionProjection, error) {
-	var resolution TicketResolutionProjection
-
-	const query = `
-		SELECT
-			r.id,
-			r.ticket_id,
-			ru.id AS resolved_by_id,
-			ru.name AS resolved_by_name,
-			r.resolution,
-			r.created_at,
-			r.updated_at
-		FROM ticket_resolutions r
-		JOIN users ru
-			ON ru.id = r.resolved_by
-		WHERE r.ticket_id = $1
-	`
-
-	if err := r.db.GetContext(ctx, &resolution, query, ticketID); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return &resolution, nil
 }

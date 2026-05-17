@@ -18,10 +18,12 @@ type TicketResponse struct {
 	Priority    *TicketPriority        `json:"priority"`
 	CreatedBy   user.UserBrief         `json:"created_by"`
 	AssignedTo  *user.UserBrief        `json:"assigned_to"`
+	ResolvedBy  *user.UserBrief        `json:"resolved_by"`
+	ClosedBy    *user.UserBrief        `json:"closed_by"`
+	Resolution  *string                `json:"resolution"`
 	AssignedAt  *time.Time             `json:"assigned_at"`
 	ResolvedAt  *time.Time             `json:"resolved_at"`
 	ClosedAt    *time.Time             `json:"closed_at"`
-	ClosedBy    *user.UserBrief        `json:"closed_by"`
 	CreatedAt   time.Time              `json:"created_at"`
 	UpdatedAt   time.Time              `json:"updated_at"`
 }
@@ -40,15 +42,6 @@ type TicketAttachmentResponse struct {
 	CreatedAt      time.Time      `json:"created_at"`
 }
 
-type TicketResolutionResponse struct {
-	ID         int64          `json:"id"`
-	TicketID   int64          `json:"ticket_id"`
-	ResolvedBy user.UserBrief `json:"resolved_by"`
-	Resolution string         `json:"resolution"`
-	CreatedAt  time.Time      `json:"created_at"`
-	UpdatedAt  time.Time      `json:"updated_at"`
-}
-
 type GetTicketParams struct {
 	pagination.Params
 }
@@ -61,8 +54,4 @@ type TicketCreateRequest struct {
 
 type TicketAssignRequest struct {
 	AssignedTo uuid.UUID `json:"assigned_to" validate:"required"`
-}
-
-type TicketResolutionCreateRequest struct {
-	Resolution string `json:"resolution" form:"resolution" validate:"required,max=1000"`
 }

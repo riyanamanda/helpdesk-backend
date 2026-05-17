@@ -15,7 +15,4 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage) {
 	e.POST("/tickets", handler.CreateTicket)
 	e.GET("/tickets/:id", handler.GetTicket)
 	e.PATCH("/tickets/:id/assign", handler.AssignTicket)
-
-	e.POST("/tickets/:id/resolution", handler.CreateTicketResolution)
-	e.GET("/tickets/:id/resolution", handler.GetResolutionByTicketID)
 }

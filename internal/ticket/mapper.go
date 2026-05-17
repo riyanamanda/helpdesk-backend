@@ -9,6 +9,7 @@ import (
 func toTicketResponse(t TicketProjection) TicketResponse {
 	var (
 		assignedTo *user.UserBrief
+		resolvedBy *user.UserBrief
 		closedBy   *user.UserBrief
 	)
 
@@ -16,6 +17,13 @@ func toTicketResponse(t TicketProjection) TicketResponse {
 		assignedTo = &user.UserBrief{
 			ID:   *t.AssignedToID,
 			Name: *t.AssignedToName,
+		}
+	}
+
+	if t.ResolvedByID != nil && t.ResolvedByName != nil {
+		resolvedBy = &user.UserBrief{
+			ID:   *t.ResolvedByID,
+			Name: *t.ResolvedByName,
 		}
 	}
 
@@ -41,6 +49,8 @@ func toTicketResponse(t TicketProjection) TicketResponse {
 			Name: string(t.CreatedByName),
 		},
 		AssignedTo: assignedTo,
+		ResolvedBy: resolvedBy,
+		Resolution: t.Resolution,
 		AssignedAt: t.AssignedAt,
 		ResolvedAt: t.ResolvedAt,
 		ClosedAt:   t.ClosedAt,
@@ -82,19 +92,5 @@ func toTicketDetailResponse(ticket TicketProjection, attachment *TicketAttachmen
 	return TicketDetailResponse{
 		TicketResponse: toTicketResponse(ticket),
 		Attachment:     attachmentResponse,
-	}
-}
-
-func toTicketResolutionResponse(r TicketResolutionProjection) TicketResolutionResponse {
-	return TicketResolutionResponse{
-		ID:       r.ID,
-		TicketID: r.TicketID,
-		ResolvedBy: user.UserBrief{
-			ID:   r.ResolvedByID,
-			Name: r.ResolvedByName,
-		},
-		Resolution: r.Resolution,
-		CreatedAt:  r.CreatedAt,
-		UpdatedAt:  r.UpdatedAt,
 	}
 }

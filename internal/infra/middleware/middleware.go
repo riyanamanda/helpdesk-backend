@@ -13,5 +13,5 @@ func registerCore(e *echo.Echo) {
 
 func registerObservability(e *echo.Echo) {
 	e.Use(requestID())
-	e.Use(requestLogger())
+	// e.Use(requestLogger())
 }
