@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -27,8 +28,8 @@ func Load() *Config {
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
 		Auth: Auth{
-			JWTSecret:            getEnv("JWT_SECRET", "this-is-the-secret"),
-			JWTExpirationMinutes: getIntEnv("JWT_EXP", getIntEnv("JWT_EXPIRED", 60)),
+			JWTSecret: getEnv("JWT_SECRET", "this-is-the-secret"),
+			JWTExp: getDurationEnv("JWT_EXP", 24*time.Hour),
 		},
 		Storage: Storage{
 			Endpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),
@@ -49,17 +50,6 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func getIntEnv(key string, fallback int) int {
-	if v := os.Getenv(key); v != "" {
-		parsed, err := strconv.Atoi(v)
-		if err == nil {
-			return parsed
-		}
-	}
-
-	return fallback
-}
-
 func getBoolEnv(key string, fallback bool) bool {
 	if v := os.Getenv(key); v != "" {
 		parsed, err := strconv.ParseBool(v)
@@ -69,4 +59,22 @@ func getBoolEnv(key string, fallback bool) bool {
 	}
 
 	return fallback
+}
+
+func getDurationEnv(
+	key string,
+	fallback time.Duration,
+) time.Duration {
+
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		return fallback
+	}
+
+	return d
 }

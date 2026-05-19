@@ -21,8 +21,15 @@ import (
 )
 
 func TestService_Login(t *testing.T) {
-	secret := "test-secret"
-	expiresIn := 15 * time.Minute
+	       secret := "test-secret"
+	       expiresIn := 15 * time.Minute
+	       authConfig := struct {
+		       JWTSecret string
+		       JWTExp    time.Duration
+	       }{
+		       JWTSecret: secret,
+		       JWTExp:    expiresIn,
+	       }
 	userID := uuid.New()
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	require.NoError(t, err)
@@ -37,7 +44,7 @@ func TestService_Login(t *testing.T) {
 			IsActive: true,
 		}, nil).Once()
 
-		svc := auth.NewAuthService(repo, secret, expiresIn)
+			   svc := auth.NewAuthService(repo, authConfig)
 
 		result, err := svc.Login(context.Background(), &auth.LoginRequest{
 			Email:    "admin@email.com",
@@ -59,7 +66,7 @@ func TestService_Login(t *testing.T) {
 		repo := usermocks.NewUserRepository(t)
 		repo.On("GetByEmail", mock.Anything, "missing@email.com").Return(nil, user.ErrUserNotFound).Once()
 
-		svc := auth.NewAuthService(repo, secret, expiresIn)
+			   svc := auth.NewAuthService(repo, authConfig)
 
 		result, err := svc.Login(context.Background(), &auth.LoginRequest{
 			Email:    "missing@email.com",

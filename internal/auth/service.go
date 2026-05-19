@@ -3,8 +3,8 @@ package auth
 import (
 	"context"
 	"errors"
-	"time"
 
+	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
@@ -17,15 +17,13 @@ type AuthService interface {
 
 type service struct {
 	userRepo     user.UserRepository
-	jwtSecret    string
-	jwtExpiresIn time.Duration
+	config config.Auth
 }
 
-func NewAuthService(repo user.UserRepository, jwtSecret string, jwtExpiresIn time.Duration) AuthService {
+func NewAuthService(repo user.UserRepository, cfg config.Auth) AuthService {
 	return &service{
 		userRepo:     repo,
-		jwtSecret:    jwtSecret,
-		jwtExpiresIn: jwtExpiresIn,
+		config: cfg,
 	}
 }
 
@@ -46,7 +44,7 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (LoginResponse, 
 		return LoginResponse{}, apperror.BadRequest("invalid email or password")
 	}
 
-	token, err := utils.GenerateToken(currentUser.ID, string(currentUser.Role), s.jwtSecret, s.jwtExpiresIn)
+	token, err := utils.GenerateToken(currentUser.ID, string(currentUser.Role), s.config.JWTSecret, s.config.JWTExp)
 	if err != nil {
 		return LoginResponse{}, err
 	}

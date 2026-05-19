@@ -60,13 +60,13 @@ func main() {
 	api := e.Group("/api/v1")
 
 	// public routes
-	auth.Register(api, db, cfg.Auth.JWTSecret, cfg.Auth.JWTExpirationMinutes)
+	auth.Register(api, db, cfg.Auth)
 
 	// protected route
 	protected := api.Group("")
 	protected.Use(
-		middleware.AuthMiddleware(cfg.Auth.JWTSecret),
-	)
+		   middleware.AuthMiddleware(cfg.Auth),
+	   )
 
 	// protected modules
 	category.Register(protected, db)

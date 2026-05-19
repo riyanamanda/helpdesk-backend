@@ -16,6 +16,10 @@ const (
 	CODE_INTERNAL_ERROR   = "INTERNAL_SERVER_ERROR"
 	CODE_BAD_REQUEST      = "BAD_REQUEST"
 	CODE_FORBIDDEN        = "FORBIDDEN"
+	CODE_UNAUTHORIZED = "UNAUTHORIZED"
+	CODE_INVALID_TOKEN = "INVALID_TOKEN"
+	CODE_TOKEN_EXPIRED = "TOKEN_EXPIRED"
+	CODE_MISSING_TOKEN = "MISSING_TOKEN"
 )
 
 var (
@@ -24,6 +28,7 @@ var (
 	ErrInternal      = errors.New("internal server error")
 	ErrBadRequest    = errors.New("bad request")
 	ErrForbidden     = errors.New("forbidden")
+	ErrUnauthorized = errors.New("unauthorized")
 )
 
 type AppError struct {
@@ -56,6 +61,15 @@ func AlreadyExists(resource string) *AppError {
 		Code:       CODE_ALREADY_EXISTS,
 		Message:    fmt.Sprintf("%s already exists", resource),
 		StatusCode: http.StatusConflict,
+	}
+}
+
+func Unauthorized(code string, message string) *AppError {
+	return &AppError{
+		Err: ErrUnauthorized,
+		Code: code,
+		Message: message,
+		StatusCode: http.StatusUnauthorized,
 	}
 }
 

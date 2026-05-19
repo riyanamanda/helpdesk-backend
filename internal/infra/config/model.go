@@ -1,6 +1,9 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type Config struct {
 	App      App
@@ -26,7 +29,7 @@ type Database struct {
 
 type Auth struct {
 	JWTSecret            string
-	JWTExpirationMinutes int
+	JWTExp time.Duration
 }
 
 type Storage struct {
