@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
@@ -22,14 +23,16 @@ type UserService interface {
 }
 
 type service struct {
-	repo    UserRepository
-	storage storage.Storage
+	repo          UserRepository
+	storage       storage.Storage
+	storageConfig config.Storage
 }
 
-func NewUserService(repo UserRepository, storage storage.Storage) UserService {
+func NewUserService(repo UserRepository, storage storage.Storage, storageConfig config.Storage) UserService {
 	return &service{
-		repo:    repo,
-		storage: storage,
+		repo:          repo,
+		storage:       storage,
+		storageConfig: storageConfig,
 	}
 }
 
@@ -47,7 +50,7 @@ func (svc *service) FetchAllUsers(ctx context.Context, params *GetUserParams) ([
 		return []UserResponse{}, 0, err
 	}
 
-	return toUserResponses(users, svc.storage), total, nil
+	return toUserResponses(users, svc.storageConfig), total, nil
 }
 
 func (svc *service) RegisterUser(ctx context.Context, req *UserCreateRequest) error {
@@ -91,7 +94,7 @@ func (svc *service) FindUserByID(ctx context.Context, id *uuid.UUID) (UserRespon
 		return UserResponse{}, err
 	}
 
-	return toUserResponse(*user, svc.storage), nil
+	return toUserResponse(*user, svc.storageConfig), nil
 }
 
 func (svc *service) UpdateUserAvatar(ctx context.Context, file multipart.File, header *multipart.FileHeader) error {

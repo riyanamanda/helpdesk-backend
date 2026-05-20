@@ -42,3 +42,11 @@ func GenerateObjectKey(prefix, filename string) string {
 		ext,
 	)
 }
+
+func BuildPublicURL(publicURL, bucket, key string) string {
+	if key == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s/%s/%s", publicURL, bucket, key)
+}

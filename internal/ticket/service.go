@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
@@ -26,16 +27,18 @@ type TicketService interface {
 }
 
 type service struct {
-	db      *sqlx.DB
-	repo    TicketRepository
-	storage storage.Storage
+	db            *sqlx.DB
+	repo          TicketRepository
+	storage       storage.Storage
+	storageConfig config.Storage
 }
 
-func NewTicketService(db *sqlx.DB, repo TicketRepository, storage storage.Storage) TicketService {
+func NewTicketService(db *sqlx.DB, repo TicketRepository, storage storage.Storage, storageConfig config.Storage) TicketService {
 	return &service{
-		db:      db,
-		repo:    repo,
-		storage: storage,
+		db:            db,
+		repo:          repo,
+		storage:       storage,
+		storageConfig: storageConfig,
 	}
 }
 
@@ -139,7 +142,7 @@ func (s *service) FindTicketByID(ctx context.Context, id int64) (TicketDetailRes
 		return TicketDetailResponse{}, err
 	}
 
-	return toTicketDetailResponse(*ticket, attachments, s.storage), nil
+	return toTicketDetailResponse(*ticket, attachments, s.storageConfig), nil
 }
 
 func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error {

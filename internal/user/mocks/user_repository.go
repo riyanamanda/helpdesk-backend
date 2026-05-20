@@ -138,23 +138,23 @@ func (_c *UserRepository_GetAll_Call) RunAndReturn(run func(context.Context, use
 }
 
 // GetByEmail provides a mock function with given fields: ctx, email
-func (_m *UserRepository) GetByEmail(ctx context.Context, email string) (*user.User, error) {
+func (_m *UserRepository) GetByEmail(ctx context.Context, email string) (*user.UserProjection, error) {
 	ret := _m.Called(ctx, email)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByEmail")
 	}
 
-	var r0 *user.User
+	var r0 *user.UserProjection
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*user.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*user.UserProjection, error)); ok {
 		return rf(ctx, email)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *user.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) *user.UserProjection); ok {
 		r0 = rf(ctx, email)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*user.User)
+			r0 = ret.Get(0).(*user.UserProjection)
 		}
 	}
 
@@ -186,12 +186,12 @@ func (_c *UserRepository_GetByEmail_Call) Run(run func(ctx context.Context, emai
 	return _c
 }
 
-func (_c *UserRepository_GetByEmail_Call) Return(_a0 *user.User, _a1 error) *UserRepository_GetByEmail_Call {
+func (_c *UserRepository_GetByEmail_Call) Return(_a0 *user.UserProjection, _a1 error) *UserRepository_GetByEmail_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *UserRepository_GetByEmail_Call) RunAndReturn(run func(context.Context, string) (*user.User, error)) *UserRepository_GetByEmail_Call {
+func (_c *UserRepository_GetByEmail_Call) RunAndReturn(run func(context.Context, string) (*user.UserProjection, error)) *UserRepository_GetByEmail_Call {
 	_c.Call.Return(run)
 	return _c
 }

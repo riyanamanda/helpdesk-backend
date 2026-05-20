@@ -2,7 +2,8 @@ package ticket
 
 import (
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
-	"github.com/riyanamanda/helpdesk-backend/internal/storage"
+	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -60,11 +61,11 @@ func toTicketResponse(t TicketProjection) TicketResponse {
 	}
 }
 
-func toTicketAttachmentResponse(ta TicketAttachmentProjection, storage storage.Storage) TicketAttachmentResponse {
+func toTicketAttachmentResponse(ta TicketAttachmentProjection, storageConfig config.Storage) TicketAttachmentResponse {
 	return TicketAttachmentResponse{
 		ID:             ta.ID,
 		TicketID:       ta.TicketID,
-		FileURL:        storage.GetURL(ta.FileKey),
+		FileURL:        utils.BuildPublicURL(storageConfig.PublicURL, storageConfig.Bucket, ta.FileKey),
 		AttachmentType: ta.AttachmentType,
 		UploadedBy: user.UserBrief{
 			ID:   ta.UploadedByID,
@@ -74,10 +75,10 @@ func toTicketAttachmentResponse(ta TicketAttachmentProjection, storage storage.S
 	}
 }
 
-func toTicketAttachmentResponses(attachments []TicketAttachmentProjection, storage storage.Storage) []TicketAttachmentResponse {
+func toTicketAttachmentResponses(attachments []TicketAttachmentProjection, storageConfig config.Storage) []TicketAttachmentResponse {
 	responses := make([]TicketAttachmentResponse, len(attachments))
 	for i, a := range attachments {
-		responses[i] = toTicketAttachmentResponse(a, storage)
+		responses[i] = toTicketAttachmentResponse(a, storageConfig)
 	}
 	return responses
 }
@@ -90,10 +91,10 @@ func toTicketResponses(tickets []TicketProjection) []TicketResponse {
 	return responses
 }
 
-func toTicketDetailResponse(ticket TicketProjection, attachments *[]TicketAttachmentProjection, storage storage.Storage) TicketDetailResponse {
+func toTicketDetailResponse(ticket TicketProjection, attachments *[]TicketAttachmentProjection, storageConfig config.Storage) TicketDetailResponse {
 	var attachmentResponses *[]TicketAttachmentResponse
 	if attachments != nil {
-		mappedAttachment := toTicketAttachmentResponses(*attachments, storage)
+		mappedAttachment := toTicketAttachmentResponses(*attachments, storageConfig)
 		attachmentResponses = &mappedAttachment
 	}
 

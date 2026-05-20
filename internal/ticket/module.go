@@ -3,12 +3,13 @@ package ticket
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
+	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage) {
+func Register(e *echo.Group, db *sqlx.DB, storage storage.Storage, storageConfig config.Storage) {
 	repo := NewTicketRepository(db)
-	svc := NewTicketService(db, repo, storageService)
+	svc := NewTicketService(db, repo, storage, storageConfig)
 	handler := NewTicketHandler(svc)
 
 	e.GET("/tickets", handler.ListTickets)

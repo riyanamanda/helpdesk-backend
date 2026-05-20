@@ -2,15 +2,16 @@ package user
 
 import (
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
-	"github.com/riyanamanda/helpdesk-backend/internal/storage"
+	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 )
 
-func toUserResponse(u UserProjection, storage storage.Storage) UserResponse {
+func toUserResponse(u UserProjection, storageConfig config.Storage) UserResponse {
 	var avatarURL *string
 	var createdBy *UserBrief
 
 	if u.AvatarKey != nil {
-		url := storage.GetURL(*u.AvatarKey)
+		url := utils.BuildPublicURL(storageConfig.PublicURL, storageConfig.Bucket, *u.AvatarKey)
 		avatarURL = &url
 	}
 
@@ -40,10 +41,10 @@ func toUserResponse(u UserProjection, storage storage.Storage) UserResponse {
 	}
 }
 
-func toUserResponses(users []UserProjection, storage storage.Storage) []UserResponse {
+func toUserResponses(users []UserProjection, storageConfig config.Storage) []UserResponse {
 	result := make([]UserResponse, len(users))
 	for i, u := range users {
-		result[i] = toUserResponse(u, storage)
+		result[i] = toUserResponse(u, storageConfig)
 	}
 	return result
 }

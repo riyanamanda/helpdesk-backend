@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	auth "github.com/riyanamanda/helpdesk-backend/internal/auth"
+	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	testingutil "github.com/riyanamanda/helpdesk-backend/internal/shared/testing"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
@@ -20,23 +21,28 @@ import (
 	usermocks "github.com/riyanamanda/helpdesk-backend/internal/user/mocks"
 )
 
+type MockStorage struct {
+	mock.Mock
+}
+
 func TestService_Login(t *testing.T) {
-	       secret := "test-secret"
-	       expiresIn := 15 * time.Minute
-	       authConfig := struct {
-		       JWTSecret string
-		       JWTExp    time.Duration
-	       }{
-		       JWTSecret: secret,
-		       JWTExp:    expiresIn,
-	       }
+	secret := "test-secret"
+	expiresIn := 15 * time.Minute
+	authConfig := struct {
+		JWTSecret string
+		JWTExp    time.Duration
+	}{
+		JWTSecret: secret,
+		JWTExp:    expiresIn,
+	}
+
 	userID := uuid.New()
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
 	t.Run("success with configured jwt secret and expiry", func(t *testing.T) {
 		repo := usermocks.NewUserRepository(t)
-		repo.On("GetByEmail", mock.Anything, "admin@email.com").Return(&user.User{
+		repo.On("GetByEmail", mock.Anything, "admin@email.com").Return(&user.UserProjection{
 			ID:       userID,
 			Email:    "admin@email.com",
 			Password: string(hashedPassword),
@@ -44,7 +50,10 @@ func TestService_Login(t *testing.T) {
 			IsActive: true,
 		}, nil).Once()
 
-			   svc := auth.NewAuthService(repo, authConfig)
+		svc := auth.NewAuthService(repo, authConfig, config.Storage{
+			PublicURL: "http://localhost:9000",
+			Bucket:    "helpdesk-dev",
+		})
 
 		result, err := svc.Login(context.Background(), &auth.LoginRequest{
 			Email:    "admin@email.com",
@@ -66,7 +75,10 @@ func TestService_Login(t *testing.T) {
 		repo := usermocks.NewUserRepository(t)
 		repo.On("GetByEmail", mock.Anything, "missing@email.com").Return(nil, user.ErrUserNotFound).Once()
 
-			   svc := auth.NewAuthService(repo, authConfig)
+		svc := auth.NewAuthService(repo, authConfig, config.Storage{
+			PublicURL: "http://localhost:9000",
+			Bucket:    "helpdesk-dev",
+		})
 
 		result, err := svc.Login(context.Background(), &auth.LoginRequest{
 			Email:    "missing@email.com",

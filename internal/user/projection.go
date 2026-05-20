@@ -10,6 +10,7 @@ type UserProjection struct {
 	ID            uuid.UUID  `db:"id"`
 	Name          string     `db:"name"`
 	Email         string     `db:"email"`
+	Password      string     `db:"password"`
 	GoogleID      *string    `db:"google_id"`
 	AvatarKey     *string    `db:"avatar_key"`
 	Phone         *string    `db:"phone"`

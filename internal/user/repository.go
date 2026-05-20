@@ -15,7 +15,7 @@ type UserRepository interface {
 	GetAll(ctx context.Context, params GetUserParams) ([]UserProjection, int, error)
 	Create(ctx context.Context, user *User) error
 	GetByID(ctx context.Context, id uuid.UUID) (*UserProjection, error)
-	GetByEmail(ctx context.Context, email string) (*User, error)
+	GetByEmail(ctx context.Context, email string) (*UserProjection, error)
 	UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error
 }
 
@@ -132,13 +132,32 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*UserProjection
 	return &user, nil
 }
 
-func (r *repository) GetByEmail(ctx context.Context, email string) (*User, error) {
-	var user User
+func (r *repository) GetByEmail(ctx context.Context, email string) (*UserProjection, error) {
+	var user UserProjection
 
 	const query = `
-		SELECT id, name, email, password, google_id, avatar_key, phone, role, division_id, is_active, created_by, created_at, updated_at
-		FROM users
-		WHERE LOWER(email) = LOWER($1)
+		SELECT
+			u.id,
+			u.name,
+			u.email,
+			u.password,
+			u.google_id,
+			u.avatar_key,
+			u.phone,
+			u.role,
+			d.id as division_id,
+			d.name as division_name,
+			u.is_active,
+			cb.id as created_by_id,
+			cb.name as created_by_name,
+			u.created_at,
+			u.updated_at
+		FROM users u
+		LEFT JOIN divisions d
+			ON d.id = u.division_id
+		LEFT JOIN users cb
+			ON cb.id = u.created_by
+		WHERE LOWER(u.email) = LOWER($1)
 	`
 
 	if err := r.db.GetContext(ctx, &user, query, email); err != nil {

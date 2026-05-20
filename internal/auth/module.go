@@ -7,9 +7,9 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, cfg config.Auth) {
+func Register(e *echo.Group, db *sqlx.DB, cfg config.Auth, storageConfig config.Storage) {
 	repo := user.NewUserRepository(db)
-	svc := NewAuthService(repo, cfg)
+	svc := NewAuthService(repo, cfg, storageConfig)
 	handler := NewAuthHandler(svc)
 
 	e.POST("/auth/login", handler.Login)

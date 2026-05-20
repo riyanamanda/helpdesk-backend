@@ -60,19 +60,19 @@ func main() {
 	api := e.Group("/api/v1")
 
 	// public routes
-	auth.Register(api, db, cfg.Auth)
+	auth.Register(api, db, cfg.Auth, cfg.Storage)
 
 	// protected route
 	protected := api.Group("")
 	protected.Use(
-		   middleware.AuthMiddleware(cfg.Auth),
-	   )
+		middleware.AuthMiddleware(cfg.Auth),
+	)
 
 	// protected modules
 	category.Register(protected, db)
 	division.Register(protected, db)
-	user.Register(protected, db, storageService)
-	ticket.Register(protected, db, storageService)
+	user.Register(protected, db, storageService, cfg.Storage)
+	ticket.Register(protected, db, storageService, cfg.Storage)
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),

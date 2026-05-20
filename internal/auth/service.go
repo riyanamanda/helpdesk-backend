@@ -16,14 +16,16 @@ type AuthService interface {
 }
 
 type service struct {
-	userRepo     user.UserRepository
-	config config.Auth
+	userRepo      user.UserRepository
+	config        config.Auth
+	storageConfig config.Storage
 }
 
-func NewAuthService(repo user.UserRepository, cfg config.Auth) AuthService {
+func NewAuthService(repo user.UserRepository, cfg config.Auth, storageConfig config.Storage) AuthService {
 	return &service{
-		userRepo:     repo,
-		config: cfg,
+		userRepo:      repo,
+		config:        cfg,
+		storageConfig: storageConfig,
 	}
 }
 
@@ -50,6 +52,7 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (LoginResponse, 
 	}
 
 	return LoginResponse{
+		User:        toCurrentUserResponse(*currentUser, s.storageConfig),
 		AccessToken: token,
 	}, nil
 }
