@@ -3,13 +3,14 @@ package middleware
 import "github.com/labstack/echo/v5"
 
 func Register(e *echo.Echo) {
-	// registerCore(e)
+	registerCore(e)
 	registerObservability(e)
 }
 
-// func registerCore(e *echo.Echo) {
-// 	e.Use(recoverMiddleware())
-// }
+func registerCore(e *echo.Echo) {
+	// e.Use(recoverMiddleware())
+	e.Use(corsMiddleware())
+}
 
 func registerObservability(e *echo.Echo) {
 	e.Use(requestID())
