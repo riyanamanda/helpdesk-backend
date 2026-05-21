@@ -31,3 +31,12 @@ func (h *handler) Login(c *echo.Context) error {
 
 	return response.Success(c, http.StatusOK, result)
 }
+
+func (h *handler) Me(c *echo.Context) error {
+	user, err := h.svc.Me(c.Request().Context())
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, http.StatusOK, user)
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
@@ -13,6 +14,7 @@ import (
 
 type AuthService interface {
 	Login(ctx context.Context, req *LoginRequest) (LoginResponse, error)
+	Me(ctx context.Context) (CurrentUserResponse, error)
 }
 
 type service struct {
@@ -55,4 +57,18 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (LoginResponse, 
 		User:        toCurrentUserResponse(*currentUser, s.storageConfig),
 		AccessToken: token,
 	}, nil
+}
+
+func (s *service) Me(ctx context.Context) (CurrentUserResponse, error) {
+	var userID uuid.UUID
+	if currentUserID, ok := utils.GetUserIDFromContext(ctx); ok {
+		userID = currentUserID
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return CurrentUserResponse{}, err
+	}
+
+	return toCurrentUserResponse(*user, s.storageConfig), nil
 }
