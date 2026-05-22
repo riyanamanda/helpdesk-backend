@@ -28,5 +28,6 @@ type CreateDivisionRequest struct {
 }
 
 type UpdateDivisionRequest struct {
-	Name string `json:"name" validate:"required,min=2,max=50"`
+	Name     string `json:"name" validate:"required,min=2,max=50"`
+	IsActive *bool  `json:"is_active"`
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	apperrors "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 )
 
@@ -70,7 +71,23 @@ func (svc *service) FindDivisionByID(ctx context.Context, id int64) (DivisionRes
 }
 
 func (svc *service) EditDivision(ctx context.Context, id int64, req *UpdateDivisionRequest) error {
-	division := Division{Name: req.Name}
+	existing, err := svc.repo.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, ErrDivisionNotFound) {
+			return apperror.NotFound("division")
+		}
+		return err
+	}
+
+	isActive := existing.IsActive
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+
+	division := Division{
+		Name:     req.Name,
+		IsActive: isActive,
+	}
 	if err := svc.repo.Update(ctx, id, &division); err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {
 			return apperrors.NotFound("division")

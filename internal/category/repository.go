@@ -35,7 +35,6 @@ func (r *repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Ca
 	const queryTotal = `
 		SELECT COUNT(*)
 		FROM categories
-		WHERE is_active = TRUE
 	`
 
 	if err := r.db.GetContext(ctx, &total, queryTotal); err != nil {
@@ -45,7 +44,6 @@ func (r *repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Ca
 	const query = `
 		SELECT id, name, is_active, created_at, updated_at
 		FROM categories
-		WHERE is_active = TRUE
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
 	`

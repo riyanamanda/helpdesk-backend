@@ -35,7 +35,6 @@ func (r *repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Di
 	const queryTotal = `
 		SELECT COUNT(*)
 		FROM divisions
-		WHERE is_active = TRUE
 	`
 	if err := r.db.GetContext(ctx, &total, queryTotal); err != nil {
 		return nil, 0, err
@@ -44,7 +43,6 @@ func (r *repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Di
 	const query = `
 		SELECT id, name, is_active, created_at, updated_at
 		FROM divisions
-		WHERE is_active = TRUE
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
 	`
@@ -78,7 +76,7 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*Division, error) {
 	const query = `
 		SELECT id, name, is_active, created_at, updated_at
 		FROM divisions
-		WHERE id = $1 AND is_active = TRUE
+		WHERE id = $1
 	`
 
 	if err := r.db.GetContext(ctx, &division, query, id); err != nil {
@@ -94,11 +92,13 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*Division, error) {
 func (r *repository) Update(ctx context.Context, id int64, division *Division) error {
 	const query = `
 		UPDATE divisions
-		SET name = $1, updated_at = NOW()
-		WHERE id = $2 AND is_active = TRUE
+		SET name = $2,
+			is_active = $3,
+			updated_at = NOW()
+		WHERE id = $1
 	`
 
-	result, err := r.db.ExecContext(ctx, query, division.Name, id)
+	result, err := r.db.ExecContext(ctx, query, id, division.Name, division.IsActive)
 
 	if err != nil {
 		if dberror.IsUniqueViolation(err) {
