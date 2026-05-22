@@ -119,7 +119,7 @@ func TestService_RegisterUser(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				testingutil.AssertAppError(t, err, apperror.CODE_ALREADY_EXISTS, http.StatusConflict, "user already exists")
+				testingutil.AssertAppError(t, err, apperror.CodeAlreadyExists, http.StatusConflict, "user already exists")
 			},
 		},
 		{
@@ -260,7 +260,7 @@ func TestService_FindUserByID(t *testing.T) {
 			assertFn: func(t *testing.T, result user.UserResponse, err error) {
 				require.Error(t, err)
 				assert.Equal(t, user.UserResponse{}, result)
-				testingutil.AssertAppError(t, err, apperror.CODE_NOT_FOUND, http.StatusNotFound, "user not found")
+				testingutil.AssertAppError(t, err, apperror.CodeNotFound, http.StatusNotFound, "user not found")
 			},
 		},
 		{
@@ -337,7 +337,7 @@ func TestService_UpdateUserAvatar(t *testing.T) {
 
 		err := svc.UpdateUserAvatar(context.Background(), testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
 		require.Error(t, err)
-		testingutil.AssertAppError(t, err, apperror.CODE_FORBIDDEN, http.StatusForbidden, "unauthorized")
+		testingutil.AssertAppError(t, err, apperror.CodeForbidden, http.StatusForbidden, "unauthorized")
 	})
 
 	t.Run("storage upload error", func(t *testing.T) {

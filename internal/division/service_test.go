@@ -47,7 +47,7 @@ func TestService_RegisterDivision(t *testing.T) {
 			assertFn: func(t *testing.T, result division.DivisionResponse, err error) {
 				require.Error(t, err)
 				assert.Equal(t, division.DivisionResponse{}, result)
-				testingutil.AssertAppError(t, err, apperror.CODE_ALREADY_EXISTS, http.StatusConflict, "division already exists")
+				testingutil.AssertAppError(t, err, apperror.CodeAlreadyExists, http.StatusConflict, "division already exists")
 			},
 		},
 		{
@@ -155,7 +155,7 @@ func TestService_FindDivisionByID(t *testing.T) {
 			assertFn: func(t *testing.T, result division.DivisionResponse, err error) {
 				require.Error(t, err)
 				assert.Equal(t, division.DivisionResponse{}, result)
-				testingutil.AssertAppError(t, err, apperror.CODE_NOT_FOUND, http.StatusNotFound, "division not found")
+				testingutil.AssertAppError(t, err, apperror.CodeNotFound, http.StatusNotFound, "division not found")
 			},
 		},
 		{
@@ -214,7 +214,7 @@ func TestService_EditDivision(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				testingutil.AssertAppError(t, err, apperror.CODE_NOT_FOUND, http.StatusNotFound, "division not found")
+				testingutil.AssertAppError(t, err, apperror.CodeNotFound, http.StatusNotFound, "division not found")
 			},
 		},
 		{
@@ -226,7 +226,7 @@ func TestService_EditDivision(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				testingutil.AssertAppError(t, err, apperror.CODE_ALREADY_EXISTS, http.StatusConflict, "division already exists")
+				testingutil.AssertAppError(t, err, apperror.CodeAlreadyExists, http.StatusConflict, "division already exists")
 			},
 		},
 		{
@@ -280,7 +280,7 @@ func TestService_DeleteDivision(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				testingutil.AssertAppError(t, err, apperror.CODE_NOT_FOUND, http.StatusNotFound, "division not found")
+				testingutil.AssertAppError(t, err, apperror.CodeNotFound, http.StatusNotFound, "division not found")
 			},
 		},
 		{

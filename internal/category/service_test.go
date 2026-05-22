@@ -47,7 +47,7 @@ func TestService_RegisterCategory(t *testing.T) {
 			assertFn: func(t *testing.T, result category.CategoryResponse, err error) {
 				require.Error(t, err)
 				assert.Equal(t, category.CategoryResponse{}, result)
-				testingutil.AssertAppError(t, err, apperror.CODE_ALREADY_EXISTS, http.StatusConflict, "category already exists")
+				testingutil.AssertAppError(t, err, apperror.CodeAlreadyExists, http.StatusConflict, "category already exists")
 			},
 		},
 		{
@@ -155,7 +155,7 @@ func TestService_FindCategoryByID(t *testing.T) {
 			assertFn: func(t *testing.T, result category.CategoryResponse, err error) {
 				require.Error(t, err)
 				assert.Equal(t, category.CategoryResponse{}, result)
-				testingutil.AssertAppError(t, err, apperror.CODE_NOT_FOUND, http.StatusNotFound, "category not found")
+				testingutil.AssertAppError(t, err, apperror.CodeNotFound, http.StatusNotFound, "category not found")
 			},
 		},
 		{
@@ -214,7 +214,7 @@ func TestService_EditCategory(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				testingutil.AssertAppError(t, err, apperror.CODE_NOT_FOUND, http.StatusNotFound, "category not found")
+				testingutil.AssertAppError(t, err, apperror.CodeNotFound, http.StatusNotFound, "category not found")
 			},
 		},
 		{
@@ -226,7 +226,7 @@ func TestService_EditCategory(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				testingutil.AssertAppError(t, err, apperror.CODE_ALREADY_EXISTS, http.StatusConflict, "category already exists")
+				testingutil.AssertAppError(t, err, apperror.CodeAlreadyExists, http.StatusConflict, "category already exists")
 			},
 		},
 		{
@@ -280,7 +280,7 @@ func TestService_DeleteCategory(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
-				testingutil.AssertAppError(t, err, apperror.CODE_NOT_FOUND, http.StatusNotFound, "category not found")
+				testingutil.AssertAppError(t, err, apperror.CodeNotFound, http.StatusNotFound, "category not found")
 			},
 		},
 		{

@@ -99,7 +99,7 @@ func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, 
 			attachment := TicketAttachment{
 				TicketID:       ticketID,
 				FileKey:        objectKey,
-				AttachmentType: string(REPORT),
+				AttachmentType: string(Report),
 				UploadedBy:     createdBy,
 			}
 
@@ -207,7 +207,7 @@ func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req Ti
 			attachment := TicketAttachment{
 				TicketID:       ticketID,
 				FileKey:        objectKey,
-				AttachmentType: string(RESOLUTION),
+				AttachmentType: string(Resolution),
 				UploadedBy:     userID,
 			}
 

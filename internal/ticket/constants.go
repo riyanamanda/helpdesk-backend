@@ -6,22 +6,22 @@ type TicketPriority string
 type AttachmentType string
 
 const (
-	OPEN        TicketStatus = "OPEN"
-	IN_PROGRESS TicketStatus = "IN_PROGRESS"
-	RESOLVED    TicketStatus = "RESOLVED"
-	CLOSED      TicketStatus = "CLOSED"
+	Open       TicketStatus = "OPEN"
+	InProgress TicketStatus = "IN_PROGRESS"
+	Resolved   TicketStatus = "RESOLVED"
+	Closed     TicketStatus = "CLOSED"
 )
 
 const (
-	LOW    TicketPriority = "LOW"
-	MEDIUM TicketPriority = "MEDIUM"
-	HIGH   TicketPriority = "HIGH"
-	URGENT TicketPriority = "URGENT"
+	Low    TicketPriority = "LOW"
+	Medium TicketPriority = "MEDIUM"
+	High   TicketPriority = "HIGH"
+	Urgent TicketPriority = "URGENT"
 )
 
 const (
-	REPORT     AttachmentType = "REPORT"
-	RESOLUTION AttachmentType = "RESOLUTION"
+	Report     AttachmentType = "REPORT"
+	Resolution AttachmentType = "RESOLUTION"
 )
 
 const maxTicketAttachmentSize = 2 << 20 // 2MB

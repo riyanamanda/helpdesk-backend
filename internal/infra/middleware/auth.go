@@ -19,13 +19,13 @@ func AuthMiddleware(cfg config.Auth) echo.MiddlewareFunc {
 		return func(c *echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
 			if authHeader == "" {
-				return response.Error(c, apperror.Unauthorized(apperror.CODE_MISSING_TOKEN, "missing authorization header"))
+				return response.Error(c, apperror.Unauthorized(apperror.CodeMissingToken, "missing authorization header"))
 			}
 
 			const bearerPrefix = "Bearer "
 
 			if !strings.HasPrefix(authHeader, bearerPrefix) {
-				return response.Error(c, apperror.Unauthorized(apperror.CODE_MISSING_TOKEN, "invalid authorization header"))
+				return response.Error(c, apperror.Unauthorized(apperror.CodeMissingToken, "invalid authorization header"))
 			}
 
 			tokenString := strings.TrimPrefix(authHeader, bearerPrefix)
@@ -33,15 +33,15 @@ func AuthMiddleware(cfg config.Auth) echo.MiddlewareFunc {
 			claims, err := utils.ParseToken(tokenString, cfg.JWTSecret)
 			if err != nil {
 				if errors.Is(err, jwt.ErrTokenExpired) {
-					return response.Error(c, apperror.Unauthorized(apperror.CODE_TOKEN_EXPIRED, "token expired"))
+					return response.Error(c, apperror.Unauthorized(apperror.CodeTokenExpired, "token expired"))
 				}
 
-				return response.Error(c, apperror.Unauthorized(apperror.CODE_INVALID_TOKEN, "invalid token"))
+				return response.Error(c, apperror.Unauthorized(apperror.CodeInvalidToken, "invalid token"))
 			}
 
 			userID, err := uuid.Parse(claims.Subject)
 			if err != nil {
-				return response.Error(c, apperror.Unauthorized(apperror.CODE_INVALID_TOKEN, "invalid token"))
+				return response.Error(c, apperror.Unauthorized(apperror.CodeInvalidToken, "invalid token"))
 			}
 
 			ctx := utils.SetUserIDToContext(c.Request().Context(), userID)

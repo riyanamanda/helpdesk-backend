@@ -87,6 +87,6 @@ func TestService_Login(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Equal(t, auth.LoginResponse{}, result)
-		testingutil.AssertAppError(t, err, apperror.CODE_BAD_REQUEST, http.StatusBadRequest, "invalid email or password")
+		testingutil.AssertAppError(t, err, apperror.CodeBadRequest, http.StatusBadRequest, "invalid email or password")
 	})
 }

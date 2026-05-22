@@ -10,16 +10,16 @@ import (
 )
 
 const (
-	CODE_NOT_FOUND        = "NOT_FOUND"
-	CODE_ALREADY_EXISTS   = "ALREADY_EXISTS"
-	CODE_VALIDATION_ERROR = "VALIDATION_ERROR"
-	CODE_INTERNAL_ERROR   = "INTERNAL_SERVER_ERROR"
-	CODE_BAD_REQUEST      = "BAD_REQUEST"
-	CODE_FORBIDDEN        = "FORBIDDEN"
-	CODE_UNAUTHORIZED = "UNAUTHORIZED"
-	CODE_INVALID_TOKEN = "INVALID_TOKEN"
-	CODE_TOKEN_EXPIRED = "TOKEN_EXPIRED"
-	CODE_MISSING_TOKEN = "MISSING_TOKEN"
+	CodeNotFound        = "NOT_FOUND"
+	CodeAlreadyExists   = "ALREADY_EXISTS"
+	CodeValidationError = "VALIDATION_ERROR"
+	CodeInternalError   = "INTERNAL_SERVER_ERROR"
+	CodeBadRequest      = "BAD_REQUEST"
+	CodeForbidden       = "FORBIDDEN"
+	CodeUnauthorized    = "UNAUTHORIZED"
+	CodeInvalidToken    = "INVALID_TOKEN"
+	CodeTokenExpired    = "TOKEN_EXPIRED"
+	CodeMissingToken    = "MISSING_TOKEN"
 )
 
 var (
@@ -49,7 +49,7 @@ func (e *AppError) Error() string {
 func NotFound(resource string) *AppError {
 	return &AppError{
 		Err:        ErrNotFound,
-		Code:       CODE_NOT_FOUND,
+		Code:       CodeNotFound,
 		Message:    fmt.Sprintf("%s not found", resource),
 		StatusCode: http.StatusNotFound,
 	}
@@ -58,7 +58,7 @@ func NotFound(resource string) *AppError {
 func AlreadyExists(resource string) *AppError {
 	return &AppError{
 		Err:        ErrAlreadyExists,
-		Code:       CODE_ALREADY_EXISTS,
+		Code:       CodeAlreadyExists,
 		Message:    fmt.Sprintf("%s already exists", resource),
 		StatusCode: http.StatusConflict,
 	}
@@ -76,7 +76,7 @@ func Unauthorized(code string, message string) *AppError {
 func Internal(message string) *AppError {
 	return &AppError{
 		Err:        ErrInternal,
-		Code:       CODE_INTERNAL_ERROR,
+		Code:       CodeInternalError,
 		Message:    message,
 		StatusCode: http.StatusInternalServerError,
 	}
@@ -85,7 +85,7 @@ func Internal(message string) *AppError {
 func BadRequest(message string) *AppError {
 	return &AppError{
 		Err:        ErrBadRequest,
-		Code:       CODE_BAD_REQUEST,
+		Code:       CodeBadRequest,
 		Message:    message,
 		StatusCode: http.StatusBadRequest,
 	}
@@ -94,7 +94,7 @@ func BadRequest(message string) *AppError {
 func Forbidden(message string) *AppError {
 	return &AppError{
 		Err:        ErrForbidden,
-		Code:       CODE_FORBIDDEN,
+		Code:       CodeForbidden,
 		Message:    message,
 		StatusCode: http.StatusForbidden,
 	}
@@ -103,7 +103,7 @@ func Forbidden(message string) *AppError {
 func Validation(details map[string]any) *AppError {
 	return &AppError{
 		Err:        ErrBadRequest,
-		Code:       CODE_VALIDATION_ERROR,
+		Code:       CodeValidationError,
 		Message:    "validation failed",
 		StatusCode: http.StatusBadRequest,
 		Details:    details,
