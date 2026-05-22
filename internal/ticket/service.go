@@ -243,7 +243,7 @@ func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
 
 	if err := s.repo.CloseTicket(ctx, ticketID, userID); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			return apperror.NotFound("ticker")
+			return apperror.NotFound("ticket")
 		}
 		return err
 	}

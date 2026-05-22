@@ -33,11 +33,11 @@ func Load() *Config {
 		},
 		Storage: Storage{
 			Endpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),
-			AccessKey: getEnv("MINOI_ACCESS_KEY", "minioadmin"),
-			SecretKey: getEnv("MINOI_SECRET_KEY", "minioadmin"),
-			Bucket:    getEnv("MINOI_BUCKET", "helpdesk-dev"),
+			AccessKey: getEnv("MINIO_ACCESS_KEY", "minioadmin"),
+			SecretKey: getEnv("MINIO_SECRET_KEY", "minioadmin"),
+			Bucket:    getEnv("MINIO_BUCKET", "helpdesk-dev"),
 			UseSSL:    getBoolEnv("MINIO_USE_SSL", false),
-			PublicURL: getEnv("MINOI_PUBLIC_URL", "http://localhost:9000"),
+			PublicURL: getEnv("MINIO_PUBLIC_URL", "http://localhost:9000"),
 		},
 	}
 }

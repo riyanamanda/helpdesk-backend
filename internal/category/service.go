@@ -30,9 +30,7 @@ func (svc *service) FetchAllCategories(ctx context.Context, params *GetCategoryP
 		params = &GetCategoryParams{}
 	}
 
-	page, limit, _ := params.Normalize()
-	params.Page = page
-	params.Limit = limit
+	params.Normalize()
 
 	categories, total, err := svc.repo.GetAll(ctx, *params)
 	if err != nil {

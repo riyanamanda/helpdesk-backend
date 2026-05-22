@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 	dberror "github.com/riyanamanda/helpdesk-backend/internal/infra/database"
@@ -29,25 +30,49 @@ func NewDivisionRepository(db *sqlx.DB) DivisionRepository {
 }
 
 func (r *repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Division, int, error) {
-	var divisions []Division
-	var total int
+	var (
+		divisions []Division
+		total     int
+		args      []any
+	)
 
-	const queryTotal = `
-		SELECT COUNT(*)
-		FROM divisions
-	`
-	if err := r.db.GetContext(ctx, &total, queryTotal); err != nil {
+	where := "WHERE 1=1"
+
+	if params.Search != "" {
+		args = append(args, "%"+params.Search+"%")
+
+		where += fmt.Sprintf(" AND name ILIKE $%d", len(args))
+	}
+
+	if params.IsActive != nil {
+		args = append(args, *params.IsActive)
+
+		where += fmt.Sprintf(" AND is_active = $%d", len(args))
+	}
+
+	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM divisions %s`, where)
+
+	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
 		return nil, 0, err
 	}
 
-	const query = `
-		SELECT id, name, is_active, created_at, updated_at
-		FROM divisions
-		ORDER BY created_at DESC
-		LIMIT $1 OFFSET $2
-	`
 	offset := (params.Page - 1) * params.Limit
-	if err := r.db.SelectContext(ctx, &divisions, query, params.Limit, offset); err != nil {
+	args = append(args, params.Limit, offset)
+
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			name,
+			is_active,
+			created_at,
+			updated_at
+		FROM divisions
+		%s
+		ORDER BY %s %s
+		LIMIT $%d OFFSET $%d
+	`, where, params.SortBy, params.SortType, len(args)-1, len(args))
+
+	if err := r.db.SelectContext(ctx, &divisions, query, args...); err != nil {
 		return nil, 0, err
 	}
 

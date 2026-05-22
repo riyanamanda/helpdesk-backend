@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 	dberror "github.com/riyanamanda/helpdesk-backend/internal/infra/database"
@@ -29,27 +30,49 @@ func NewCategoryRepository(db *sqlx.DB) CategoryRepository {
 }
 
 func (r *repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Category, int, error) {
-	var categories []Category
-	var total int
+	var (
+		categories []Category
+		total      int
+		args       []any
+	)
 
-	const queryTotal = `
-		SELECT COUNT(*)
-		FROM categories
-	`
+	where := "WHERE 1=1"
 
-	if err := r.db.GetContext(ctx, &total, queryTotal); err != nil {
+	if params.Search != "" {
+		args = append(args, "%"+params.Search+"%")
+
+		where += fmt.Sprintf(" AND name ILIKE $%d", len(args))
+	}
+
+	if params.IsActive != nil {
+		args = append(args, *params.IsActive)
+
+		where += fmt.Sprintf(" AND is_active = $%d", len(args))
+	}
+
+	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM categories %s`, where)
+
+	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
 		return nil, 0, err
 	}
 
-	const query = `
-		SELECT id, name, is_active, created_at, updated_at
-		FROM categories
-		ORDER BY created_at DESC
-		LIMIT $1 OFFSET $2
-	`
-
 	offset := (params.Page - 1) * params.Limit
-	if err := r.db.SelectContext(ctx, &categories, query, params.Limit, offset); err != nil {
+	args = append(args, params.Limit, offset)
+
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			name,
+			is_active,
+			created_at,
+			updated_at
+		FROM categories
+		%s
+		ORDER BY %s %s
+		LIMIT $%d OFFSET $%d
+	`, where, params.SortBy, params.SortType, len(args)-1, len(args))
+
+	if err := r.db.SelectContext(ctx, &categories, query, args...); err != nil {
 		return nil, 0, err
 	}
 
