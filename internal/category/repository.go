@@ -82,7 +82,7 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*Category, error) {
 	const query = `
 		SELECT id, name, is_active, created_at, updated_at
 		FROM categories
-		WHERE id = $1 AND is_active = TRUE
+		WHERE id = $1
 	`
 
 	if err := r.db.GetContext(ctx, &category, query, id); err != nil {
@@ -98,11 +98,13 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*Category, error) {
 func (r *repository) Update(ctx context.Context, id int64, category *Category) error {
 	const query = `
 		UPDATE categories
-		SET name = $1, updated_at = NOW()
-		WHERE id = $2 AND is_active = TRUE
+		SET name = $2,
+			is_active = $3,
+			updated_at = NOW()
+		WHERE id = $1
 	`
 
-	result, err := r.db.ExecContext(ctx, query, category.Name, id)
+	result, err := r.db.ExecContext(ctx, query, id, category.Name, category.IsActive)
 
 	if err != nil {
 		if dberror.IsUniqueViolation(err) {

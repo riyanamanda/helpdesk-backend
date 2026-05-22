@@ -28,5 +28,6 @@ type CreateCategoryRequest struct {
 }
 
 type UpdateCategoryRequest struct {
-	Name string `json:"name" validate:"required,min=3,max=50"`
+	Name     string `json:"name" validate:"required,min=3,max=50"`
+	IsActive *bool  `json:"is_active"`
 }

@@ -70,7 +70,23 @@ func (svc *service) FindCategoryByID(ctx context.Context, id int64) (CategoryRes
 }
 
 func (svc *service) EditCategory(ctx context.Context, id int64, req *UpdateCategoryRequest) error {
-	category := Category{Name: req.Name}
+	existing, err := svc.repo.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, ErrCategoryNotFound) {
+			return apperrors.NotFound("category")
+		}
+		return err
+	}
+
+	isActive := existing.IsActive
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+
+	category := Category{
+		Name:     req.Name,
+		IsActive: isActive,
+	}
 	if err := svc.repo.Update(ctx, id, &category); err != nil {
 		if errors.Is(err, ErrCategoryNotFound) {
 			return apperrors.NotFound("category")
