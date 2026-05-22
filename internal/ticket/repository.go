@@ -14,26 +14,85 @@ import (
 //go:generate mockery --name TicketRepository
 type TicketRepository interface {
 	GetAll(ctx context.Context, params GetTicketParams) ([]TicketProjection, int64, error)
-	Create(ctx context.Context, tx *sqlx.Tx, ticket Ticket) (int64, error)
 	GetByID(ctx context.Context, id int64) (*TicketProjection, error)
-
-	CreateAttachment(ctx context.Context, tx *sqlx.Tx, attachment TicketAttachment) error
 	GetAttachmentsByTicketID(ctx context.Context, ticketID int64) (*[]TicketAttachmentProjection, error)
-
 	Assign(ctx context.Context, ticketID int64, userID uuid.UUID) error
 	UpdatePriority(ctx context.Context, ticketID int64, priority TicketPriority) error
-	UpdateResolution(ctx context.Context, tx *sqlx.Tx, ticketID int64, userID uuid.UUID, resolution string) error
 	CloseTicket(ctx context.Context, ticketID int64, userID uuid.UUID) error
+	Begin(ctx context.Context) (TicketTx, error)
+}
+
+type TicketTx interface {
+	Create(ctx context.Context, ticket Ticket) (int64, error)
+	CreateAttachment(ctx context.Context, attachment TicketAttachment) error
+	UpdateResolution(ctx context.Context, ticketID int64, userID uuid.UUID, resolution string) error
+	Commit() error
+	Rollback() error
 }
 
 type repository struct {
 	db *sqlx.DB
 }
 
+type txRepository struct {
+	tx *sqlx.Tx
+}
+
 func NewTicketRepository(db *sqlx.DB) TicketRepository {
-	return &repository{
-		db: db,
+	return &repository{db: db}
+}
+
+func (r *repository) Begin(ctx context.Context) (TicketTx, error) {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
+	return &txRepository{tx: tx}, nil
+}
+
+func (t *txRepository) Commit() error   { return t.tx.Commit() }
+func (t *txRepository) Rollback() error { return t.tx.Rollback() }
+
+func (t *txRepository) Create(ctx context.Context, ticket Ticket) (int64, error) {
+	const query = `
+		INSERT INTO tickets (title, description, category_id, created_by)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id
+	`
+	var id int64
+	err := t.tx.QueryRowxContext(ctx, query, ticket.Title, ticket.Description, ticket.CategoryID, ticket.CreatedBy).
+		Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func (t *txRepository) CreateAttachment(ctx context.Context, attachment TicketAttachment) error {
+	const query = `
+		INSERT INTO ticket_attachments (ticket_id, file_key, attachment_type, uploaded_by)
+		VALUES ($1, $2, $3, $4)
+	`
+	_, err := t.tx.ExecContext(ctx, query, attachment.TicketID, attachment.FileKey, attachment.AttachmentType, attachment.UploadedBy)
+	return err
+}
+
+func (t *txRepository) UpdateResolution(ctx context.Context, ticketID int64, userID uuid.UUID, resolution string) error {
+	const query = `
+		UPDATE tickets
+		SET resolution = $3,
+			resolved_by = $2,
+			resolved_at = NOW(),
+			status = 'RESOLVED',
+			updated_at = NOW()
+		WHERE id = $1
+		AND status not in ('RESOLVED','CLOSED')
+	`
+	result, err := t.tx.ExecContext(ctx, query, ticketID, userID, resolution)
+	if err != nil {
+		return err
+	}
+	return database.CheckRowsAffected(result, ErrTicketNotFound)
 }
 
 func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]TicketProjection, int64, error) {
@@ -97,23 +156,6 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 	return tickets, total, nil
 }
 
-func (r *repository) Create(ctx context.Context, tx *sqlx.Tx, ticket Ticket) (int64, error) {
-	const query = `
-		INSERT INTO tickets (title, description, category_id, created_by)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id
-	`
-
-	var id int64
-	err := tx.QueryRowxContext(ctx, query, ticket.Title, ticket.Description, ticket.CategoryID, ticket.CreatedBy).
-		Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
-}
-
 func (r *repository) GetByID(ctx context.Context, id int64) (*TicketProjection, error) {
 	var ticket TicketProjection
 
@@ -164,20 +206,6 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*TicketProjection, 
 	return &ticket, nil
 }
 
-func (r *repository) CreateAttachment(ctx context.Context, tx *sqlx.Tx, attachment TicketAttachment) error {
-	const query = `
-		INSERT INTO ticket_attachments (ticket_id, file_key, attachment_type, uploaded_by)
-		VALUES ($1, $2, $3, $4)
-	`
-
-	_, err := tx.ExecContext(ctx, query, attachment.TicketID, attachment.FileKey, attachment.AttachmentType, attachment.UploadedBy)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (r *repository) GetAttachmentsByTicketID(ctx context.Context, ticketID int64) (*[]TicketAttachmentProjection, error) {
 	var attachment []TicketAttachmentProjection
 
@@ -224,16 +252,7 @@ func (r *repository) Assign(ctx context.Context, ticketID int64, userID uuid.UUI
 		return err
 	}
 
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if affected == 0 {
-		return ErrTicketNotFound
-	}
-
-	return nil
+	return database.CheckRowsAffected(result, ErrTicketNotFound)
 }
 
 func (r *repository) UpdatePriority(ctx context.Context, ticketID int64, priority TicketPriority) error {
@@ -249,45 +268,7 @@ func (r *repository) UpdatePriority(ctx context.Context, ticketID int64, priorit
 		return err
 	}
 
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if affected == 0 {
-		return ErrTicketNotFound
-	}
-
-	return nil
-}
-
-func (r *repository) UpdateResolution(ctx context.Context, tx *sqlx.Tx, ticketID int64, userID uuid.UUID, resolution string) error {
-	const query = `
-		UPDATE tickets
-		SET resolution = $3,
-			resolved_by = $2,
-			resolved_at = NOW(),
-			status = 'RESOLVED',
-			updated_at = NOW()
-		WHERE id = $1
-		AND status not in ('RESOLVED','CLOSED')
-	`
-
-	result, err := tx.ExecContext(ctx, query, ticketID, userID, resolution)
-	if err != nil {
-		return err
-	}
-
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if affected == 0 {
-		return ErrTicketNotFound
-	}
-
-	return nil
+	return database.CheckRowsAffected(result, ErrTicketNotFound)
 }
 
 func (r *repository) CloseTicket(ctx context.Context, ticketID int64, userID uuid.UUID) error {
@@ -306,14 +287,5 @@ func (r *repository) CloseTicket(ctx context.Context, ticketID int64, userID uui
 		return err
 	}
 
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if affected == 0 {
-		return ErrTicketNotFound
-	}
-
-	return nil
+	return database.CheckRowsAffected(result, ErrTicketNotFound)
 }

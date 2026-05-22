@@ -3,6 +3,7 @@ package ticket
 import (
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/collection"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
@@ -76,19 +77,13 @@ func toTicketAttachmentResponse(ta TicketAttachmentProjection, storageConfig con
 }
 
 func toTicketAttachmentResponses(attachments []TicketAttachmentProjection, storageConfig config.Storage) []TicketAttachmentResponse {
-	responses := make([]TicketAttachmentResponse, len(attachments))
-	for i, a := range attachments {
-		responses[i] = toTicketAttachmentResponse(a, storageConfig)
-	}
-	return responses
+	return collection.MapSlice(attachments, func(a TicketAttachmentProjection) TicketAttachmentResponse {
+		return toTicketAttachmentResponse(a, storageConfig)
+	})
 }
 
 func toTicketResponses(tickets []TicketProjection) []TicketResponse {
-	responses := make([]TicketResponse, len(tickets))
-	for i, t := range tickets {
-		responses[i] = toTicketResponse(t)
-	}
-	return responses
+	return collection.MapSlice(tickets, toTicketResponse)
 }
 
 func toTicketDetailResponse(ticket TicketProjection, attachments *[]TicketAttachmentProjection, storageConfig config.Storage) TicketDetailResponse {

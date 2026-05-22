@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"mime/multipart"
 
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
@@ -18,24 +17,22 @@ import (
 
 type TicketService interface {
 	FetchAllTickets(ctx context.Context, params *GetTicketParams) ([]TicketResponse, int64, error)
-	RegisterTicket(ctx context.Context, req *TicketCreateRequest, file multipart.File, fileHeader *multipart.FileHeader) error
+	RegisterTicket(ctx context.Context, req *TicketCreateRequest, file *upload.File) error
 	FindTicketByID(ctx context.Context, id int64) (TicketDetailResponse, error)
 	AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error
 	SetPriority(ctx context.Context, ticketID int64, req TicketPriorityRequest) error
-	RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file multipart.File, fileHeader *multipart.FileHeader) error
+	RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file *upload.File) error
 	CloseTicket(ctx context.Context, ticketID int64) error
 }
 
 type service struct {
-	db            *sqlx.DB
 	repo          TicketRepository
 	storage       storage.Storage
 	storageConfig config.Storage
 }
 
-func NewTicketService(db *sqlx.DB, repo TicketRepository, storage storage.Storage, storageConfig config.Storage) TicketService {
+func NewTicketService(repo TicketRepository, storage storage.Storage, storageConfig config.Storage) TicketService {
 	return &service{
-		db:            db,
 		repo:          repo,
 		storage:       storage,
 		storageConfig: storageConfig,
@@ -59,7 +56,7 @@ func (s *service) FetchAllTickets(ctx context.Context, params *GetTicketParams) 
 	return toTicketResponses(tickets), total, nil
 }
 
-func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, file multipart.File, fileHeader *multipart.FileHeader) error {
+func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, file *upload.File) error {
 	var createdBy uuid.UUID
 	if currentUserID, ok := utils.GetUserIDFromContext(ctx); ok {
 		createdBy = currentUserID
@@ -72,30 +69,25 @@ func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, 
 		CreatedBy:   createdBy,
 	}
 
-	tx, err := s.db.BeginTxx(ctx, nil)
+	tx, err := s.repo.Begin(ctx)
 	if err != nil {
 		return err
 	}
-
 	defer func() {
 		if err != nil {
 			_ = tx.Rollback()
 		}
 	}()
 
-	ticketID, err := s.repo.Create(ctx, tx, ticket)
+	ticketID, err := tx.Create(ctx, ticket)
 	if err != nil {
 		return err
 	}
 
-	if file != nil && fileHeader != nil {
-		objectKey := utils.GenerateObjectKey(fmt.Sprintf("tickets/%d/report", ticketID), fileHeader.Filename)
-		contentType := fileHeader.Header.Get("Content-Type")
+	if file != nil {
+		objectKey := utils.GenerateObjectKey(fmt.Sprintf("tickets/%d/report", ticketID), file.Filename)
 
-		err := s.storage.Upload(ctx, objectKey, file, fileHeader.Size, contentType)
-
-		// keep success response even though attachment error but remove uploaded file
-		if err == nil {
+		if uploadErr := s.storage.Upload(ctx, objectKey, file.Content, file.Size, file.ContentType); uploadErr == nil {
 			attachment := TicketAttachment{
 				TicketID:       ticketID,
 				FileKey:        objectKey,
@@ -103,29 +95,17 @@ func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, 
 				UploadedBy:     createdBy,
 			}
 
-			if err := s.repo.CreateAttachment(ctx, tx, attachment); err != nil {
-
+			if attachErr := tx.CreateAttachment(ctx, attachment); attachErr != nil {
 				_ = s.storage.Delete(ctx, objectKey)
-
-				slog.ErrorContext(
-					ctx,
-					"failed to create ticket attachment",
-					"ticket_id", ticketID,
-					"error", err,
-				)
+				slog.ErrorContext(ctx, "failed to create ticket attachment", "ticket_id", ticketID, "error", attachErr)
 			}
 		} else {
-			slog.ErrorContext(ctx, "failed to upload ticket attachment", "ticket_id", ticketID, "error", err)
+			slog.ErrorContext(ctx, "failed to upload ticket attachment", "ticket_id", ticketID, "error", uploadErr)
 		}
-
 	}
 
 	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (s *service) FindTicketByID(ctx context.Context, id int64) (TicketDetailResponse, error) {
@@ -146,7 +126,6 @@ func (s *service) FindTicketByID(ctx context.Context, id int64) (TicketDetailRes
 }
 
 func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error {
-
 	if err := s.repo.Assign(ctx, ticketID, req.AssignedTo); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperror.NotFound("ticket")
@@ -161,8 +140,7 @@ func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAs
 }
 
 func (s *service) SetPriority(ctx context.Context, ticketID int64, req TicketPriorityRequest) error {
-	err := s.repo.UpdatePriority(ctx, ticketID, req.Priority)
-	if err != nil {
+	if err := s.repo.UpdatePriority(ctx, ticketID, req.Priority); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperror.NotFound("ticket")
 		}
@@ -172,12 +150,11 @@ func (s *service) SetPriority(ctx context.Context, ticketID int64, req TicketPri
 	return nil
 }
 
-func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file multipart.File, fileHeader *multipart.FileHeader) error {
-	tx, err := s.db.BeginTxx(ctx, nil)
+func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file *upload.File) error {
+	tx, err := s.repo.Begin(ctx)
 	if err != nil {
 		return err
 	}
-
 	defer func() {
 		if err != nil {
 			_ = tx.Rollback()
@@ -189,21 +166,17 @@ func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req Ti
 		userID = currentUserID
 	}
 
-	if err := s.repo.UpdateResolution(ctx, tx, ticketID, userID, req.Resolution); err != nil {
+	if err = tx.UpdateResolution(ctx, ticketID, userID, req.Resolution); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperror.NotFound("ticket")
 		}
 		return err
 	}
 
-	if file != nil && fileHeader != nil {
-		objectKey := utils.GenerateObjectKey(fmt.Sprintf("tickets/%d/resolution", ticketID), fileHeader.Filename)
-		contentType := fileHeader.Header.Get("Content-Type")
+	if file != nil {
+		objectKey := utils.GenerateObjectKey(fmt.Sprintf("tickets/%d/resolution", ticketID), file.Filename)
 
-		err := s.storage.Upload(ctx, objectKey, file, fileHeader.Size, contentType)
-
-		// keep success response even though attachment error but remove uploaded file
-		if err == nil {
+		if uploadErr := s.storage.Upload(ctx, objectKey, file.Content, file.Size, file.ContentType); uploadErr == nil {
 			attachment := TicketAttachment{
 				TicketID:       ticketID,
 				FileKey:        objectKey,
@@ -211,28 +184,17 @@ func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req Ti
 				UploadedBy:     userID,
 			}
 
-			if err := s.repo.CreateAttachment(ctx, tx, attachment); err != nil {
-
+			if attachErr := tx.CreateAttachment(ctx, attachment); attachErr != nil {
 				_ = s.storage.Delete(ctx, objectKey)
-
-				slog.ErrorContext(
-					ctx,
-					"failed to create ticket attachment",
-					"ticket_id", ticketID,
-					"error", err,
-				)
+				slog.ErrorContext(ctx, "failed to create ticket attachment", "ticket_id", ticketID, "error", attachErr)
 			}
 		} else {
-			slog.ErrorContext(ctx, "failed to upload ticket attachment", "ticket_id", ticketID, "error", err)
+			slog.ErrorContext(ctx, "failed to upload ticket attachment", "ticket_id", ticketID, "error", uploadErr)
 		}
 	}
 
 	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {

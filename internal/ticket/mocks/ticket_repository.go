@@ -5,7 +5,6 @@ package mocks
 import (
 	context "context"
 
-	sqlx "github.com/jmoiron/sqlx"
 	mock "github.com/stretchr/testify/mock"
 
 	ticket "github.com/riyanamanda/helpdesk-backend/internal/ticket"
@@ -24,6 +23,62 @@ type TicketRepository_Expecter struct {
 
 func (_m *TicketRepository) EXPECT() *TicketRepository_Expecter {
 	return &TicketRepository_Expecter{mock: &_m.Mock}
+}
+
+// Begin provides a mock function with given fields: ctx
+func (_m *TicketRepository) Begin(ctx context.Context) (ticket.TicketTx, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Begin")
+	}
+
+	var r0 ticket.TicketTx
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (ticket.TicketTx, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) ticket.TicketTx); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ticket.TicketTx)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TicketRepository_Begin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Begin'
+type TicketRepository_Begin_Call struct {
+	*mock.Call
+}
+
+func (_e *TicketRepository_Expecter) Begin(ctx interface{}) *TicketRepository_Begin_Call {
+	return &TicketRepository_Begin_Call{Call: _e.mock.On("Begin", ctx)}
+}
+
+func (_c *TicketRepository_Begin_Call) Run(run func(ctx context.Context)) *TicketRepository_Begin_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *TicketRepository_Begin_Call) Return(_a0 ticket.TicketTx, _a1 error) *TicketRepository_Begin_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *TicketRepository_Begin_Call) RunAndReturn(run func(context.Context) (ticket.TicketTx, error)) *TicketRepository_Begin_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // Assign provides a mock function with given fields: ctx, ticketID, userID
@@ -49,10 +104,6 @@ type TicketRepository_Assign_Call struct {
 	*mock.Call
 }
 
-// Assign is a helper method to define mock.On call
-//   - ctx context.Context
-//   - ticketID int64
-//   - userID uuid.UUID
 func (_e *TicketRepository_Expecter) Assign(ctx interface{}, ticketID interface{}, userID interface{}) *TicketRepository_Assign_Call {
 	return &TicketRepository_Assign_Call{Call: _e.mock.On("Assign", ctx, ticketID, userID)}
 }
@@ -97,10 +148,6 @@ type TicketRepository_CloseTicket_Call struct {
 	*mock.Call
 }
 
-// CloseTicket is a helper method to define mock.On call
-//   - ctx context.Context
-//   - ticketID int64
-//   - userID uuid.UUID
 func (_e *TicketRepository_Expecter) CloseTicket(ctx interface{}, ticketID interface{}, userID interface{}) *TicketRepository_CloseTicket_Call {
 	return &TicketRepository_CloseTicket_Call{Call: _e.mock.On("CloseTicket", ctx, ticketID, userID)}
 }
@@ -118,112 +165,6 @@ func (_c *TicketRepository_CloseTicket_Call) Return(_a0 error) *TicketRepository
 }
 
 func (_c *TicketRepository_CloseTicket_Call) RunAndReturn(run func(context.Context, int64, uuid.UUID) error) *TicketRepository_CloseTicket_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Create provides a mock function with given fields: ctx, tx, _a2
-func (_m *TicketRepository) Create(ctx context.Context, tx *sqlx.Tx, _a2 ticket.Ticket) (int64, error) {
-	ret := _m.Called(ctx, tx, _a2)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Create")
-	}
-
-	var r0 int64
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *sqlx.Tx, ticket.Ticket) (int64, error)); ok {
-		return rf(ctx, tx, _a2)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, *sqlx.Tx, ticket.Ticket) int64); ok {
-		r0 = rf(ctx, tx, _a2)
-	} else {
-		r0 = ret.Get(0).(int64)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, *sqlx.Tx, ticket.Ticket) error); ok {
-		r1 = rf(ctx, tx, _a2)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// TicketRepository_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
-type TicketRepository_Create_Call struct {
-	*mock.Call
-}
-
-// Create is a helper method to define mock.On call
-//   - ctx context.Context
-//   - tx *sqlx.Tx
-//   - _a2 ticket.Ticket
-func (_e *TicketRepository_Expecter) Create(ctx interface{}, tx interface{}, _a2 interface{}) *TicketRepository_Create_Call {
-	return &TicketRepository_Create_Call{Call: _e.mock.On("Create", ctx, tx, _a2)}
-}
-
-func (_c *TicketRepository_Create_Call) Run(run func(ctx context.Context, tx *sqlx.Tx, _a2 ticket.Ticket)) *TicketRepository_Create_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*sqlx.Tx), args[2].(ticket.Ticket))
-	})
-	return _c
-}
-
-func (_c *TicketRepository_Create_Call) Return(_a0 int64, _a1 error) *TicketRepository_Create_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *TicketRepository_Create_Call) RunAndReturn(run func(context.Context, *sqlx.Tx, ticket.Ticket) (int64, error)) *TicketRepository_Create_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// CreateAttachment provides a mock function with given fields: ctx, tx, attachment
-func (_m *TicketRepository) CreateAttachment(ctx context.Context, tx *sqlx.Tx, attachment ticket.TicketAttachment) error {
-	ret := _m.Called(ctx, tx, attachment)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CreateAttachment")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *sqlx.Tx, ticket.TicketAttachment) error); ok {
-		r0 = rf(ctx, tx, attachment)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// TicketRepository_CreateAttachment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateAttachment'
-type TicketRepository_CreateAttachment_Call struct {
-	*mock.Call
-}
-
-// CreateAttachment is a helper method to define mock.On call
-//   - ctx context.Context
-//   - tx *sqlx.Tx
-//   - attachment ticket.TicketAttachment
-func (_e *TicketRepository_Expecter) CreateAttachment(ctx interface{}, tx interface{}, attachment interface{}) *TicketRepository_CreateAttachment_Call {
-	return &TicketRepository_CreateAttachment_Call{Call: _e.mock.On("CreateAttachment", ctx, tx, attachment)}
-}
-
-func (_c *TicketRepository_CreateAttachment_Call) Run(run func(ctx context.Context, tx *sqlx.Tx, attachment ticket.TicketAttachment)) *TicketRepository_CreateAttachment_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*sqlx.Tx), args[2].(ticket.TicketAttachment))
-	})
-	return _c
-}
-
-func (_c *TicketRepository_CreateAttachment_Call) Return(_a0 error) *TicketRepository_CreateAttachment_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *TicketRepository_CreateAttachment_Call) RunAndReturn(run func(context.Context, *sqlx.Tx, ticket.TicketAttachment) error) *TicketRepository_CreateAttachment_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -270,9 +211,6 @@ type TicketRepository_GetAll_Call struct {
 	*mock.Call
 }
 
-// GetAll is a helper method to define mock.On call
-//   - ctx context.Context
-//   - params ticket.GetTicketParams
 func (_e *TicketRepository_Expecter) GetAll(ctx interface{}, params interface{}) *TicketRepository_GetAll_Call {
 	return &TicketRepository_GetAll_Call{Call: _e.mock.On("GetAll", ctx, params)}
 }
@@ -329,9 +267,6 @@ type TicketRepository_GetAttachmentsByTicketID_Call struct {
 	*mock.Call
 }
 
-// GetAttachmentsByTicketID is a helper method to define mock.On call
-//   - ctx context.Context
-//   - ticketID int64
 func (_e *TicketRepository_Expecter) GetAttachmentsByTicketID(ctx interface{}, ticketID interface{}) *TicketRepository_GetAttachmentsByTicketID_Call {
 	return &TicketRepository_GetAttachmentsByTicketID_Call{Call: _e.mock.On("GetAttachmentsByTicketID", ctx, ticketID)}
 }
@@ -388,9 +323,6 @@ type TicketRepository_GetByID_Call struct {
 	*mock.Call
 }
 
-// GetByID is a helper method to define mock.On call
-//   - ctx context.Context
-//   - id int64
 func (_e *TicketRepository_Expecter) GetByID(ctx interface{}, id interface{}) *TicketRepository_GetByID_Call {
 	return &TicketRepository_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
 }
@@ -435,10 +367,6 @@ type TicketRepository_UpdatePriority_Call struct {
 	*mock.Call
 }
 
-// UpdatePriority is a helper method to define mock.On call
-//   - ctx context.Context
-//   - ticketID int64
-//   - priority ticket.TicketPriority
 func (_e *TicketRepository_Expecter) UpdatePriority(ctx interface{}, ticketID interface{}, priority interface{}) *TicketRepository_UpdatePriority_Call {
 	return &TicketRepository_UpdatePriority_Call{Call: _e.mock.On("UpdatePriority", ctx, ticketID, priority)}
 }
@@ -456,56 +384,6 @@ func (_c *TicketRepository_UpdatePriority_Call) Return(_a0 error) *TicketReposit
 }
 
 func (_c *TicketRepository_UpdatePriority_Call) RunAndReturn(run func(context.Context, int64, ticket.TicketPriority) error) *TicketRepository_UpdatePriority_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// UpdateResolution provides a mock function with given fields: ctx, tx, ticketID, userID, resolution
-func (_m *TicketRepository) UpdateResolution(ctx context.Context, tx *sqlx.Tx, ticketID int64, userID uuid.UUID, resolution string) error {
-	ret := _m.Called(ctx, tx, ticketID, userID, resolution)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UpdateResolution")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *sqlx.Tx, int64, uuid.UUID, string) error); ok {
-		r0 = rf(ctx, tx, ticketID, userID, resolution)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// TicketRepository_UpdateResolution_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateResolution'
-type TicketRepository_UpdateResolution_Call struct {
-	*mock.Call
-}
-
-// UpdateResolution is a helper method to define mock.On call
-//   - ctx context.Context
-//   - tx *sqlx.Tx
-//   - ticketID int64
-//   - userID uuid.UUID
-//   - resolution string
-func (_e *TicketRepository_Expecter) UpdateResolution(ctx interface{}, tx interface{}, ticketID interface{}, userID interface{}, resolution interface{}) *TicketRepository_UpdateResolution_Call {
-	return &TicketRepository_UpdateResolution_Call{Call: _e.mock.On("UpdateResolution", ctx, tx, ticketID, userID, resolution)}
-}
-
-func (_c *TicketRepository_UpdateResolution_Call) Run(run func(ctx context.Context, tx *sqlx.Tx, ticketID int64, userID uuid.UUID, resolution string)) *TicketRepository_UpdateResolution_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*sqlx.Tx), args[2].(int64), args[3].(uuid.UUID), args[4].(string))
-	})
-	return _c
-}
-
-func (_c *TicketRepository_UpdateResolution_Call) Return(_a0 error) *TicketRepository_UpdateResolution_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *TicketRepository_UpdateResolution_Call) RunAndReturn(run func(context.Context, *sqlx.Tx, int64, uuid.UUID, string) error) *TicketRepository_UpdateResolution_Call {
 	_c.Call.Return(run)
 	return _c
 }

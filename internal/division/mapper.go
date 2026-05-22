@@ -1,13 +1,11 @@
 package division
 
+import "github.com/riyanamanda/helpdesk-backend/internal/shared/collection"
+
 func toDivisionResponse(d Division) DivisionResponse {
 	return DivisionResponse(d)
 }
 
 func toDivisionResponses(divisions []Division) []DivisionResponse {
-	result := make([]DivisionResponse, len(divisions))
-	for i, d := range divisions {
-		result[i] = toDivisionResponse(d)
-	}
-	return result
+	return collection.MapSlice(divisions, toDivisionResponse)
 }

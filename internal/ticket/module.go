@@ -9,7 +9,7 @@ import (
 
 func Register(e *echo.Group, db *sqlx.DB, storage storage.Storage, storageConfig config.Storage) {
 	repo := NewTicketRepository(db)
-	svc := NewTicketService(db, repo, storage, storageConfig)
+	svc := NewTicketService(repo, storage, storageConfig)
 	handler := NewTicketHandler(svc)
 
 	e.GET("/tickets", handler.ListTickets)

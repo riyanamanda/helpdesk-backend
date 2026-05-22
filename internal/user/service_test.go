@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
-	"mime/multipart"
 	"net/http"
-	"net/textproto"
 	"strings"
 	"testing"
 	"time"
@@ -21,6 +19,7 @@ import (
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/pagination"
 	testingutil "github.com/riyanamanda/helpdesk-backend/internal/shared/testing"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	user "github.com/riyanamanda/helpdesk-backend/internal/user"
 	usermocks "github.com/riyanamanda/helpdesk-backend/internal/user/mocks"
@@ -29,14 +28,6 @@ import (
 // MockStorage provides a no-op implementation of storage.Storage for testing
 type MockStorage struct {
 	mock.Mock
-}
-
-type testMultipartFile struct {
-	*strings.Reader
-}
-
-func (f testMultipartFile) Close() error {
-	return nil
 }
 
 func (m *MockStorage) Upload(ctx context.Context, key string, reader io.Reader, size int64, contentType string) error {
@@ -293,6 +284,15 @@ func TestService_FindUserByID(t *testing.T) {
 	}
 }
 
+func newUploadFile(content string) *upload.File {
+	return &upload.File{
+		Content:     strings.NewReader(content),
+		Filename:    "avatar.png",
+		ContentType: "image/png",
+		Size:        1024,
+	}
+}
+
 func TestService_UpdateUserAvatar(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := usermocks.NewUserRepository(t)
@@ -304,18 +304,11 @@ func TestService_UpdateUserAvatar(t *testing.T) {
 
 		userID := uuid.New()
 		ctx := utils.SetUserIDToContext(context.Background(), userID)
-		header := &multipart.FileHeader{
-			Filename: "avatar.png",
-			Size:     1024,
-			Header: textproto.MIMEHeader{
-				"Content-Type": []string{"image/png"},
-			},
-		}
 
 		storage.On("Upload", mock.Anything, "avatars/"+userID.String()+"/avatar", mock.Anything, int64(1024), "image/png").Return(nil).Once()
 		repo.On("UpdateAvatar", mock.Anything, userID, "avatars/"+userID.String()+"/avatar").Return(nil).Once()
 
-		err := svc.UpdateUserAvatar(ctx, testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
+		err := svc.UpdateUserAvatar(ctx, newUploadFile("fake image content"))
 		require.NoError(t, err)
 	})
 
@@ -327,15 +320,7 @@ func TestService_UpdateUserAvatar(t *testing.T) {
 			Bucket:    "helpdesk-dev",
 		})
 
-		header := &multipart.FileHeader{
-			Filename: "avatar.png",
-			Size:     1024,
-			Header: textproto.MIMEHeader{
-				"Content-Type": []string{"image/png"},
-			},
-		}
-
-		err := svc.UpdateUserAvatar(context.Background(), testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
+		err := svc.UpdateUserAvatar(context.Background(), newUploadFile("fake image content"))
 		require.Error(t, err)
 		testingutil.AssertAppError(t, err, apperror.CodeForbidden, http.StatusForbidden, "unauthorized")
 	})
@@ -350,17 +335,10 @@ func TestService_UpdateUserAvatar(t *testing.T) {
 
 		userID := uuid.New()
 		ctx := utils.SetUserIDToContext(context.Background(), userID)
-		header := &multipart.FileHeader{
-			Filename: "avatar.png",
-			Size:     1024,
-			Header: textproto.MIMEHeader{
-				"Content-Type": []string{"image/png"},
-			},
-		}
 
 		storage.On("Upload", mock.Anything, "avatars/"+userID.String()+"/avatar", mock.Anything, int64(1024), "image/png").Return(errors.New("storage error")).Once()
 
-		err := svc.UpdateUserAvatar(ctx, testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
+		err := svc.UpdateUserAvatar(ctx, newUploadFile("fake image content"))
 		require.Error(t, err)
 		assert.EqualError(t, err, "storage error")
 	})
@@ -375,18 +353,11 @@ func TestService_UpdateUserAvatar(t *testing.T) {
 
 		userID := uuid.New()
 		ctx := utils.SetUserIDToContext(context.Background(), userID)
-		header := &multipart.FileHeader{
-			Filename: "avatar.png",
-			Size:     1024,
-			Header: textproto.MIMEHeader{
-				"Content-Type": []string{"image/png"},
-			},
-		}
 
 		storage.On("Upload", mock.Anything, "avatars/"+userID.String()+"/avatar", mock.Anything, int64(1024), "image/png").Return(nil).Once()
 		repo.On("UpdateAvatar", mock.Anything, userID, "avatars/"+userID.String()+"/avatar").Return(errors.New("repository error")).Once()
 
-		err := svc.UpdateUserAvatar(ctx, testMultipartFile{Reader: strings.NewReader("fake image content")}, header)
+		err := svc.UpdateUserAvatar(ctx, newUploadFile("fake image content"))
 		require.Error(t, err)
 		assert.EqualError(t, err, "repository error")
 	})

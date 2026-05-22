@@ -9,6 +9,7 @@ import (
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 )
 
@@ -74,17 +75,24 @@ func (h *handler) UpdateUserAvatar(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	file, err := fileHeader.Open()
+	f, err := fileHeader.Open()
 	if err != nil {
 		return response.Error(c, apperror.Internal("failed to open uploaded file"))
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
+		if err := f.Close(); err != nil {
 			slog.Error("failed to close file", "error", err)
 		}
 	}()
 
-	if err := h.svc.UpdateUserAvatar(c.Request().Context(), file, fileHeader); err != nil {
+	file := &upload.File{
+		Content:     f,
+		Filename:    fileHeader.Filename,
+		ContentType: fileHeader.Header.Get("Content-Type"),
+		Size:        fileHeader.Size,
+	}
+
+	if err := h.svc.UpdateUserAvatar(c.Request().Context(), file); err != nil {
 		return response.Error(c, err)
 	}
 

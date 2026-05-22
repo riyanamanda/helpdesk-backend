@@ -3,6 +3,7 @@ package user
 import (
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/collection"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 )
 
@@ -42,9 +43,7 @@ func toUserResponse(u UserProjection, storageConfig config.Storage) UserResponse
 }
 
 func toUserResponses(users []UserProjection, storageConfig config.Storage) []UserResponse {
-	result := make([]UserResponse, len(users))
-	for i, u := range users {
-		result[i] = toUserResponse(u, storageConfig)
-	}
-	return result
+	return collection.MapSlice(users, func(u UserProjection) UserResponse {
+		return toUserResponse(u, storageConfig)
+	})
 }

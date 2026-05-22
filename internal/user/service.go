@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"mime/multipart"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 	"golang.org/x/crypto/bcrypt"
@@ -19,7 +19,7 @@ type UserService interface {
 	FetchAllUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int, error)
 	RegisterUser(ctx context.Context, req *UserCreateRequest) error
 	FindUserByID(ctx context.Context, id *uuid.UUID) (UserResponse, error)
-	UpdateUserAvatar(ctx context.Context, file multipart.File, header *multipart.FileHeader) error
+	UpdateUserAvatar(ctx context.Context, file *upload.File) error
 }
 
 type service struct {
@@ -97,15 +97,14 @@ func (svc *service) FindUserByID(ctx context.Context, id *uuid.UUID) (UserRespon
 	return toUserResponse(*user, svc.storageConfig), nil
 }
 
-func (svc *service) UpdateUserAvatar(ctx context.Context, file multipart.File, header *multipart.FileHeader) error {
+func (svc *service) UpdateUserAvatar(ctx context.Context, file *upload.File) error {
 	userID, ok := utils.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperror.Forbidden("unauthorized")
 	}
 
-	contentType := header.Header.Get("Content-Type")
 	objectKey := fmt.Sprintf("avatars/%s/avatar", userID.String())
-	if err := svc.storage.Upload(ctx, objectKey, file, header.Size, contentType); err != nil {
+	if err := svc.storage.Upload(ctx, objectKey, file.Content, file.Size, file.ContentType); err != nil {
 		return err
 	}
 

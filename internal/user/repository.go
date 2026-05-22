@@ -183,14 +183,5 @@ func (r *repository) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey s
 		return err
 	}
 
-	rowAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowAffected == 0 {
-		return ErrUserNotFound
-	}
-
-	return nil
+	return dberror.CheckRowsAffected(result, ErrUserNotFound)
 }

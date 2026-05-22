@@ -124,7 +124,6 @@ func (r *repository) Update(ctx context.Context, id int64, division *Division) e
 	`
 
 	result, err := r.db.ExecContext(ctx, query, id, division.Name, division.IsActive)
-
 	if err != nil {
 		if dberror.IsUniqueViolation(err) {
 			return ErrDivisionAlreadyExists
@@ -132,16 +131,7 @@ func (r *repository) Update(ctx context.Context, id int64, division *Division) e
 		return err
 	}
 
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if affected == 0 {
-		return ErrDivisionNotFound
-	}
-
-	return nil
+	return dberror.CheckRowsAffected(result, ErrDivisionNotFound)
 }
 
 func (r *repository) Delete(ctx context.Context, id int64) error {
@@ -155,14 +145,5 @@ func (r *repository) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if affected == 0 {
-		return ErrDivisionNotFound
-	}
-
-	return nil
+	return dberror.CheckRowsAffected(result, ErrDivisionNotFound)
 }

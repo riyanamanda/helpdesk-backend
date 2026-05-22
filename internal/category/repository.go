@@ -126,7 +126,6 @@ func (r *repository) Update(ctx context.Context, id int64, category *Category) e
 	`
 
 	result, err := r.db.ExecContext(ctx, query, id, category.Name, category.IsActive)
-
 	if err != nil {
 		if dberror.IsUniqueViolation(err) {
 			return ErrCategoryAlreadyExists
@@ -134,16 +133,7 @@ func (r *repository) Update(ctx context.Context, id int64, category *Category) e
 		return err
 	}
 
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if affected == 0 {
-		return ErrCategoryNotFound
-	}
-
-	return nil
+	return dberror.CheckRowsAffected(result, ErrCategoryNotFound)
 }
 
 func (r *repository) Delete(ctx context.Context, id int64) error {
@@ -157,14 +147,5 @@ func (r *repository) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if affected == 0 {
-		return ErrCategoryNotFound
-	}
-
-	return nil
+	return dberror.CheckRowsAffected(result, ErrCategoryNotFound)
 }

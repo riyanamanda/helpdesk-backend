@@ -3,13 +3,13 @@ package ticket
 import (
 	"errors"
 	"log/slog"
-	"mime/multipart"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 )
@@ -40,17 +40,14 @@ func (h *handler) ListTickets(c *echo.Context) error {
 }
 
 func (h *handler) CreateTicket(c *echo.Context) error {
-	var (
-		file       multipart.File
-		fileHeader *multipart.FileHeader
-	)
-
 	req, err := request.BindAndValidate[TicketCreateRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	fileHeader, err = c.FormFile("attachment")
+	var file *upload.File
+
+	fileHeader, err := c.FormFile("attachment")
 	if err != nil && !errors.Is(err, http.ErrMissingFile) && !errors.Is(err, http.ErrNotMultipart) {
 		return response.Error(c, err)
 	}
@@ -60,18 +57,25 @@ func (h *handler) CreateTicket(c *echo.Context) error {
 			return response.Error(c, err)
 		}
 
-		file, err = fileHeader.Open()
+		f, err := fileHeader.Open()
 		if err != nil {
 			return response.Error(c, apperror.Internal("failed to open uploaded attachment"))
 		}
 		defer func() {
-			if err := file.Close(); err != nil {
+			if err := f.Close(); err != nil {
 				slog.Error("failed to close file", "error", err)
 			}
 		}()
+
+		file = &upload.File{
+			Content:     f,
+			Filename:    fileHeader.Filename,
+			ContentType: fileHeader.Header.Get("Content-Type"),
+			Size:        fileHeader.Size,
+		}
 	}
 
-	if err := h.service.RegisterTicket(c.Request().Context(), req, file, fileHeader); err != nil {
+	if err := h.service.RegisterTicket(c.Request().Context(), req, file); err != nil {
 		return response.Error(c, err)
 	}
 
@@ -129,11 +133,6 @@ func (h *handler) SetPriority(c *echo.Context) error {
 }
 
 func (h *handler) CreateResolution(c *echo.Context) error {
-	var (
-		file       multipart.File
-		fileHeader *multipart.FileHeader
-	)
-
 	ticketID, err := utils.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
 		return response.Error(c, err)
@@ -144,7 +143,9 @@ func (h *handler) CreateResolution(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	fileHeader, err = c.FormFile("attachment")
+	var file *upload.File
+
+	fileHeader, err := c.FormFile("attachment")
 	if err != nil && !errors.Is(err, http.ErrMissingFile) && !errors.Is(err, http.ErrNotMultipart) {
 		return response.Error(c, err)
 	}
@@ -154,18 +155,25 @@ func (h *handler) CreateResolution(c *echo.Context) error {
 			return response.Error(c, err)
 		}
 
-		file, err = fileHeader.Open()
+		f, err := fileHeader.Open()
 		if err != nil {
 			return response.Error(c, apperror.Internal("failed to open uploaded attachment"))
 		}
 		defer func() {
-			if err := file.Close(); err != nil {
+			if err := f.Close(); err != nil {
 				slog.Error("failed to close file", "error", err)
 			}
 		}()
+
+		file = &upload.File{
+			Content:     f,
+			Filename:    fileHeader.Filename,
+			ContentType: fileHeader.Header.Get("Content-Type"),
+			Size:        fileHeader.Size,
+		}
 	}
 
-	if err := h.service.RegisterResolution(c.Request().Context(), ticketID, *req, file, fileHeader); err != nil {
+	if err := h.service.RegisterResolution(c.Request().Context(), ticketID, *req, file); err != nil {
 		return response.Error(c, err)
 	}
 
