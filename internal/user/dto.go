@@ -37,5 +37,5 @@ type UserCreateRequest struct {
 	Email      string   `json:"email" validate:"required,email"`
 	Password   string   `json:"password" validate:"required,min=8"`
 	Role       UserRole `json:"role" validate:"required,oneof=ADMIN EMPLOYEE"`
-	DivisionID int64    `json:"division_id" validate:"gt=0"`
+	DivisionID int64    `json:"division_id" validate:"required,gt=0"`
 }

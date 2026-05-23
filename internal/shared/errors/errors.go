@@ -28,7 +28,7 @@ var (
 	ErrInternal      = errors.New("internal server error")
 	ErrBadRequest    = errors.New("bad request")
 	ErrForbidden     = errors.New("forbidden")
-	ErrUnauthorized = errors.New("unauthorized")
+	ErrUnauthorized  = errors.New("unauthorized")
 )
 
 type AppError struct {
@@ -66,9 +66,9 @@ func AlreadyExists(resource string) *AppError {
 
 func Unauthorized(code string, message string) *AppError {
 	return &AppError{
-		Err: ErrUnauthorized,
-		Code: code,
-		Message: message,
+		Err:        ErrUnauthorized,
+		Code:       code,
+		Message:    message,
 		StatusCode: http.StatusUnauthorized,
 	}
 }
