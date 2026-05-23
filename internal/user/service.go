@@ -41,9 +41,7 @@ func (svc *service) FetchAllUsers(ctx context.Context, params *GetUserParams) ([
 		params = &GetUserParams{}
 	}
 
-	page, limit, _ := params.Normalize()
-	params.Page = page
-	params.Limit = limit
+	params.Normalize()
 
 	users, total, err := svc.repo.GetAll(ctx, *params)
 	if err != nil {

@@ -30,6 +30,13 @@ type UserBrief struct {
 
 type GetUserParams struct {
 	pagination.Params
+
+	Search     string   `query:"search"`
+	SortBy     string   `query:"sort_by"`
+	SortType   string   `query:"sort_type"`
+	IsActive   *bool    `query:"is_active"`
+	Role       UserRole `query:"role"`
+	DivisionID *int64   `query:"division_id"`
 }
 
 type UserCreateRequest struct {
@@ -38,4 +45,26 @@ type UserCreateRequest struct {
 	Password   string   `json:"password" validate:"required,min=8"`
 	Role       UserRole `json:"role" validate:"required,oneof=ADMIN EMPLOYEE"`
 	DivisionID int64    `json:"division_id" validate:"required,gt=0"`
+}
+
+func (p *GetUserParams) Normalize() {
+	page, limit, _ := p.Params.Normalize()
+	p.Page = page
+	p.Limit = limit
+
+	allowedSortBy := map[string]bool{
+		"name":        true,
+		"role":        true,
+		"division_id": true,
+		"is_active":   true,
+		"created_at":  true,
+	}
+
+	if !allowedSortBy[p.SortBy] {
+		p.SortBy = "created_at"
+	}
+
+	if p.SortType != "ASC" && p.SortType != "DESC" {
+		p.SortType = "DESC"
+	}
 }

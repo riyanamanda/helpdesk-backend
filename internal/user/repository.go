@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -30,20 +31,44 @@ func NewUserRepository(db *sqlx.DB) UserRepository {
 }
 
 func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]UserProjection, int, error) {
-	var users []UserProjection
-	var total int
+	var (
+		users []UserProjection
+		total int
+		args  []any
+	)
 
-	const queryTotal = `
-		SELECT COUNT(*)
-		FROM users
-		WHERE is_active = TRUE
-	`
+	where := "WHERE 1=1"
 
-	if err := r.db.GetContext(ctx, &total, queryTotal); err != nil {
+	if params.Search != "" {
+		args = append(args, "%"+params.Search+"%")
+		where += fmt.Sprintf(" AND u.name ILIKE $%d", len(args))
+	}
+
+	if params.IsActive != nil {
+		args = append(args, *params.IsActive)
+		where += fmt.Sprintf(" AND u.is_active = $%d", len(args))
+	}
+
+	if params.Role != "" {
+		args = append(args, params.Role)
+		where += fmt.Sprintf(" AND u.role = $%d", len(args))
+	}
+
+	if params.DivisionID != nil {
+		args = append(args, *params.DivisionID)
+		where += fmt.Sprintf(" AND u.division_id = $%d", len(args))
+	}
+
+	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM users u %s`, where)
+
+	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
 		return nil, 0, err
 	}
 
-	const query = `
+	offset := (params.Page - 1) * params.Limit
+	args = append(args, params.Limit, offset)
+
+	query := fmt.Sprintf(`
 		SELECT
 			u.id,
 			u.name,
@@ -64,13 +89,12 @@ func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]UserPr
 			ON d.id = u.division_id
 		LEFT JOIN users cb
 			ON cb.id = u.created_by
-		WHERE u.is_active = TRUE
-		ORDER BY u.created_at DESC
-		LIMIT $1 OFFSET $2
-	`
+		%s
+		ORDER BY u.%s %s
+		LIMIT $%d OFFSET $%d
+	`, where, params.SortBy, params.SortType, len(args)-1, len(args))
 
-	offset := (params.Page - 1) * params.Limit
-	if err := r.db.SelectContext(ctx, &users, query, params.Limit, offset); err != nil {
+	if err := r.db.SelectContext(ctx, &users, query, args...); err != nil {
 		return nil, 0, err
 	}
 
