@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -96,20 +97,48 @@ func (t *txRepository) UpdateResolution(ctx context.Context, ticketID int64, use
 }
 
 func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]TicketProjection, int64, error) {
-	var tickets []TicketProjection
-	var total int64
+	var (
+		tickets []TicketProjection
+		total   int64
+		args    []any
+	)
 
-	const queryTotal = `
-		SELECT COUNT(*)
-		FROM tickets
-		WHERE status != 'CLOSED'
-	`
+	where := "WHERE 1=1"
 
-	if err := r.db.GetContext(ctx, &total, queryTotal); err != nil {
+	if params.Status != "" {
+		args = append(args, params.Status)
+		where += fmt.Sprintf(" AND t.status = $%d", len(args))
+	}
+
+	if params.Priority != "" {
+		args = append(args, params.Priority)
+		where += fmt.Sprintf(" AND t.priority = $%d", len(args))
+	}
+
+	if params.CategoryID != nil {
+		args = append(args, *params.CategoryID)
+		where += fmt.Sprintf(" AND t.category_id = $%d", len(args))
+	}
+
+	if params.DivisionID != nil {
+		args = append(args, *params.DivisionID)
+		where += fmt.Sprintf(" AND t.division_id = $%d", len(args))
+	}
+
+	if params.AssignedToID != nil {
+		args = append(args, *params.AssignedToID)
+		where += fmt.Sprintf(" AND t.assigned_to = $%d", len(args))
+	}
+
+	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM tickets t %s`, where)
+	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
 		return nil, 0, err
 	}
 
-	const query = `
+	offset := (params.Page - 1) * params.Limit
+	args = append(args, params.Limit, offset)
+
+	query := fmt.Sprintf(`
 		SELECT
 			t.id,
 			t.title,
@@ -135,25 +164,18 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 			t.created_at,
 			t.updated_at
 		FROM tickets t
-		JOIN categories c
-			ON c.id = t.category_id
-		JOIN divisions d
-			ON d.id = t.division_id
-		JOIN users u
-			ON u.id = t.created_by
-		LEFT JOIN users uat
-			ON uat.id = t.assigned_to
-		LEFT JOIN users urb
-			ON urb.id = t.resolved_by
-		LEFT JOIN users ucb
-			ON ucb.id = t.closed_by
-		-- WHERE t.status != 'CLOSED'
-		ORDER BY t.created_at DESC
-		LIMIT $1 OFFSET $2
-	`
+		JOIN categories c ON c.id = t.category_id
+		JOIN divisions d ON d.id = t.division_id
+		JOIN users u ON u.id = t.created_by
+		LEFT JOIN users uat ON uat.id = t.assigned_to
+		LEFT JOIN users urb ON urb.id = t.resolved_by
+		LEFT JOIN users ucb ON ucb.id = t.closed_by
+		%s
+		ORDER BY t.%s %s
+		LIMIT $%d OFFSET $%d
+	`, where, params.SortBy, params.SortType, len(args)-1, len(args))
 
-	offset := (params.Page - 1) * params.Limit
-	if err := r.db.SelectContext(ctx, &tickets, query, params.Limit, offset); err != nil {
+	if err := r.db.SelectContext(ctx, &tickets, query, args...); err != nil {
 		return nil, 0, err
 	}
 

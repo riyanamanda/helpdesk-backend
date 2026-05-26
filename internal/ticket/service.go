@@ -44,9 +44,7 @@ func (s *service) FetchAllTickets(ctx context.Context, params *GetTicketParams) 
 		params = &GetTicketParams{}
 	}
 
-	page, limit, _ := params.Normalize()
-	params.Page = page
-	params.Limit = limit
+	params.Normalize()
 
 	tickets, total, err := s.repo.GetAll(ctx, *params)
 	if err != nil {

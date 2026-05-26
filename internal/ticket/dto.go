@@ -46,6 +46,32 @@ type TicketAttachmentResponse struct {
 
 type GetTicketParams struct {
 	pagination.Params
+	Status       TicketStatus   `query:"status"`
+	Priority     TicketPriority `query:"priority"`
+	CategoryID   *int64         `query:"category_id"`
+	DivisionID   *int64         `query:"division_id"`
+	AssignedToID *uuid.UUID     `query:"assigned_to_id"`
+	SortBy       string         `query:"sort_by"`
+	SortType     string         `query:"sort_type"`
+}
+
+func (p *GetTicketParams) Normalize() {
+	page, limit, _ := p.Params.Normalize()
+	p.Page = page
+	p.Limit = limit
+
+	allowedSortBy := map[string]bool{
+		"created_at": true,
+		"updated_at": true,
+		"status":     true,
+		"priority":   true,
+	}
+	if !allowedSortBy[p.SortBy] {
+		p.SortBy = "created_at"
+	}
+	if p.SortType != "ASC" && p.SortType != "DESC" {
+		p.SortType = "DESC"
+	}
 }
 
 type TicketCreateRequest struct {
