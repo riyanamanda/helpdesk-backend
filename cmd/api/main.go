@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/auth"
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
+	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/database"
@@ -73,6 +74,7 @@ func main() {
 	division.Register(protected, db)
 	user.Register(protected, db, storageService, cfg.Storage)
 	ticket.Register(protected, db, storageService, cfg.Storage)
+	dashboard.Register(protected, db)
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),
