@@ -8,7 +8,7 @@ import (
 )
 
 type DivisionService interface {
-	FetchAllDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int, error)
+	FetchAllDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int64, error)
 	RegisterDivision(ctx context.Context, req *CreateDivisionRequest) (DivisionResponse, error)
 	FindDivisionByID(ctx context.Context, id int64) (DivisionResponse, error)
 	EditDivision(ctx context.Context, id int64, req *UpdateDivisionRequest) error
@@ -25,7 +25,7 @@ func NewDivisionService(repo DivisionRepository) DivisionService {
 	}
 }
 
-func (svc *service) FetchAllDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int, error) {
+func (svc *service) FetchAllDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int64, error) {
 	if params == nil {
 		params = &GetDivisionParams{}
 	}

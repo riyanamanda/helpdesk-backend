@@ -81,32 +81,32 @@ func TestService_FetchAllDivisions(t *testing.T) {
 		name      string
 		params    *division.GetDivisionParams
 		setupMock func(*divisionmocks.DivisionRepository)
-		assertFn  func(*testing.T, []division.DivisionResponse, int, error)
+		assertFn  func(*testing.T, []division.DivisionResponse, int64, error)
 	}{
 		{
 			name:   "success",
 			params: &division.GetDivisionParams{},
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
 				items := []division.Division{{ID: 1, Name: "IT"}, {ID: 2, Name: "HR"}}
-				repo.On("GetAll", mock.Anything, division.GetDivisionParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, 2, nil).Once()
+				repo.On("GetAll", mock.Anything, division.GetDivisionParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, int64(2), nil).Once()
 			},
-			assertFn: func(t *testing.T, result []division.DivisionResponse, total int, err error) {
+			assertFn: func(t *testing.T, result []division.DivisionResponse, total int64, err error) {
 				require.NoError(t, err)
 				assert.Len(t, result, 2)
 				assert.Equal(t, "IT", result[0].Name)
-				assert.Equal(t, 2, total)
+				assert.Equal(t, int64(2), total)
 			},
 		},
 		{
 			name:   "repository error",
 			params: &division.GetDivisionParams{},
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
-				repo.On("GetAll", mock.Anything, mock.Anything).Return(nil, 0, errors.New("database error")).Once()
+				repo.On("GetAll", mock.Anything, mock.Anything).Return(nil, int64(0), errors.New("database error")).Once()
 			},
-			assertFn: func(t *testing.T, result []division.DivisionResponse, total int, err error) {
+			assertFn: func(t *testing.T, result []division.DivisionResponse, total int64, err error) {
 				require.Error(t, err)
 				assert.Empty(t, result)
-				assert.Equal(t, 0, total)
+				assert.Equal(t, int64(0), total)
 				assert.EqualError(t, err, "database error")
 			},
 		},

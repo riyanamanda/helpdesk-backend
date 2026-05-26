@@ -12,7 +12,7 @@ import (
 
 //go:generate mockery --name DivisionRepository
 type DivisionRepository interface {
-	GetAll(ctx context.Context, params GetDivisionParams) ([]Division, int, error)
+	GetAll(ctx context.Context, params GetDivisionParams) ([]Division, int64, error)
 	Create(ctx context.Context, division *Division) error
 	GetByID(ctx context.Context, id int64) (*Division, error)
 	Update(ctx context.Context, id int64, division *Division) error
@@ -29,10 +29,10 @@ func NewDivisionRepository(db *sqlx.DB) DivisionRepository {
 	}
 }
 
-func (r *repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Division, int, error) {
+func (r *repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Division, int64, error) {
 	var (
 		divisions []Division
-		total     int
+		total     int64
 		args      []any
 	)
 

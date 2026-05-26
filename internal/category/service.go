@@ -8,7 +8,7 @@ import (
 )
 
 type CategoryService interface {
-	FetchAllCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int, error)
+	FetchAllCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int64, error)
 	RegisterCategory(ctx context.Context, req *CreateCategoryRequest) (CategoryResponse, error)
 	FindCategoryByID(ctx context.Context, id int64) (CategoryResponse, error)
 	EditCategory(ctx context.Context, id int64, req *UpdateCategoryRequest) error
@@ -25,7 +25,7 @@ func NewCategoryService(repo CategoryRepository) CategoryService {
 	}
 }
 
-func (svc *service) FetchAllCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int, error) {
+func (svc *service) FetchAllCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int64, error) {
 	if params == nil {
 		params = &GetCategoryParams{}
 	}

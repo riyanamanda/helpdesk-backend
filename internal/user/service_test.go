@@ -169,7 +169,7 @@ func TestService_FetchAllUsers(t *testing.T) {
 		name      string
 		params    *user.GetUserParams
 		setupMock func(*usermocks.UserRepository)
-		assertFn  func(*testing.T, []user.UserResponse, int, error)
+		assertFn  func(*testing.T, []user.UserResponse, int64, error)
 	}{
 		{
 			name:   "success with default pagination",
@@ -179,25 +179,25 @@ func TestService_FetchAllUsers(t *testing.T) {
 					{ID: uuid.New(), Name: "Admin", Email: "admin@email.com", Role: user.ADMIN, DivisionID: 1, DivisionName: "IT", IsActive: true},
 					{ID: uuid.New(), Name: "Staff", Email: "staff@email.com", Role: user.EMPLOYEE, DivisionID: 2, DivisionName: "HR", IsActive: true},
 				}
-				repo.On("GetAll", mock.Anything, user.GetUserParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, 2, nil).Once()
+				repo.On("GetAll", mock.Anything, user.GetUserParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, int64(2), nil).Once()
 			},
-			assertFn: func(t *testing.T, result []user.UserResponse, total int, err error) {
+			assertFn: func(t *testing.T, result []user.UserResponse, total int64, err error) {
 				require.NoError(t, err)
 				assert.Len(t, result, 2)
 				assert.Equal(t, "Admin", result[0].Name)
-				assert.Equal(t, 2, total)
+				assert.Equal(t, int64(2), total)
 			},
 		},
 		{
 			name:   "repository error",
 			params: &user.GetUserParams{},
 			setupMock: func(repo *usermocks.UserRepository) {
-				repo.On("GetAll", mock.Anything, mock.Anything).Return(nil, 0, errors.New("database error")).Once()
+				repo.On("GetAll", mock.Anything, mock.Anything).Return(nil, int64(0), errors.New("database error")).Once()
 			},
-			assertFn: func(t *testing.T, result []user.UserResponse, total int, err error) {
+			assertFn: func(t *testing.T, result []user.UserResponse, total int64, err error) {
 				require.Error(t, err)
 				assert.Empty(t, result)
-				assert.Equal(t, 0, total)
+				assert.Equal(t, int64(0), total)
 				assert.EqualError(t, err, "database error")
 			},
 		},

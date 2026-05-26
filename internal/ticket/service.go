@@ -66,6 +66,7 @@ func (s *service) RegisterTicket(ctx context.Context, req *TicketCreateRequest, 
 		Title:       req.Title,
 		Description: req.Description,
 		CategoryID:  req.CategoryID,
+		DivisionID:  req.DivisionID,
 		CreatedBy:   createdBy,
 	}
 

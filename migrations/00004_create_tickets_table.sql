@@ -1,12 +1,13 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS tickets (
-    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 
     title VARCHAR(200) NOT NULL,
     description TEXT NOT NULL,
 
-    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+    category_id BIGINT NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+    division_id BIGINT NOT NULL REFERENCES divisions(id) ON DELETE RESTRICT,
 
     status VARCHAR(20) NOT NULL DEFAULT 'OPEN',
     priority VARCHAR(20),
@@ -38,6 +39,9 @@ CREATE TABLE IF NOT EXISTS tickets (
 
 CREATE INDEX IF NOT EXISTS tickets_category_id_idx
 ON tickets (category_id);
+
+CREATE INDEX IF NOT EXISTS tickets_division_id_idx
+ON tickets (division_id);
 
 CREATE INDEX IF NOT EXISTS tickets_status_idx
 ON tickets (status);

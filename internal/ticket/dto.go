@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
+	"github.com/riyanamanda/helpdesk-backend/internal/division"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/pagination"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
@@ -14,6 +15,7 @@ type TicketResponse struct {
 	Title       string                 `json:"title"`
 	Description string                 `json:"description"`
 	Category    category.CategoryBrief `json:"category"`
+	Division    division.DivisionBrief `json:"division"`
 	Status      TicketStatus           `json:"status"`
 	Priority    *TicketPriority        `json:"priority"`
 	CreatedBy   user.UserBrief         `json:"created_by"`
@@ -49,7 +51,8 @@ type GetTicketParams struct {
 type TicketCreateRequest struct {
 	Title       string `json:"title" form:"title" validate:"required,min=5,max=100"`
 	Description string `json:"description" form:"description" validate:"required,min=5,max=255"`
-	CategoryID  int    `json:"category_id" form:"category_id" validate:"required,gt=0"`
+	CategoryID  int64  `json:"category" form:"category" validate:"required,gt=0"`
+	DivisionID  int64  `json:"division" form:"division" validate:"required,gt=0"`
 }
 
 type TicketAssignRequest struct {

@@ -2,6 +2,7 @@ package ticket
 
 import (
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
+	"github.com/riyanamanda/helpdesk-backend/internal/division"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/collection"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
@@ -41,14 +42,18 @@ func toTicketResponse(t TicketProjection) TicketResponse {
 		Title:       t.Title,
 		Description: t.Description,
 		Category: category.CategoryBrief{
-			ID:   int64(t.CategoryID),
+			ID:   t.CategoryID,
 			Name: t.CategoryName,
+		},
+		Division: division.DivisionBrief{
+			ID:   t.DivisionID,
+			Name: t.DivisionName,
 		},
 		Status:   TicketStatus(t.Status),
 		Priority: (*TicketPriority)(t.Priority),
 		CreatedBy: user.UserBrief{
-			ID:   t.CreatedByID,
-			Name: string(t.CreatedByName),
+			ID: t.CreatedByID,
+			Name: t.CreatedByName,
 		},
 		AssignedTo: assignedTo,
 		ResolvedBy: resolvedBy,

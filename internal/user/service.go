@@ -16,7 +16,7 @@ import (
 )
 
 type UserService interface {
-	FetchAllUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int, error)
+	FetchAllUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error)
 	RegisterUser(ctx context.Context, req *UserCreateRequest) error
 	FindUserByID(ctx context.Context, id *uuid.UUID) (UserResponse, error)
 	UpdateUserAvatar(ctx context.Context, file *upload.File) error
@@ -36,7 +36,7 @@ func NewUserService(repo UserRepository, storage storage.Storage, storageConfig 
 	}
 }
 
-func (svc *service) FetchAllUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int, error) {
+func (svc *service) FetchAllUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error) {
 	if params == nil {
 		params = &GetUserParams{}
 	}

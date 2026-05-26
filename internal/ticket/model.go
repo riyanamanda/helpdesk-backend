@@ -10,7 +10,8 @@ type Ticket struct {
 	ID          int64      `db:"id"`
 	Title       string     `db:"title"`
 	Description string     `db:"description"`
-	CategoryID  int        `db:"category_id"`
+	CategoryID  int64      `db:"category_id"`
+	DivisionID  int64      `db:"division_id"`
 	Status      string     `db:"status"`
 	Priority    *string    `db:"priority"`
 	CreatedBy   uuid.UUID  `db:"created_by"`

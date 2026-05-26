@@ -12,7 +12,7 @@ import (
 
 //go:generate mockery --name CategoryRepository
 type CategoryRepository interface {
-	GetAll(ctx context.Context, params GetCategoryParams) ([]Category, int, error)
+	GetAll(ctx context.Context, params GetCategoryParams) ([]Category, int64, error)
 	Create(ctx context.Context, category *Category) error
 	GetByID(ctx context.Context, id int64) (*Category, error)
 	Update(ctx context.Context, id int64, category *Category) error
@@ -29,10 +29,10 @@ func NewCategoryRepository(db *sqlx.DB) CategoryRepository {
 	}
 }
 
-func (r *repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Category, int, error) {
+func (r *repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Category, int64, error) {
 	var (
 		categories []Category
-		total      int
+		total      int64
 		args       []any
 	)
 

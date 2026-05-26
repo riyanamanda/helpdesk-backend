@@ -81,32 +81,32 @@ func TestService_FetchAllCategories(t *testing.T) {
 		name      string
 		params    *category.GetCategoryParams
 		setupMock func(*categorymocks.CategoryRepository)
-		assertFn  func(*testing.T, []category.CategoryResponse, int, error)
+		assertFn  func(*testing.T, []category.CategoryResponse, int64, error)
 	}{
 		{
 			name:   "success",
 			params: &category.GetCategoryParams{},
 			setupMock: func(repo *categorymocks.CategoryRepository) {
 				items := []category.Category{{ID: 1, Name: "Hardware"}, {ID: 2, Name: "Software"}}
-				repo.On("GetAll", mock.Anything, category.GetCategoryParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, 2, nil).Once()
+				repo.On("GetAll", mock.Anything, category.GetCategoryParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, int64(2), nil).Once()
 			},
-			assertFn: func(t *testing.T, result []category.CategoryResponse, total int, err error) {
+			assertFn: func(t *testing.T, result []category.CategoryResponse, total int64, err error) {
 				require.NoError(t, err)
 				assert.Len(t, result, 2)
 				assert.Equal(t, "Hardware", result[0].Name)
-				assert.Equal(t, 2, total)
+				assert.Equal(t, int64(2), total)
 			},
 		},
 		{
 			name:   "repository error",
 			params: &category.GetCategoryParams{},
 			setupMock: func(repo *categorymocks.CategoryRepository) {
-				repo.On("GetAll", mock.Anything, mock.Anything).Return(nil, 0, errors.New("database error")).Once()
+				repo.On("GetAll", mock.Anything, mock.Anything).Return(nil, int64(0), errors.New("database error")).Once()
 			},
-			assertFn: func(t *testing.T, result []category.CategoryResponse, total int, err error) {
+			assertFn: func(t *testing.T, result []category.CategoryResponse, total int64, err error) {
 				require.Error(t, err)
 				assert.Empty(t, result)
-				assert.Equal(t, 0, total)
+				assert.Equal(t, int64(0), total)
 				assert.EqualError(t, err, "database error")
 			},
 		},

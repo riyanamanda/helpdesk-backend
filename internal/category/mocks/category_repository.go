@@ -118,7 +118,7 @@ func (_c *CategoryRepository_Delete_Call) RunAndReturn(run func(context.Context,
 }
 
 // GetAll provides a mock function with given fields: ctx, params
-func (_m *CategoryRepository) GetAll(ctx context.Context, params category.GetCategoryParams) ([]category.Category, int, error) {
+func (_m *CategoryRepository) GetAll(ctx context.Context, params category.GetCategoryParams) ([]category.Category, int64, error) {
 	ret := _m.Called(ctx, params)
 
 	if len(ret) == 0 {
@@ -126,9 +126,9 @@ func (_m *CategoryRepository) GetAll(ctx context.Context, params category.GetCat
 	}
 
 	var r0 []category.Category
-	var r1 int
+	var r1 int64
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, category.GetCategoryParams) ([]category.Category, int, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, category.GetCategoryParams) ([]category.Category, int64, error)); ok {
 		return rf(ctx, params)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, category.GetCategoryParams) []category.Category); ok {
@@ -139,10 +139,10 @@ func (_m *CategoryRepository) GetAll(ctx context.Context, params category.GetCat
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, category.GetCategoryParams) int); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, category.GetCategoryParams) int64); ok {
 		r1 = rf(ctx, params)
 	} else {
-		r1 = ret.Get(1).(int)
+		r1 = ret.Get(1).(int64)
 	}
 
 	if rf, ok := ret.Get(2).(func(context.Context, category.GetCategoryParams) error); ok {
@@ -173,12 +173,12 @@ func (_c *CategoryRepository_GetAll_Call) Run(run func(ctx context.Context, para
 	return _c
 }
 
-func (_c *CategoryRepository_GetAll_Call) Return(_a0 []category.Category, _a1 int, _a2 error) *CategoryRepository_GetAll_Call {
+func (_c *CategoryRepository_GetAll_Call) Return(_a0 []category.Category, _a1 int64, _a2 error) *CategoryRepository_GetAll_Call {
 	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *CategoryRepository_GetAll_Call) RunAndReturn(run func(context.Context, category.GetCategoryParams) ([]category.Category, int, error)) *CategoryRepository_GetAll_Call {
+func (_c *CategoryRepository_GetAll_Call) RunAndReturn(run func(context.Context, category.GetCategoryParams) ([]category.Category, int64, error)) *CategoryRepository_GetAll_Call {
 	_c.Call.Return(run)
 	return _c
 }

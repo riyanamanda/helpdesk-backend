@@ -72,7 +72,7 @@ func (_c *UserRepository_Create_Call) RunAndReturn(run func(context.Context, *us
 }
 
 // GetAll provides a mock function with given fields: ctx, params
-func (_m *UserRepository) GetAll(ctx context.Context, params user.GetUserParams) ([]user.UserProjection, int, error) {
+func (_m *UserRepository) GetAll(ctx context.Context, params user.GetUserParams) ([]user.UserProjection, int64, error) {
 	ret := _m.Called(ctx, params)
 
 	if len(ret) == 0 {
@@ -80,9 +80,9 @@ func (_m *UserRepository) GetAll(ctx context.Context, params user.GetUserParams)
 	}
 
 	var r0 []user.UserProjection
-	var r1 int
+	var r1 int64
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, user.GetUserParams) ([]user.UserProjection, int, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, user.GetUserParams) ([]user.UserProjection, int64, error)); ok {
 		return rf(ctx, params)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, user.GetUserParams) []user.UserProjection); ok {
@@ -93,10 +93,10 @@ func (_m *UserRepository) GetAll(ctx context.Context, params user.GetUserParams)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, user.GetUserParams) int); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, user.GetUserParams) int64); ok {
 		r1 = rf(ctx, params)
 	} else {
-		r1 = ret.Get(1).(int)
+		r1 = ret.Get(1).(int64)
 	}
 
 	if rf, ok := ret.Get(2).(func(context.Context, user.GetUserParams) error); ok {
@@ -127,12 +127,12 @@ func (_c *UserRepository_GetAll_Call) Run(run func(ctx context.Context, params u
 	return _c
 }
 
-func (_c *UserRepository_GetAll_Call) Return(_a0 []user.UserProjection, _a1 int, _a2 error) *UserRepository_GetAll_Call {
+func (_c *UserRepository_GetAll_Call) Return(_a0 []user.UserProjection, _a1 int64, _a2 error) *UserRepository_GetAll_Call {
 	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *UserRepository_GetAll_Call) RunAndReturn(run func(context.Context, user.GetUserParams) ([]user.UserProjection, int, error)) *UserRepository_GetAll_Call {
+func (_c *UserRepository_GetAll_Call) RunAndReturn(run func(context.Context, user.GetUserParams) ([]user.UserProjection, int64, error)) *UserRepository_GetAll_Call {
 	_c.Call.Return(run)
 	return _c
 }

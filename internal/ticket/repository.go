@@ -55,12 +55,12 @@ func (t *txRepository) Rollback() error { return t.tx.Rollback() }
 
 func (t *txRepository) Create(ctx context.Context, ticket Ticket) (int64, error) {
 	const query = `
-		INSERT INTO tickets (title, description, category_id, created_by)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO tickets (title, description, category_id, division_id, created_by)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
 	`
 	var id int64
-	err := t.tx.QueryRowxContext(ctx, query, ticket.Title, ticket.Description, ticket.CategoryID, ticket.CreatedBy).
+	err := t.tx.QueryRowxContext(ctx, query, ticket.Title, ticket.Description, ticket.CategoryID, ticket.DivisionID, ticket.CreatedBy).
 		Scan(&id)
 	if err != nil {
 		return 0, err
@@ -116,6 +116,8 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 			t.description,
 			c.id AS category_id,
 			c.name AS category_name,
+			d.id AS division_id,
+			d.name as division_name,
 			t.status,
 			t.priority,
 			u.id AS created_by_id,
@@ -135,6 +137,8 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 		FROM tickets t
 		JOIN categories c
 			ON c.id = t.category_id
+		JOIN divisions d
+			ON d.id = t.division_id
 		JOIN users u
 			ON u.id = t.created_by
 		LEFT JOIN users uat
@@ -143,7 +147,7 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 			ON urb.id = t.resolved_by
 		LEFT JOIN users ucb
 			ON ucb.id = t.closed_by
-		WHERE t.status != 'CLOSED'
+		-- WHERE t.status != 'CLOSED'
 		ORDER BY t.created_at DESC
 		LIMIT $1 OFFSET $2
 	`
