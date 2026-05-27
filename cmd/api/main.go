@@ -15,6 +15,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
+	"github.com/riyanamanda/helpdesk-backend/internal/profile"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/middleware"
@@ -72,9 +73,10 @@ func main() {
 	// protected modules
 	category.Register(protected, db)
 	division.Register(protected, db)
-	user.Register(protected, db, storageService, cfg.Storage)
+	user.Register(protected, db, cfg.Storage)
 	ticket.Register(protected, db, storageService, cfg.Storage)
 	dashboard.Register(protected, db)
+	profile.Register(protected, db, storageService, cfg.Storage, cfg.Auth)
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),

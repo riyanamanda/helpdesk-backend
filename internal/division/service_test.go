@@ -88,7 +88,7 @@ func TestService_FetchAllDivisions(t *testing.T) {
 			params: &division.GetDivisionParams{},
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
 				items := []division.Division{{ID: 1, Name: "IT"}, {ID: 2, Name: "HR"}}
-				repo.On("GetAll", mock.Anything, division.GetDivisionParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, int64(2), nil).Once()
+				repo.On("GetAll", mock.Anything, division.GetDivisionParams{Params: pagination.Params{Page: 1, Limit: 10}, SortBy: "created_at", SortType: "DESC"}).Return(items, int64(2), nil).Once()
 			},
 			assertFn: func(t *testing.T, result []division.DivisionResponse, total int64, err error) {
 				require.NoError(t, err)
@@ -197,6 +197,7 @@ func TestService_EditDivision(t *testing.T) {
 			id:   20,
 			req:  &division.UpdateDivisionRequest{Name: "Finance"},
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
+				repo.On("GetByID", mock.Anything, int64(20)).Return(&division.Division{ID: 20, Name: "IT", IsActive: true}, nil).Once()
 				repo.On("Update", mock.Anything, int64(20), mock.MatchedBy(func(data *division.Division) bool {
 					return data != nil && data.Name == "Finance"
 				})).Return(nil).Once()
@@ -210,7 +211,7 @@ func TestService_EditDivision(t *testing.T) {
 			id:   21,
 			req:  &division.UpdateDivisionRequest{Name: "Finance"},
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
-				repo.On("Update", mock.Anything, int64(21), mock.Anything).Return(division.ErrDivisionNotFound).Once()
+				repo.On("GetByID", mock.Anything, int64(21)).Return(nil, division.ErrDivisionNotFound).Once()
 			},
 			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
@@ -222,6 +223,7 @@ func TestService_EditDivision(t *testing.T) {
 			id:   22,
 			req:  &division.UpdateDivisionRequest{Name: "Finance"},
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
+				repo.On("GetByID", mock.Anything, int64(22)).Return(&division.Division{ID: 22, Name: "IT", IsActive: true}, nil).Once()
 				repo.On("Update", mock.Anything, int64(22), mock.Anything).Return(division.ErrDivisionAlreadyExists).Once()
 			},
 			assertFn: func(t *testing.T, err error) {
@@ -234,6 +236,7 @@ func TestService_EditDivision(t *testing.T) {
 			id:   23,
 			req:  &division.UpdateDivisionRequest{Name: "Finance"},
 			setupMock: func(repo *divisionmocks.DivisionRepository) {
+				repo.On("GetByID", mock.Anything, int64(23)).Return(&division.Division{ID: 23, Name: "IT", IsActive: true}, nil).Once()
 				repo.On("Update", mock.Anything, int64(23), mock.Anything).Return(errors.New("database error")).Once()
 			},
 			assertFn: func(t *testing.T, err error) {

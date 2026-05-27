@@ -88,7 +88,7 @@ func TestService_FetchAllCategories(t *testing.T) {
 			params: &category.GetCategoryParams{},
 			setupMock: func(repo *categorymocks.CategoryRepository) {
 				items := []category.Category{{ID: 1, Name: "Hardware"}, {ID: 2, Name: "Software"}}
-				repo.On("GetAll", mock.Anything, category.GetCategoryParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, int64(2), nil).Once()
+				repo.On("GetAll", mock.Anything, category.GetCategoryParams{Params: pagination.Params{Page: 1, Limit: 10}, SortBy: "created_at", SortType: "DESC"}).Return(items, int64(2), nil).Once()
 			},
 			assertFn: func(t *testing.T, result []category.CategoryResponse, total int64, err error) {
 				require.NoError(t, err)
@@ -197,6 +197,7 @@ func TestService_EditCategory(t *testing.T) {
 			id:   20,
 			req:  &category.UpdateCategoryRequest{Name: "Peripheral"},
 			setupMock: func(repo *categorymocks.CategoryRepository) {
+				repo.On("GetByID", mock.Anything, int64(20)).Return(&category.Category{ID: 20, Name: "Hardware", IsActive: true}, nil).Once()
 				repo.On("Update", mock.Anything, int64(20), mock.MatchedBy(func(data *category.Category) bool {
 					return data != nil && data.Name == "Peripheral"
 				})).Return(nil).Once()
@@ -210,7 +211,7 @@ func TestService_EditCategory(t *testing.T) {
 			id:   21,
 			req:  &category.UpdateCategoryRequest{Name: "Peripheral"},
 			setupMock: func(repo *categorymocks.CategoryRepository) {
-				repo.On("Update", mock.Anything, int64(21), mock.Anything).Return(category.ErrCategoryNotFound).Once()
+				repo.On("GetByID", mock.Anything, int64(21)).Return(nil, category.ErrCategoryNotFound).Once()
 			},
 			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
@@ -222,6 +223,7 @@ func TestService_EditCategory(t *testing.T) {
 			id:   22,
 			req:  &category.UpdateCategoryRequest{Name: "Peripheral"},
 			setupMock: func(repo *categorymocks.CategoryRepository) {
+				repo.On("GetByID", mock.Anything, int64(22)).Return(&category.Category{ID: 22, Name: "Hardware", IsActive: true}, nil).Once()
 				repo.On("Update", mock.Anything, int64(22), mock.Anything).Return(category.ErrCategoryAlreadyExists).Once()
 			},
 			assertFn: func(t *testing.T, err error) {
@@ -234,6 +236,7 @@ func TestService_EditCategory(t *testing.T) {
 			id:   23,
 			req:  &category.UpdateCategoryRequest{Name: "Peripheral"},
 			setupMock: func(repo *categorymocks.CategoryRepository) {
+				repo.On("GetByID", mock.Anything, int64(23)).Return(&category.Category{ID: 23, Name: "Hardware", IsActive: true}, nil).Once()
 				repo.On("Update", mock.Anything, int64(23), mock.Anything).Return(errors.New("database error")).Once()
 			},
 			assertFn: func(t *testing.T, err error) {

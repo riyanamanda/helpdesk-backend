@@ -3,7 +3,6 @@ package user_test
 import (
 	"context"
 	"errors"
-	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -19,30 +18,15 @@ import (
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/pagination"
 	testingutil "github.com/riyanamanda/helpdesk-backend/internal/shared/testing"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	user "github.com/riyanamanda/helpdesk-backend/internal/user"
 	usermocks "github.com/riyanamanda/helpdesk-backend/internal/user/mocks"
 )
 
-// MockStorage provides a no-op implementation of storage.Storage for testing
-type MockStorage struct {
-	mock.Mock
-}
-
-func (m *MockStorage) Upload(ctx context.Context, key string, reader io.Reader, size int64, contentType string) error {
-	args := m.Called(ctx, key, reader, size, contentType)
-	return args.Error(0)
-}
-
-func (m *MockStorage) Delete(ctx context.Context, key string) error {
-	args := m.Called(ctx, key)
-	return args.Error(0)
-}
-
-func newMockStorage() *MockStorage {
-	store := new(MockStorage)
-	return store
+func newUserService(repo *usermocks.UserRepository) user.UserService {
+	return user.NewUserService(repo, config.Storage{
+		PublicURL: "http://localhost:9000",
+		Bucket:    "helpdesk-dev",
+	})
 }
 
 func TestService_RegisterUser(t *testing.T) {
@@ -66,23 +50,18 @@ func TestService_RegisterUser(t *testing.T) {
 					if data == nil {
 						return false
 					}
-
 					if data.Name != "Admin" {
 						return false
 					}
-
 					if data.Email != "admin@email.com" {
 						return false
 					}
-
 					if data.Role != user.ADMIN || data.DivisionID != 1 {
 						return false
 					}
-
 					if data.Password == "password123" {
 						return false
 					}
-
 					return bcrypt.CompareHashAndPassword([]byte(data.Password), []byte("password123")) == nil
 				})).Run(func(args mock.Arguments) {
 					data := args.Get(1).(*user.User)
@@ -139,8 +118,7 @@ func TestService_RegisterUser(t *testing.T) {
 				Role:       user.ADMIN,
 				DivisionID: 1,
 			},
-			setupMock: func(repo *usermocks.UserRepository) {
-			},
+			setupMock: func(repo *usermocks.UserRepository) {},
 			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "password")
@@ -151,11 +129,7 @@ func TestService_RegisterUser(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := usermocks.NewUserRepository(t)
-			storage := newMockStorage()
-			svc := user.NewUserService(repo, storage, config.Storage{
-				PublicURL: "http://localhost:9000",
-				Bucket:    "helpdesk-dev",
-			})
+			svc := newUserService(repo)
 			tc.setupMock(repo)
 
 			err := svc.RegisterUser(context.Background(), tc.req)
@@ -179,7 +153,7 @@ func TestService_FetchAllUsers(t *testing.T) {
 					{ID: uuid.New(), Name: "Admin", Email: "admin@email.com", Role: user.ADMIN, DivisionID: 1, DivisionName: "IT", IsActive: true},
 					{ID: uuid.New(), Name: "Staff", Email: "staff@email.com", Role: user.EMPLOYEE, DivisionID: 2, DivisionName: "HR", IsActive: true},
 				}
-				repo.On("GetAll", mock.Anything, user.GetUserParams{Params: pagination.Params{Page: 1, Limit: 10}}).Return(items, int64(2), nil).Once()
+				repo.On("GetAll", mock.Anything, user.GetUserParams{Params: pagination.Params{Page: 1, Limit: 10}, SortBy: "created_at", SortType: "DESC"}).Return(items, int64(2), nil).Once()
 			},
 			assertFn: func(t *testing.T, result []user.UserResponse, total int64, err error) {
 				require.NoError(t, err)
@@ -206,11 +180,7 @@ func TestService_FetchAllUsers(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := usermocks.NewUserRepository(t)
-			storage := newMockStorage()
-			svc := user.NewUserService(repo, storage, config.Storage{
-				PublicURL: "http://localhost:9000",
-				Bucket:    "helpdesk-dev",
-			})
+			svc := newUserService(repo)
 			tc.setupMock(repo)
 
 			result, total, err := svc.FetchAllUsers(context.Background(), tc.params)
@@ -271,94 +241,11 @@ func TestService_FindUserByID(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := usermocks.NewUserRepository(t)
-			storage := newMockStorage()
-			svc := user.NewUserService(repo, storage, config.Storage{
-				PublicURL: "http://localhost:9000",
-				Bucket:    "helpdesk-dev",
-			})
+			svc := newUserService(repo)
 			tc.setupMock(repo)
 
 			result, err := svc.FindUserByID(context.Background(), tc.id)
 			tc.assertFn(t, result, err)
 		})
 	}
-}
-
-func newUploadFile(content string) *upload.File {
-	return &upload.File{
-		Content:     strings.NewReader(content),
-		Filename:    "avatar.png",
-		ContentType: "image/png",
-		Size:        1024,
-	}
-}
-
-func TestService_UpdateUserAvatar(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		repo := usermocks.NewUserRepository(t)
-		storage := newMockStorage()
-		svc := user.NewUserService(repo, storage, config.Storage{
-			PublicURL: "http://localhost:9000",
-			Bucket:    "helpdesk-dev",
-		})
-
-		userID := uuid.New()
-		ctx := utils.SetUserIDToContext(context.Background(), userID)
-
-		storage.On("Upload", mock.Anything, "avatars/"+userID.String()+"/avatar", mock.Anything, int64(1024), "image/png").Return(nil).Once()
-		repo.On("UpdateAvatar", mock.Anything, userID, "avatars/"+userID.String()+"/avatar").Return(nil).Once()
-
-		err := svc.UpdateUserAvatar(ctx, newUploadFile("fake image content"))
-		require.NoError(t, err)
-	})
-
-	t.Run("unauthorized when user id not in context", func(t *testing.T) {
-		repo := usermocks.NewUserRepository(t)
-		storage := newMockStorage()
-		svc := user.NewUserService(repo, storage, config.Storage{
-			PublicURL: "http://localhost:9000",
-			Bucket:    "helpdesk-dev",
-		})
-
-		err := svc.UpdateUserAvatar(context.Background(), newUploadFile("fake image content"))
-		require.Error(t, err)
-		testingutil.AssertAppError(t, err, apperror.CodeForbidden, http.StatusForbidden, "unauthorized")
-	})
-
-	t.Run("storage upload error", func(t *testing.T) {
-		repo := usermocks.NewUserRepository(t)
-		storage := newMockStorage()
-		svc := user.NewUserService(repo, storage, config.Storage{
-			PublicURL: "http://localhost:9000",
-			Bucket:    "helpdesk-dev",
-		})
-
-		userID := uuid.New()
-		ctx := utils.SetUserIDToContext(context.Background(), userID)
-
-		storage.On("Upload", mock.Anything, "avatars/"+userID.String()+"/avatar", mock.Anything, int64(1024), "image/png").Return(errors.New("storage error")).Once()
-
-		err := svc.UpdateUserAvatar(ctx, newUploadFile("fake image content"))
-		require.Error(t, err)
-		assert.EqualError(t, err, "storage error")
-	})
-
-	t.Run("repository update avatar error", func(t *testing.T) {
-		repo := usermocks.NewUserRepository(t)
-		storage := newMockStorage()
-		svc := user.NewUserService(repo, storage, config.Storage{
-			PublicURL: "http://localhost:9000",
-			Bucket:    "helpdesk-dev",
-		})
-
-		userID := uuid.New()
-		ctx := utils.SetUserIDToContext(context.Background(), userID)
-
-		storage.On("Upload", mock.Anything, "avatars/"+userID.String()+"/avatar", mock.Anything, int64(1024), "image/png").Return(nil).Once()
-		repo.On("UpdateAvatar", mock.Anything, userID, "avatars/"+userID.String()+"/avatar").Return(errors.New("repository error")).Once()
-
-		err := svc.UpdateUserAvatar(ctx, newUploadFile("fake image content"))
-		require.Error(t, err)
-		assert.EqualError(t, err, "repository error")
-	})
 }

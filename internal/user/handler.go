@@ -1,7 +1,6 @@
 package user
 
 import (
-	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -9,8 +8,6 @@ import (
 	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 )
 
 type handler struct {
@@ -65,36 +62,3 @@ func (h *handler) GetUser(c *echo.Context) error {
 	return response.Success(c, http.StatusOK, user)
 }
 
-func (h *handler) UpdateUserAvatar(c *echo.Context) error {
-	fileHeader, err := c.FormFile("avatar")
-	if err != nil {
-		return response.Error(c, apperror.BadRequest("avatar is required"))
-	}
-
-	if err := validation.ValidateImage(fileHeader, maxAvatarSize, AllowedAvatarTypes); err != nil {
-		return response.Error(c, err)
-	}
-
-	f, err := fileHeader.Open()
-	if err != nil {
-		return response.Error(c, apperror.Internal("failed to open uploaded file"))
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			slog.Error("failed to close file", "error", err)
-		}
-	}()
-
-	file := &upload.File{
-		Content:     f,
-		Filename:    fileHeader.Filename,
-		ContentType: fileHeader.Header.Get("Content-Type"),
-		Size:        fileHeader.Size,
-	}
-
-	if err := h.svc.UpdateUserAvatar(c.Request().Context(), file); err != nil {
-		return response.Error(c, err)
-	}
-
-	return response.Message(c, http.StatusOK, "update avatar successfully")
-}

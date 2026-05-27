@@ -192,6 +192,8 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*TicketProjection, 
 			t.description,
 			c.id AS category_id,
 			c.name AS category_name,
+			d.id AS division_id,
+			d.name AS division_name,
 			t.status,
 			t.priority,
 			u.id AS created_by_id,
@@ -211,6 +213,8 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*TicketProjection, 
 		FROM tickets t
 		JOIN categories c
 			ON c.id = t.category_id
+		JOIN divisions d
+			ON d.id = t.division_id
 		JOIN users u
 			ON u.id = t.created_by
 		LEFT JOIN users uat
