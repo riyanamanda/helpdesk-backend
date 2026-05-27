@@ -32,6 +32,20 @@ func (h *handler) Login(c *echo.Context) error {
 	return response.Success(c, http.StatusOK, result)
 }
 
+func (h *handler) LoginWithGoogle(c *echo.Context) error {
+	req, err := request.BindAndValidate[GoogleLoginRequest](c)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	result, err := h.svc.LoginWithGoogle(c.Request().Context(), req)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, http.StatusOK, result)
+}
+
 func (h *handler) Me(c *echo.Context) error {
 	user, err := h.svc.Me(c.Request().Context())
 	if err != nil {

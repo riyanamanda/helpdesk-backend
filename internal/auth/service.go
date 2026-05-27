@@ -14,6 +14,7 @@ import (
 
 type AuthService interface {
 	Login(ctx context.Context, req *LoginRequest) (LoginResponse, error)
+	LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (LoginResponse, error)
 	Me(ctx context.Context) (CurrentUserResponse, error)
 }
 
@@ -46,6 +47,35 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (LoginResponse, 
 
 	if err := bcrypt.CompareHashAndPassword([]byte(currentUser.Password), []byte(req.Password)); err != nil {
 		return LoginResponse{}, apperror.BadRequest("invalid email or password")
+	}
+
+	token, err := utils.GenerateToken(currentUser.ID, string(currentUser.Role), s.config.JWTSecret, s.config.JWTExp)
+	if err != nil {
+		return LoginResponse{}, err
+	}
+
+	return LoginResponse{
+		User:        toCurrentUserResponse(*currentUser, s.storageConfig),
+		AccessToken: token,
+	}, nil
+}
+
+func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (LoginResponse, error) {
+	firebaseClaims, err := utils.VerifyFirebaseIDToken(req.IDToken, s.config.FirebaseProjectID)
+	if err != nil {
+		return LoginResponse{}, apperror.Unauthorized(apperror.CodeUnauthorized, "invalid google token")
+	}
+
+	currentUser, err := s.userRepo.GetByEmail(ctx, firebaseClaims.Email)
+	if err != nil {
+		if errors.Is(err, user.ErrUserNotFound) {
+			return LoginResponse{}, apperror.Forbidden("your google account is not registered")
+		}
+		return LoginResponse{}, err
+	}
+
+	if !currentUser.IsActive {
+		return LoginResponse{}, apperror.Forbidden("user is inactive")
 	}
 
 	token, err := utils.GenerateToken(currentUser.ID, string(currentUser.Role), s.config.JWTSecret, s.config.JWTExp)

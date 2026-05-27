@@ -21,17 +21,10 @@ import (
 	usermocks "github.com/riyanamanda/helpdesk-backend/internal/user/mocks"
 )
 
-type MockStorage struct {
-	mock.Mock
-}
-
 func TestService_Login(t *testing.T) {
 	secret := "test-secret"
 	expiresIn := 15 * time.Minute
-	authConfig := struct {
-		JWTSecret string
-		JWTExp    time.Duration
-	}{
+	authConfig := config.Auth{
 		JWTSecret: secret,
 		JWTExp:    expiresIn,
 	}
