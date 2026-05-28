@@ -125,6 +125,15 @@ func (s *service) FindTicketByID(ctx context.Context, id int64) (TicketDetailRes
 }
 
 func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error {
+	existing, err := s.repo.GetByID(ctx, ticketID)
+	if err != nil {
+		return err
+	}
+
+	if existing.Priority == nil {
+		return apperror.BadRequest("Please set priority before assign a ticket")
+	}
+
 	if err := s.repo.Assign(ctx, ticketID, req.AssignedTo); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperror.NotFound("ticket")
@@ -150,6 +159,15 @@ func (s *service) SetPriority(ctx context.Context, ticketID int64, req TicketPri
 }
 
 func (s *service) RegisterResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file *upload.File) error {
+	existing, err := s.repo.GetByID(ctx, ticketID)
+	if err != nil {
+		return err
+	}
+
+	if existing.AssignedToID == nil {
+		return apperror.BadRequest("Please assign the ticket before add resolution")
+	}
+
 	tx, err := s.repo.Begin(ctx)
 	if err != nil {
 		return err
