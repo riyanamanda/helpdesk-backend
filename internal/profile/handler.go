@@ -16,8 +16,10 @@ type handler struct {
 	svc ProfileService
 }
 
-func NewProfileHandler(svc ProfileService) handler {
-	return handler{svc: svc}
+func NewProfileHandler(svc ProfileService) *handler {
+	return &handler{
+		svc: svc,
+	}
 }
 
 func (h *handler) GetProfile(c *echo.Context) error {

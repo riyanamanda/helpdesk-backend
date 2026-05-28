@@ -19,10 +19,8 @@ func Register(e *echo.Group, db *sqlx.DB, cfg config.Auth, storageConfig config.
 		middleware.AuthMiddleware(cfg),
 	)
 
-	// public
 	authGroup.POST("/login", handler.Login)
 	authGroup.POST("/google", handler.LoginWithGoogle)
 
-	// protected
 	protected.GET("/me", handler.Me)
 }

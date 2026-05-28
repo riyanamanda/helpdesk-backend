@@ -192,5 +192,3 @@ func (r *repository) GetByEmail(ctx context.Context, email string) (*UserProject
 
 	return &user, nil
 }
-
-

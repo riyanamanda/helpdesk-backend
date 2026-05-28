@@ -8,11 +8,9 @@ func Register(e *echo.Echo) {
 }
 
 func registerCore(e *echo.Echo) {
-	// e.Use(recoverMiddleware())
 	e.Use(corsMiddleware())
 }
 
 func registerObservability(e *echo.Echo) {
 	e.Use(requestID())
-	// e.Use(requestLogger())
 }

@@ -8,15 +8,17 @@ import (
 )
 
 type handler struct {
-	service DashboardService
+	svc DashboardService
 }
 
-func NewDashboardHandler(service DashboardService) handler {
-	return handler{service: service}
+func NewDashboardHandler(svc DashboardService) *handler {
+	return &handler{
+		svc: svc,
+	}
 }
 
 func (h *handler) GetSummary(c *echo.Context) error {
-	summary, err := h.service.GetSummary(c.Request().Context())
+	summary, err := h.svc.GetSummary(c.Request().Context())
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -25,7 +27,7 @@ func (h *handler) GetSummary(c *echo.Context) error {
 }
 
 func (h *handler) GetRecentTickets(c *echo.Context) error {
-	tickets, err := h.service.GetRecentTickets(c.Request().Context())
+	tickets, err := h.svc.GetRecentTickets(c.Request().Context())
 	if err != nil {
 		return response.Error(c, err)
 	}

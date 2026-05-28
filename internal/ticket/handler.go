@@ -15,12 +15,12 @@ import (
 )
 
 type handler struct {
-	service TicketService
+	svc TicketService
 }
 
-func NewTicketHandler(service TicketService) handler {
-	return handler{
-		service: service,
+func NewTicketHandler(svc TicketService) *handler {
+	return &handler{
+		svc: svc,
 	}
 }
 
@@ -31,7 +31,7 @@ func (h *handler) ListTickets(c *echo.Context) error {
 		return response.Error(c, apperror.BadRequest("invalid query params"))
 	}
 
-	tickets, total, err := h.service.FetchAllTickets(c.Request().Context(), &param)
+	tickets, total, err := h.svc.FetchAllTickets(c.Request().Context(), &param)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -75,7 +75,7 @@ func (h *handler) CreateTicket(c *echo.Context) error {
 		}
 	}
 
-	if err := h.service.RegisterTicket(c.Request().Context(), req, file); err != nil {
+	if err := h.svc.RegisterTicket(c.Request().Context(), req, file); err != nil {
 		return response.Error(c, err)
 	}
 
@@ -88,7 +88,7 @@ func (h *handler) GetTicket(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	ticket, err := h.service.FindTicketByID(c.Request().Context(), id)
+	ticket, err := h.svc.FindTicketByID(c.Request().Context(), id)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -107,7 +107,7 @@ func (h *handler) AssignTicket(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	if err := h.service.AssignTicket(c.Request().Context(), ticketID, *req); err != nil {
+	if err := h.svc.AssignTicket(c.Request().Context(), ticketID, *req); err != nil {
 		return response.Error(c, err)
 	}
 
@@ -125,7 +125,7 @@ func (h *handler) SetPriority(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	if err := h.service.SetPriority(c.Request().Context(), ticketID, *req); err != nil {
+	if err := h.svc.SetPriority(c.Request().Context(), ticketID, *req); err != nil {
 		return response.Error(c, err)
 	}
 
@@ -173,7 +173,7 @@ func (h *handler) CreateResolution(c *echo.Context) error {
 		}
 	}
 
-	if err := h.service.RegisterResolution(c.Request().Context(), ticketID, *req, file); err != nil {
+	if err := h.svc.RegisterResolution(c.Request().Context(), ticketID, *req, file); err != nil {
 		return response.Error(c, err)
 	}
 
@@ -186,7 +186,7 @@ func (h *handler) CloseTicket(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	if err := h.service.CloseTicket(c.Request().Context(), ticketID); err != nil {
+	if err := h.svc.CloseTicket(c.Request().Context(), ticketID); err != nil {
 		return response.Error(c, err)
 	}
 

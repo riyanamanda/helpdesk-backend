@@ -13,6 +13,7 @@ import (
 )
 
 //go:generate mockery --name TicketRepository
+//go:generate mockery --name TicketTx
 type TicketRepository interface {
 	GetAll(ctx context.Context, params GetTicketParams) ([]TicketProjection, int64, error)
 	GetByID(ctx context.Context, id int64) (*TicketProjection, error)
@@ -40,7 +41,9 @@ type txRepository struct {
 }
 
 func NewTicketRepository(db *sqlx.DB) TicketRepository {
-	return &repository{db: db}
+	return &repository{
+		db: db,
+	}
 }
 
 func (r *repository) Begin(ctx context.Context) (TicketTx, error) {

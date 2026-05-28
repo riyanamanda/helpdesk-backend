@@ -24,7 +24,9 @@ type repository struct {
 }
 
 func NewProfileRepository(db *sqlx.DB) ProfileRepository {
-	return &repository{db: db}
+	return &repository{
+		db: db,
+	}
 }
 
 func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*user.UserProjection, error) {

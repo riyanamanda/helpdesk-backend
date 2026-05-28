@@ -12,8 +12,8 @@ type handler struct {
 	svc AuthService
 }
 
-func NewAuthHandler(svc AuthService) handler {
-	return handler{
+func NewAuthHandler(svc AuthService) *handler {
+	return &handler{
 		svc: svc,
 	}
 }

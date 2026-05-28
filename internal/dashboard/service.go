@@ -12,7 +12,9 @@ type service struct {
 }
 
 func NewDashboardService(repo DashboardRepository) DashboardService {
-	return &service{repo: repo}
+	return &service{
+		repo: repo,
+	}
 }
 
 func (s *service) GetSummary(ctx context.Context) (SummaryResponse, error) {

@@ -8,8 +8,8 @@ import (
 func Register(e *echo.Group, db *sqlx.DB) {
 	repo := NewDashboardRepository(db)
 	svc := NewDashboardService(repo)
-	h := NewDashboardHandler(svc)
+	handler := NewDashboardHandler(svc)
 
-	e.GET("/dashboard/summary", h.GetSummary)
-	e.GET("/dashboard/recent-tickets", h.GetRecentTickets)
+	e.GET("/dashboard/summary", handler.GetSummary)
+	e.GET("/dashboard/recent-tickets", handler.GetRecentTickets)
 }
