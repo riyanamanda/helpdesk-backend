@@ -15,10 +15,11 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
-	"github.com/riyanamanda/helpdesk-backend/internal/profile"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/middleware"
+	"github.com/riyanamanda/helpdesk-backend/internal/infra/redis"
+	"github.com/riyanamanda/helpdesk-backend/internal/profile"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/ticket"
@@ -26,6 +27,7 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
 	cfg := config.Load()
 
 	e := echo.New()
@@ -58,16 +60,23 @@ func main() {
 	}
 	storageService := storage.NewMinioStorage(minioClient, cfg.Storage.Bucket, cfg.Storage.PublicURL)
 
+	// redis
+	redisClient, err := redis.NewRedisClient(ctx, cfg.Redis)
+	if err != nil {
+		slog.Error("failed to connect redis", "error", err)
+		os.Exit(1)
+	}
+
 	// api root
 	api := e.Group("/api/v1")
 
 	// public routes
-	auth.Register(api, db, cfg.Auth, cfg.Storage)
+	auth.Register(api, db, cfg.Auth, cfg.Storage, redisClient)
 
 	// protected route
 	protected := api.Group("")
 	protected.Use(
-		middleware.AuthMiddleware(cfg.Auth),
+		middleware.AuthMiddleware(cfg.Auth, redisClient),
 	)
 
 	// protected modules
@@ -100,11 +109,11 @@ func main() {
 	slog.Info("shutting down server...")
 
 	// wait 10sec for finish any request
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	// shutdown
-	if err := server.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(shutdownctx); err != nil {
 		slog.Error("graceful shutdown failed", "error", err)
 	}
 

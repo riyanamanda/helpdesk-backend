@@ -46,6 +46,13 @@ func (h *handler) LoginWithGoogle(c *echo.Context) error {
 	return response.Success(c, http.StatusOK, result)
 }
 
+func (h *handler) Logout(c *echo.Context) error {
+	if err := h.svc.Logout(c.Request().Context()); err != nil {
+		return response.Error(c, err)
+	}
+	return response.Message(c, http.StatusOK, "logged out successfully")
+}
+
 func (h *handler) Me(c *echo.Context) error {
 	user, err := h.svc.Me(c.Request().Context())
 	if err != nil {

@@ -8,7 +8,10 @@ import (
 
 type contextKey string
 
-const ContextUserIDKey contextKey = "user_id"
+const (
+	ContextUserIDKey contextKey = "user_id"
+	ContextJTIKey    contextKey = "jti"
+)
 
 func SetUserIDToContext(ctx context.Context, userID uuid.UUID) context.Context {
 	return context.WithValue(ctx, ContextUserIDKey, userID)
@@ -16,6 +19,14 @@ func SetUserIDToContext(ctx context.Context, userID uuid.UUID) context.Context {
 
 func GetUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 	userID, ok := ctx.Value(ContextUserIDKey).(uuid.UUID)
-
 	return userID, ok
+}
+
+func SetJTIToContext(ctx context.Context, jti string) context.Context {
+	return context.WithValue(ctx, ContextJTIKey, jti)
+}
+
+func GetJTIFromContext(ctx context.Context) (string, bool) {
+	jti, ok := ctx.Value(ContextJTIKey).(string)
+	return jti, ok
 }

@@ -13,10 +13,13 @@ type JWTCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID uuid.UUID, role string, secret string, expiresIn time.Duration) (string, error) {
+func GenerateToken(userID uuid.UUID, role string, secret string, expiresIn time.Duration) (string, string, error) {
+	jti := uuid.NewString()
+
 	claims := JWTCustomClaims{
 		Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:      jti,
 			Subject: userID.String(),
 			ExpiresAt: jwt.NewNumericDate(
 				time.Now().Add(expiresIn),
@@ -28,8 +31,12 @@ func GenerateToken(userID uuid.UUID, role string, secret string, expiresIn time.
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, err := token.SignedString([]byte(secret))
+	if err != nil {
+		return "", "", err
+	}
 
-	return token.SignedString([]byte(secret))
+	return signedToken, jti, nil
 }
 
 func ParseToken(tokenString string, secret string) (*JWTCustomClaims, error) {

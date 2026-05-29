@@ -10,6 +10,7 @@ type Config struct {
 	Database Database
 	Auth     Auth
 	Storage  Storage
+	Redis    Redis
 }
 
 type App struct {
@@ -40,6 +41,12 @@ type Storage struct {
 	Bucket    string
 	UseSSL    bool
 	PublicURL string
+}
+
+type Redis struct {
+	Host     string
+	Port     string
+	Password string
 }
 
 func (d Database) ConnString() string {

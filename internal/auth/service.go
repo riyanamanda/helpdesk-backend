@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
@@ -12,9 +13,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type sessionStore interface {
+	Set(ctx context.Context, key string, value string, expiration time.Duration) error
+	Delete(ctx context.Context, key string) error
+}
+
 type AuthService interface {
 	Login(ctx context.Context, req *LoginRequest) (LoginResponse, error)
 	LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (LoginResponse, error)
+	Logout(ctx context.Context) error
 	Me(ctx context.Context) (CurrentUserResponse, error)
 }
 
@@ -22,13 +29,15 @@ type service struct {
 	userRepo      user.UserRepository
 	config        config.Auth
 	storageConfig config.Storage
+	redis         sessionStore
 }
 
-func NewAuthService(repo user.UserRepository, cfg config.Auth, storageConfig config.Storage) AuthService {
+func NewAuthService(repo user.UserRepository, cfg config.Auth, storageConfig config.Storage, redis sessionStore) AuthService {
 	return &service{
 		userRepo:      repo,
 		config:        cfg,
 		storageConfig: storageConfig,
+		redis:         redis,
 	}
 }
 
@@ -49,8 +58,12 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (LoginResponse, 
 		return LoginResponse{}, apperror.BadRequest("invalid email or password")
 	}
 
-	token, err := utils.GenerateToken(currentUser.ID, string(currentUser.Role), s.config.JWTSecret, s.config.JWTExp)
+	token, jti, err := utils.GenerateToken(currentUser.ID, string(currentUser.Role), s.config.JWTSecret, s.config.JWTExp)
 	if err != nil {
+		return LoginResponse{}, err
+	}
+
+	if err = s.redis.Set(ctx, "auth:token:"+jti, currentUser.ID.String(), s.config.JWTExp); err != nil {
 		return LoginResponse{}, err
 	}
 
@@ -78,8 +91,12 @@ func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) 
 		return LoginResponse{}, apperror.Forbidden("user is inactive")
 	}
 
-	token, err := utils.GenerateToken(currentUser.ID, string(currentUser.Role), s.config.JWTSecret, s.config.JWTExp)
+	token, jti, err := utils.GenerateToken(currentUser.ID, string(currentUser.Role), s.config.JWTSecret, s.config.JWTExp)
 	if err != nil {
+		return LoginResponse{}, err
+	}
+
+	if err = s.redis.Set(ctx, "auth:token:"+jti, currentUser.ID.String(), s.config.JWTExp); err != nil {
 		return LoginResponse{}, err
 	}
 
@@ -87,6 +104,14 @@ func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) 
 		User:        toCurrentUserResponse(*currentUser, s.storageConfig),
 		AccessToken: token,
 	}, nil
+}
+
+func (s *service) Logout(ctx context.Context) error {
+	jti, ok := utils.GetJTIFromContext(ctx)
+	if !ok || jti == "" {
+		return apperror.Unauthorized(apperror.CodeInvalidToken, "invalid token")
+	}
+	return s.redis.Delete(ctx, "auth:token:"+jti)
 }
 
 func (s *service) Me(ctx context.Context) (CurrentUserResponse, error) {

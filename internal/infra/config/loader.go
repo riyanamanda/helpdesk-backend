@@ -40,6 +40,11 @@ func Load() *Config {
 			UseSSL:    getBoolEnv("MINIO_USE_SSL", false),
 			PublicURL: getEnv("MINIO_PUBLIC_URL", "http://localhost:9000"),
 		},
+		Redis: Redis{
+			Host:     getEnv("REDIS_HOST", "localhost"),
+			Port:     getEnv("REDIS_PORT", "6379"),
+			Password: getEnv("REDIS_PASSWORD", ""),
+		},
 	}
 }
 

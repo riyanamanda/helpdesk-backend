@@ -21,6 +21,16 @@ import (
 	usermocks "github.com/riyanamanda/helpdesk-backend/internal/user/mocks"
 )
 
+type fakeSessionStore struct{}
+
+func (f *fakeSessionStore) Set(_ context.Context, _ string, _ string, _ time.Duration) error {
+	return nil
+}
+
+func (f *fakeSessionStore) Delete(_ context.Context, _ string) error {
+	return nil
+}
+
 func TestService_Login(t *testing.T) {
 	secret := "test-secret"
 	expiresIn := 15 * time.Minute
@@ -46,7 +56,7 @@ func TestService_Login(t *testing.T) {
 		svc := auth.NewAuthService(repo, authConfig, config.Storage{
 			PublicURL: "http://localhost:9000",
 			Bucket:    "helpdesk-dev",
-		})
+		}, &fakeSessionStore{})
 
 		result, err := svc.Login(context.Background(), &auth.LoginRequest{
 			Email:    "admin@email.com",
@@ -71,7 +81,7 @@ func TestService_Login(t *testing.T) {
 		svc := auth.NewAuthService(repo, authConfig, config.Storage{
 			PublicURL: "http://localhost:9000",
 			Bucket:    "helpdesk-dev",
-		})
+		}, &fakeSessionStore{})
 
 		result, err := svc.Login(context.Background(), &auth.LoginRequest{
 			Email:    "missing@email.com",
