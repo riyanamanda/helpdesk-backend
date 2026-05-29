@@ -1,4 +1,4 @@
-.PHONY: run tidy test clean seed migrate-up migrate-down
+.PHONY: run tidy test clean seed migrate-up migrate-down format
 
 run:
 	air
@@ -23,3 +23,6 @@ migrate-up:
 
 migrate-down:
 	goose down
+
+format:
+	goimports -w -local github.com/riyanamanda/helpdesk-backend .

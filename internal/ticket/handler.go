@@ -2,11 +2,9 @@ package ticket
 
 import (
 	"errors"
-	"log/slog"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
-
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
@@ -24,10 +22,8 @@ func NewTicketHandler(svc TicketService) *Handler {
 		svc: svc,
 	}
 }
-
 func (h *Handler) ListTickets(c *echo.Context) error {
 	var params GetTicketParams
-
 	if err := c.Bind(&params); err != nil {
 		return response.Error(c, apperror.BadRequest("invalid query params"))
 	}
@@ -62,11 +58,7 @@ func (h *Handler) CreateTicket(c *echo.Context) error {
 		if err != nil {
 			return response.Error(c, apperror.Internal("failed to open uploaded attachment"))
 		}
-		defer func() {
-			if err := f.Close(); err != nil {
-				slog.Error("failed to close file", "error", err)
-			}
-		}()
+		defer f.Close()
 
 		file = &upload.File{
 			Content:     f,
@@ -145,7 +137,6 @@ func (h *Handler) CreateResolution(c *echo.Context) error {
 	}
 
 	var file *upload.File
-
 	fileHeader, err := c.FormFile("attachment")
 	if err != nil && !errors.Is(err, http.ErrMissingFile) && !errors.Is(err, http.ErrNotMultipart) {
 		return response.Error(c, err)
@@ -160,11 +151,7 @@ func (h *Handler) CreateResolution(c *echo.Context) error {
 		if err != nil {
 			return response.Error(c, apperror.Internal("failed to open uploaded attachment"))
 		}
-		defer func() {
-			if err := f.Close(); err != nil {
-				slog.Error("failed to close file", "error", err)
-			}
-		}()
+		defer f.Close()
 
 		file = &upload.File{
 			Content:     f,

@@ -7,9 +7,7 @@ import (
 )
 
 func Register(e *echo.Echo, cfg config.App) {
-
 	e.Use(corsMiddleware(cfg.CORSOrigins))
 
 	e.Use(requestID())
-
 }

@@ -14,38 +14,28 @@ type CustomValidator struct {
 }
 
 func New() *CustomValidator {
-
 	v := validator.New()
 
 	v.RegisterTagNameFunc(func(fld reflect.StructField) string {
-
 		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
 
 		if name == "-" {
-
 			return ""
-
 		}
 
 		return name
-
 	})
 
 	return &CustomValidator{validator: v}
-
 }
 
 func (cv *CustomValidator) Validate(i any) error {
-
 	return cv.validator.Struct(i)
-
 }
 
 func Parse(err error) *apperror.AppError {
-
 	return apperror.Validation(
 
 		apperror.ValidationErrors(err),
 	)
-
 }

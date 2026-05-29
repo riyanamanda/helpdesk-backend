@@ -7,60 +7,36 @@ import (
 )
 
 func toProfileResponse(p user.UserProjection, storageConfig config.Storage) ProfileResponse {
-
 	var avatarURL *string
-
 	var createdBy *user.UserBrief
 
 	if p.AvatarKey != nil {
-
 		url := httputil.BuildPublicURL(storageConfig.PublicURL, storageConfig.Bucket, *p.AvatarKey)
-
 		avatarURL = &url
-
 	}
 
 	if p.CreatedByID != nil && p.CreatedByName != nil {
-
 		createdBy = &user.UserBrief{
-
-			ID: *p.CreatedByID,
-
+			ID:   *p.CreatedByID,
 			Name: *p.CreatedByName,
 		}
-
 	}
 
 	return ProfileResponse{
-
-		ID: p.ID,
-
-		Name: p.Name,
-
-		Email: p.Email,
-
-		GoogleID: p.GoogleID,
-
+		ID:        p.ID,
+		Name:      p.Name,
+		Email:     p.Email,
+		GoogleID:  p.GoogleID,
 		AvatarURL: avatarURL,
-
-		Phone: p.Phone,
-
-		Role: p.Role,
-
+		Phone:     p.Phone,
+		Role:      p.Role,
 		Division: DivisionBrief{
-
-			ID: p.DivisionID,
-
+			ID:   p.DivisionID,
 			Name: p.DivisionName,
 		},
-
-		IsActive: p.IsActive,
-
+		IsActive:  p.IsActive,
 		CreatedBy: createdBy,
-
 		CreatedAt: p.CreatedAt,
-
 		UpdatedAt: p.UpdatedAt,
 	}
-
 }

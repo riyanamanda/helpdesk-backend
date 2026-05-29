@@ -8,12 +8,18 @@ CREATE TABLE IF NOT EXISTS users (
     google_id VARCHAR(100) UNIQUE,
     avatar_key TEXT,
     phone VARCHAR(20),
+    gender VARCHAR(10) NOT NULL,
     role VARCHAR(20) NOT NULL,
     division_id INTEGER NOT NULL REFERENCES divisions(id) ON UPDATE RESTRICT ON DELETE RESTRICT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_by UUID REFERENCES users(id) ON UPDATE RESTRICT ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT users_gender_check
+    CHECK (
+        gender IN ('MALE', 'FEMALE')
+    ),
     
     CONSTRAINT users_role_check
     CHECK (

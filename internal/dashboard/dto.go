@@ -16,11 +16,11 @@ type TicketPriorityStats struct {
 }
 
 type SummaryResponse struct {
-	ByStatus   TicketStatusStats   `json:"by_status"`
-	ByPriority TicketPriorityStats `json:"by_priority"`
+	Status   TicketStatusStats   `json:"status"`
+	Priority TicketPriorityStats `json:"priority"`
 }
 
-type RecentTicket struct {
+type RecentTicketResponse struct {
 	ID         int64   `json:"id"`
 	Title      string  `json:"title"`
 	Status     string  `json:"status"`

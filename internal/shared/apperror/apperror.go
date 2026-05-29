@@ -36,13 +36,14 @@ type AppError struct {
 	Code       string
 	Message    string
 	StatusCode int
-	Details    map[string]interface{}
+	Details    map[string]any
 }
 
 func (e *AppError) Error() string {
 	if e.Message != "" {
 		return e.Message
 	}
+
 	return e.Err.Error()
 }
 
@@ -112,8 +113,8 @@ func Validation(details map[string]any) *AppError {
 
 func ValidationErrors(err error) map[string]any {
 	result := map[string]any{}
-
 	var ve validator.ValidationErrors
+
 	if !errors.As(err, &ve) {
 		return result
 	}

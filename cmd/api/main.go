@@ -28,124 +28,88 @@ import (
 )
 
 func main() {
-
 	ctx := context.Background()
-
 	cfg := config.Load()
 
 	e := echo.New()
-
 	e.Validator = validation.New()
 
 	middleware.Register(e, cfg.App)
 
 	e.GET("/", func(c *echo.Context) error {
-
 		return c.JSON(http.StatusOK, map[string]string{
-
 			"status": "healthy",
-
-			"name": cfg.App.Name,
+			"name":   cfg.App.Name,
 		})
-
 	})
 
 	db := database.NewPostgres(cfg.Database.ConnString())
+	defer db.Close()
 
-	defer func() {
-
-		if err := db.Close(); err != nil {
-
-			slog.Error("failed to close database", "error", err)
-
-		}
-
-	}()
-
-	minioClient, err := storage.NewMinioClient(cfg.Storage.Endpoint, cfg.Storage.AccessKey, cfg.Storage.SecretKey, cfg.Storage.UseSSL)
-
+	minioClient, err := storage.NewMinioClient(
+		cfg.Storage.Endpoint,
+		cfg.Storage.AccessKey,
+		cfg.Storage.SecretKey,
+		cfg.Storage.UseSSL,
+	)
 	if err != nil {
-
 		slog.Error("load storage failed", "error", err)
-
 		os.Exit(1)
-
 	}
 
-	storageService := storage.NewMinioStorage(minioClient, cfg.Storage.Bucket, cfg.Storage.PublicURL)
+	storageService := storage.NewMinioStorage(
+		minioClient,
+		cfg.Storage.Bucket,
+		cfg.Storage.PublicURL,
+	)
 
 	redisClient, err := redis.NewRedisClient(ctx, cfg.Redis)
-
 	if err != nil {
-
 		slog.Error("failed to connect redis", "error", err)
-
 		os.Exit(1)
-
 	}
 
 	userRepo := user.NewUserRepository(db)
-
 	api := e.Group("/api/v1")
 
 	auth.Register(api, userRepo, cfg.Auth, cfg.Storage, redisClient)
 
 	protected := api.Group("")
-
 	protected.Use(
-
 		middleware.AuthMiddleware(cfg.Auth, redisClient),
 	)
 
 	category.Register(protected, db)
-
 	division.Register(protected, db)
-
 	user.Register(protected, userRepo, cfg.Storage)
-
 	ticket.Register(protected, db, storageService, cfg.Storage)
-
 	dashboard.Register(protected, db)
-
 	profile.Register(protected, db, storageService, cfg.Storage, cfg.Auth)
 
 	server := &http.Server{
-
-		Addr: net.JoinHostPort(cfg.App.Host, cfg.App.Port),
-
+		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),
 		Handler: e,
 	}
 
 	go func() {
-
 		slog.Info("server starting", "addr", server.Addr)
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-
 			slog.Error("failed to start server", "addr", server.Addr, "error", err)
-
 		}
-
 	}()
 
 	quit := make(chan os.Signal, 1)
-
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-
-	<-quit // blocking
-
+	<-quit
 	slog.Info("shutting down server...")
 
-	shutdownctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-
+	shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	if err := server.Shutdown(shutdownctx); err != nil {
-
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		slog.Error("graceful shutdown failed", "error", err)
-
 	}
 
 	slog.Info("server exited properly")
-
 }

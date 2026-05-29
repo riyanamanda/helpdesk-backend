@@ -25,7 +25,7 @@ func VerifyIDToken(idToken, projectID string) (*Claims, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch firebase public keys: %w", err)
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer resp.Body.Close()
 
 	var certs map[string]string
 	if err := json.NewDecoder(resp.Body).Decode(&certs); err != nil {

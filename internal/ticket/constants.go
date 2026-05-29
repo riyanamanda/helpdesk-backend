@@ -1,7 +1,9 @@
 package ticket
 
-type TicketStatus string
-type TicketPriority string
+type (
+	TicketStatus   string
+	TicketPriority string
+)
 
 type AttachmentType string
 

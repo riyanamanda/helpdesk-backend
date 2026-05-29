@@ -7,8 +7,7 @@ import (
 )
 
 type LoginRequest struct {
-	Email string `json:"email" validate:"required,email"`
-
+	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
 }
 
@@ -17,27 +16,20 @@ type GoogleLoginRequest struct {
 }
 
 type LoginResponse struct {
-	User CurrentUserResponse `json:"user"`
-
-	AccessToken string `json:"access_token"`
+	User        CurrentUserResponse `json:"user"`
+	AccessToken string              `json:"access_token"`
 }
 
 type DivisionBrief struct {
-	ID int64 `json:"id"`
-
+	ID   int64  `json:"id"`
 	Name string `json:"name"`
 }
 
 type CurrentUserResponse struct {
-	ID uuid.UUID `json:"id"`
-
-	Name string `json:"name"`
-
-	Email string `json:"email"`
-
-	Role user.UserRole `json:"role"`
-
-	AvatarURL *string `json:"avatar_url"`
-
-	Division DivisionBrief `json:"division"`
+	ID        uuid.UUID     `json:"id"`
+	Name      string        `json:"name"`
+	Email     string        `json:"email"`
+	Role      user.UserRole `json:"role"`
+	AvatarURL *string       `json:"avatar_url"`
+	Division  DivisionBrief `json:"division"`
 }

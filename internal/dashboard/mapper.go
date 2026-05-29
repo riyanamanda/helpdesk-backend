@@ -1,0 +1,28 @@
+package dashboard
+
+import "time"
+
+func toSummary(s SummaryProjection) SummaryResponse {
+	return SummaryResponse{
+		Status:   TicketStatusStats(s.Status),
+		Priority: TicketPriorityStats(s.Priority),
+	}
+}
+
+func toRecentTickets(tickets []RecentTicketProjection) []RecentTicketResponse {
+	result := make([]RecentTicketResponse, len(tickets))
+
+	for i, row := range tickets {
+		result[i] = RecentTicketResponse{
+			ID:         row.ID,
+			Title:      row.Title,
+			Status:     row.Status,
+			Priority:   row.Priority,
+			CreatedBy:  row.CreatedBy,
+			AssignedTo: row.AssignedTo,
+			CreatedAt:  row.CreatedAt.Format(time.RFC3339),
+		}
+	}
+
+	return result
+}

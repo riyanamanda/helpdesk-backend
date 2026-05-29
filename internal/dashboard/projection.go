@@ -2,7 +2,12 @@ package dashboard
 
 import "time"
 
-type statusStatsRow struct {
+type SummaryProjection struct {
+	Status   StatusStatsProjection
+	Priority PriorityStatsProjection
+}
+
+type StatusStatsProjection struct {
 	Open       int64 `db:"open"`
 	InProgress int64 `db:"in_progress"`
 	Resolved   int64 `db:"resolved"`
@@ -10,14 +15,14 @@ type statusStatsRow struct {
 	Total      int64 `db:"total"`
 }
 
-type priorityStatsRow struct {
+type PriorityStatsProjection struct {
 	Low    int64 `db:"low"`
 	Medium int64 `db:"medium"`
 	High   int64 `db:"high"`
 	Urgent int64 `db:"urgent"`
 }
 
-type recentTicketRow struct {
+type RecentTicketProjection struct {
 	ID         int64     `db:"id"`
 	Title      string    `db:"title"`
 	Status     string    `db:"status"`

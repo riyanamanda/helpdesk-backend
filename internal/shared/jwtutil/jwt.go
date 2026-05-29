@@ -50,7 +50,6 @@ func ParseToken(tokenString, secret string) (*JWTCustomClaims, error) {
 			return []byte(secret), nil
 		},
 	)
-
 	if err != nil {
 		return nil, err
 	}

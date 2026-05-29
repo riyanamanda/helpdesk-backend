@@ -9,12 +9,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
-
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
 )
 
 func ParsePositiveInt64PathParam(c *echo.Context, paramName, resourceName string) (int64, error) {
 	value := c.Param(paramName)
+
 	id, err := strconv.ParseInt(value, 10, 64)
 	if err != nil || id <= 0 {
 		if resourceName != "" {
@@ -28,13 +28,11 @@ func ParsePositiveInt64PathParam(c *echo.Context, paramName, resourceName string
 
 func GenerateObjectKey(prefix, filename string) string {
 	ext := filepath.Ext(filename)
-
 	random := strings.ReplaceAll(
 		uuid.NewString(),
 		"-",
 		"",
 	)[:8]
-
 	return fmt.Sprintf(
 		"%s/%d-%s%s",
 		prefix,

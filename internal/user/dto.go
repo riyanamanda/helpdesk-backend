@@ -4,78 +4,52 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/pagination"
 )
 
 type DivisionBrief struct {
-	ID int64 `json:"id"`
-
+	ID   int64  `json:"id"`
 	Name string `json:"name"`
 }
 
 type UserResponse struct {
-	ID uuid.UUID `json:"id"`
-
-	Name string `json:"name"`
-
-	Email string `json:"email"`
-
-	GoogleID *string `json:"google_id"`
-
-	AvatarURL *string `json:"avatar_url"`
-
-	Phone *string `json:"phone"`
-
-	Role UserRole `json:"role"`
-
-	Division DivisionBrief `json:"division"`
-
-	IsActive bool `json:"is_active"`
-
-	CreatedBy *UserBrief `json:"created_by"`
-
-	CreatedAt time.Time `json:"created_at"`
-
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uuid.UUID     `json:"id"`
+	Name      string        `json:"name"`
+	Email     string        `json:"email"`
+	GoogleID  *string       `json:"google_id"`
+	AvatarURL *string       `json:"avatar_url"`
+	Phone     *string       `json:"phone"`
+	Role      UserRole      `json:"role"`
+	Division  DivisionBrief `json:"division"`
+	IsActive  bool          `json:"is_active"`
+	CreatedBy *UserBrief    `json:"created_by"`
+	CreatedAt time.Time     `json:"created_at"`
+	UpdatedAt time.Time     `json:"updated_at"`
 }
 
 type UserBrief struct {
-	ID uuid.UUID `json:"id"`
-
-	Name string `json:"name"`
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
 }
 
 type GetUserParams struct {
 	pagination.Params
-
-	Search string `query:"search"`
-
-	SortBy string `query:"sort_by"`
-
-	SortType string `query:"sort_type"`
-
-	IsActive *bool `query:"is_active"`
-
-	Role UserRole `query:"role"`
-
-	DivisionID *int64 `query:"division_id"`
+	Search     string   `query:"search"`
+	SortBy     string   `query:"sort_by"`
+	SortType   string   `query:"sort_type"`
+	IsActive   *bool    `query:"is_active"`
+	Role       UserRole `query:"role"`
+	DivisionID *int64   `query:"division_id"`
 }
 
 type UserCreateRequest struct {
-	Name string `json:"name" validate:"required,min=3,max=20"`
-
-	Email string `json:"email" validate:"required,email"`
-
-	Password string `json:"password" validate:"required,min=8"`
-
-	Role UserRole `json:"role" validate:"required,oneof=ADMIN EMPLOYEE"`
-
-	DivisionID int64 `json:"division_id" validate:"required,gt=0"`
+	Name       string   `json:"name" validate:"required,min=3,max=20"`
+	Email      string   `json:"email" validate:"required,email"`
+	Password   string   `json:"password" validate:"required,min=8"`
+	Role       UserRole `json:"role" validate:"required,oneof=ADMIN EMPLOYEE"`
+	DivisionID int64    `json:"division_id" validate:"required,gt=0"`
 }
 
 func (p *GetUserParams) Normalize() {
-
 	p.Params.Normalize()
-
 }
