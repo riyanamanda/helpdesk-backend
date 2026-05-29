@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
@@ -18,6 +19,7 @@ type ProfileService interface {
 	UpdateProfile(ctx context.Context, req *UpdateProfileRequest) error
 	UpdateAvatar(ctx context.Context, file *upload.File) error
 	SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error
+	RevokeGoogle(ctx context.Context) error
 }
 
 type service struct {
@@ -59,7 +61,7 @@ func (s *service) UpdateProfile(ctx context.Context, req *UpdateProfileRequest) 
 		return apperror.Unauthorized(apperror.CodeUnauthorized, "unauthorized")
 	}
 
-	if err := s.profileRepo.UpdateProfile(ctx, userID, req.Name, req.Phone); err != nil {
+	if err := s.profileRepo.UpdateProfile(ctx, userID, req.Name, req.Phone, strings.ToUpper(req.Gender)); err != nil {
 		if errors.Is(err, ErrProfileNotFound) {
 			return apperror.NotFound("profile")
 		}
@@ -107,6 +109,28 @@ func (s *service) SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error 
 		if errors.Is(err, ErrGoogleIDAlreadyLinked) {
 			return apperror.AlreadyExists("google account")
 		}
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) RevokeGoogle(ctx context.Context) error {
+	userID, ok := ctxkey.GetUserIDFromContext(ctx)
+	if !ok {
+		return apperror.Unauthorized(apperror.CodeUnauthorized, "unauthorized")
+	}
+
+	currentProfile, err := s.profileRepo.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	if currentProfile.GoogleID == nil {
+		return apperror.NotFound("your account is not linked to google")
+	}
+
+	if err := s.profileRepo.UnsetGoogleID(ctx, userID); err != nil {
 		return err
 	}
 

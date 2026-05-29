@@ -85,3 +85,11 @@ func (h *Handler) SyncGoogle(c *echo.Context) error {
 
 	return response.Message(c, http.StatusOK, "google account linked successfully")
 }
+
+func (h *Handler) RevokeGoogle(c *echo.Context) error {
+	if err := h.svc.RevokeGoogle(c.Request().Context()); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Message(c, http.StatusOK, "google account unlinked successfully")
+}

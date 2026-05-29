@@ -18,4 +18,5 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storag
 	profileGroup.PUT("", handler.UpdateProfile)
 	profileGroup.PATCH("/avatar", handler.UpdateAvatar)
 	profileGroup.POST("/sync-google", handler.SyncGoogle)
+	profileGroup.POST("/revoke-google", handler.RevokeGoogle)
 }

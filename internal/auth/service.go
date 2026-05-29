@@ -105,6 +105,10 @@ func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) 
 		return LoginResponse{}, err
 	}
 
+	if currentUser.GoogleID == nil {
+		return LoginResponse{}, apperror.Forbidden("google account is not linked to this account")
+	}
+
 	if !currentUser.IsActive {
 		return LoginResponse{}, apperror.Forbidden("user is inactive")
 	}

@@ -13,9 +13,10 @@ import (
 
 type ProfileRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*user.UserProjection, error)
-	UpdateProfile(ctx context.Context, id uuid.UUID, name string, phone *string) error
+	UpdateProfile(ctx context.Context, id uuid.UUID, name string, phone *string, gender string) error
 	UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error
 	SetGoogleID(ctx context.Context, id uuid.UUID, googleID string) error
+	UnsetGoogleID(ctx context.Context, id uuid.UUID) error
 }
 
 type repository struct {
@@ -63,16 +64,17 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*user.UserProje
 	return &user, nil
 }
 
-func (r *repository) UpdateProfile(ctx context.Context, id uuid.UUID, name string, phone *string) error {
+func (r *repository) UpdateProfile(ctx context.Context, id uuid.UUID, name string, phone *string, gender string) error {
 	const query = `
 		UPDATE users
-		SET name       = $2,
-		    phone      = $3,
-		    updated_at = NOW()
+		SET name       	= $2,
+		    phone     	= $3,
+			gender		= $4,
+		    updated_at 	= NOW()
 		WHERE id = $1
 	`
 
-	result, err := r.db.ExecContext(ctx, query, id, name, phone)
+	result, err := r.db.ExecContext(ctx, query, id, name, phone, gender)
 	if err != nil {
 		return err
 	}
@@ -109,6 +111,22 @@ func (r *repository) SetGoogleID(ctx context.Context, id uuid.UUID, googleID str
 		if dberror.IsUniqueViolation(err) {
 			return ErrGoogleIDAlreadyLinked
 		}
+		return err
+	}
+
+	return dberror.CheckRowsAffected(result, ErrProfileNotFound)
+}
+
+func (r *repository) UnsetGoogleID(ctx context.Context, id uuid.UUID) error {
+	const query = `
+		UPDATE users
+		SET google_id	= null,
+			updated_at	= NOW()
+		WHERE id = $1
+	`
+
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
 		return err
 	}
 
