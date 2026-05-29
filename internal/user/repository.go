@@ -88,6 +88,7 @@ func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]UserPr
 			u.avatar_key,
 			u.phone,
 			u.role,
+			u.gender,
 			d.id as division_id,
 			d.name as division_name,
 			u.is_active,
@@ -113,11 +114,11 @@ func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]UserPr
 
 func (r *repository) Create(ctx context.Context, user *User) error {
 	const query = `
-		INSERT INTO users (name, email, password, role, division_id, created_by)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO users (name, email, password, role, gender, division_id, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 
-	_, err := r.db.ExecContext(ctx, query, user.Name, user.Email, user.Password, user.Role, user.DivisionID, user.CreatedBy)
+	_, err := r.db.ExecContext(ctx, query, user.Name, user.Email, user.Password, user.Role, user.Gender, user.DivisionID, user.CreatedBy)
 	if err != nil {
 		if dberror.IsUniqueViolation(err) {
 			return ErrUserAlreadyExists
@@ -141,6 +142,7 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*UserProjection
 			u.avatar_key,
 			u.phone,
 			u.role,
+			u.gender,
 			d.id as division_id,
 			d.name as division_name,
 			u.is_active,
@@ -180,6 +182,7 @@ func (r *repository) GetByEmail(ctx context.Context, email string) (*UserProject
 			u.avatar_key,
 			u.phone,
 			u.role,
+			u.gender,
 			d.id as division_id,
 			d.name as division_name,
 			u.is_active,

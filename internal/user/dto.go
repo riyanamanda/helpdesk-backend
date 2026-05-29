@@ -20,6 +20,7 @@ type UserResponse struct {
 	AvatarURL *string       `json:"avatar_url"`
 	Phone     *string       `json:"phone"`
 	Role      UserRole      `json:"role"`
+	Gender    string        `json:"gender"`
 	Division  DivisionBrief `json:"division"`
 	IsActive  bool          `json:"is_active"`
 	CreatedBy *UserBrief    `json:"created_by"`
@@ -48,6 +49,7 @@ type UserCreateRequest struct {
 	Password   string   `json:"password" validate:"required,min=8"`
 	Role       UserRole `json:"role" validate:"required,oneof=ADMIN EMPLOYEE"`
 	DivisionID int64    `json:"division_id" validate:"required,gt=0"`
+	Gender     string   `json:"gender" validate:"required"`
 }
 
 func (p *GetUserParams) Normalize() {

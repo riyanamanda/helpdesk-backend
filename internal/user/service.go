@@ -62,6 +62,7 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 		Password:   string(hashedPassword),
 		Role:       req.Role,
 		DivisionID: req.DivisionID,
+		Gender:     strings.ToUpper(req.Gender),
 		CreatedBy:  createdBy,
 	}
 

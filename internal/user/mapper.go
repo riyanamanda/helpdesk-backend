@@ -30,6 +30,7 @@ func toUserResponse(u UserProjection, storageConfig config.Storage) UserResponse
 		AvatarURL: avatarURL,
 		Phone:     u.Phone,
 		Role:      UserRole(u.Role),
+		Gender:    u.Gender,
 		Division: DivisionBrief{
 			ID:   u.DivisionID,
 			Name: u.DivisionName,

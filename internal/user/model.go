@@ -15,6 +15,7 @@ type User struct {
 	AvatarKey  *string    `db:"avatar_key"`
 	Phone      *string    `db:"phone"`
 	Role       UserRole   `db:"role"`
+	Gender     string     `db:"gender"`
 	DivisionID int64      `db:"division_id"`
 	IsActive   bool       `db:"is_active"`
 	CreatedBy  *uuid.UUID `db:"created_by"`
