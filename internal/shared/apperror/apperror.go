@@ -64,7 +64,7 @@ func AlreadyExists(resource string) *AppError {
 	}
 }
 
-func Unauthorized(code string, message string) *AppError {
+func Unauthorized(code, message string) *AppError {
 	return &AppError{
 		Err:        ErrUnauthorized,
 		Code:       code,
@@ -111,27 +111,31 @@ func Validation(details map[string]any) *AppError {
 }
 
 func ValidationErrors(err error) map[string]any {
-	errors := map[string]any{}
+	result := map[string]any{}
 
-	for _, err := range err.(validator.ValidationErrors) {
-		field := strings.ToLower(err.Field())
+	var ve validator.ValidationErrors
+	if !errors.As(err, &ve) {
+		return result
+	}
 
-		switch err.Tag() {
+	for _, e := range ve {
+		field := strings.ToLower(e.Field())
 
+		switch e.Tag() {
 		case "required":
-			errors[field] = field + " is required"
+			result[field] = field + " is required"
 		case "min":
-			errors[field] = field + " minimum length is " + err.Param()
+			result[field] = field + " minimum length is " + e.Param()
 		case "max":
-			errors[field] = field + " maximum length is " + err.Param()
+			result[field] = field + " maximum length is " + e.Param()
 		case "email":
-			errors[field] = "invalid email format"
+			result[field] = "invalid email format"
 		default:
-			errors[field] = "invalid value"
+			result[field] = "invalid value"
 		}
 	}
 
-	return errors
+	return result
 }
 
 func As(err error) *AppError {

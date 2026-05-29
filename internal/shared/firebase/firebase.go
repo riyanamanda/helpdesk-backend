@@ -1,4 +1,4 @@
-package utils
+package firebase
 
 import (
 	"crypto/rsa"
@@ -14,25 +14,25 @@ import (
 
 const firebasePublicKeyURL = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
 
-type FirebaseClaims struct {
+type Claims struct {
 	Email         string `json:"email"`
 	EmailVerified bool   `json:"email_verified"`
 	jwt.RegisteredClaims
 }
 
-func VerifyFirebaseIDToken(idToken string, projectID string) (*FirebaseClaims, error) {
+func VerifyIDToken(idToken, projectID string) (*Claims, error) {
 	resp, err := http.Get(firebasePublicKeyURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch firebase public keys: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var certs map[string]string
 	if err := json.NewDecoder(resp.Body).Decode(&certs); err != nil {
 		return nil, fmt.Errorf("failed to decode firebase public keys: %w", err)
 	}
 
-	claims := &FirebaseClaims{}
+	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(idToken, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

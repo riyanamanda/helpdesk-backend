@@ -12,18 +12,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
-	ticket "github.com/riyanamanda/helpdesk-backend/internal/ticket"
-	ticketmocks "github.com/riyanamanda/helpdesk-backend/internal/ticket/mocks"
-	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
 	testingutil "github.com/riyanamanda/helpdesk-backend/internal/shared/testing"
 	storagemocks "github.com/riyanamanda/helpdesk-backend/internal/storage/mocks"
+	ticket "github.com/riyanamanda/helpdesk-backend/internal/ticket"
+	ticketmocks "github.com/riyanamanda/helpdesk-backend/internal/ticket/mocks"
 )
 
 func newTestService(repo ticket.TicketRepository, storage *storagemocks.Storage) ticket.TicketService {
 	return ticket.NewTicketService(repo, storage, config.Storage{})
 }
 
-func TestService_FetchAllTickets(t *testing.T) {
+func TestService_ListTickets(t *testing.T) {
 	testCases := []struct {
 		name      string
 		params    *ticket.GetTicketParams
@@ -52,7 +52,7 @@ func TestService_FetchAllTickets(t *testing.T) {
 			setupMock: func(repo *ticketmocks.TicketRepository) {
 				repo.On("GetAll", mock.Anything, mock.Anything).Return(nil, int64(0), errors.New("database error")).Once()
 			},
-			assertFn: func(t *testing.T, result []ticket.TicketResponse, total int64, err error) {
+			assertFn: func(t *testing.T, result []ticket.TicketResponse, _ int64, err error) {
 				require.Error(t, err)
 				assert.Empty(t, result)
 				assert.EqualError(t, err, "database error")
@@ -67,13 +67,13 @@ func TestService_FetchAllTickets(t *testing.T) {
 			svc := newTestService(repo, storage)
 			tc.setupMock(repo)
 
-			result, total, err := svc.FetchAllTickets(context.Background(), tc.params)
+			result, total, err := svc.ListTickets(context.Background(), tc.params)
 			tc.assertFn(t, result, total, err)
 		})
 	}
 }
 
-func TestService_FindTicketByID(t *testing.T) {
+func TestService_GetTicket(t *testing.T) {
 	testCases := []struct {
 		name      string
 		id        int64
@@ -101,7 +101,7 @@ func TestService_FindTicketByID(t *testing.T) {
 			setupMock: func(repo *ticketmocks.TicketRepository) {
 				repo.On("GetByID", mock.Anything, int64(2)).Return(nil, ticket.ErrTicketNotFound).Once()
 			},
-			assertFn: func(t *testing.T, result ticket.TicketDetailResponse, err error) {
+			assertFn: func(t *testing.T, _ ticket.TicketDetailResponse, err error) {
 				require.Error(t, err)
 				testingutil.AssertAppError(t, err, apperror.CodeNotFound, http.StatusNotFound, "ticket not found")
 			},
@@ -112,7 +112,7 @@ func TestService_FindTicketByID(t *testing.T) {
 			setupMock: func(repo *ticketmocks.TicketRepository) {
 				repo.On("GetByID", mock.Anything, int64(3)).Return(nil, errors.New("database error")).Once()
 			},
-			assertFn: func(t *testing.T, result ticket.TicketDetailResponse, err error) {
+			assertFn: func(t *testing.T, _ ticket.TicketDetailResponse, err error) {
 				require.Error(t, err)
 				assert.EqualError(t, err, "database error")
 			},
@@ -126,7 +126,7 @@ func TestService_FindTicketByID(t *testing.T) {
 			svc := newTestService(repo, storage)
 			tc.setupMock(repo)
 
-			result, err := svc.FindTicketByID(context.Background(), tc.id)
+			result, err := svc.GetTicket(context.Background(), tc.id)
 			tc.assertFn(t, result, err)
 		})
 	}
@@ -307,7 +307,7 @@ func TestService_CloseTicket(t *testing.T) {
 	}
 }
 
-func TestService_RegisterTicket(t *testing.T) {
+func TestService_CreateTicket(t *testing.T) {
 	testCases := []struct {
 		name      string
 		req       *ticket.TicketCreateRequest
@@ -330,7 +330,7 @@ func TestService_RegisterTicket(t *testing.T) {
 		{
 			name: "begin transaction error",
 			req:  &ticket.TicketCreateRequest{Title: "Issue", Description: "desc", CategoryID: 1, DivisionID: 1},
-			setupMock: func(repo *ticketmocks.TicketRepository, tx *ticketmocks.TicketTx) {
+			setupMock: func(repo *ticketmocks.TicketRepository, _ *ticketmocks.TicketTx) {
 				repo.On("Begin", mock.Anything).Return(nil, errors.New("tx error")).Once()
 			},
 			assertFn: func(t *testing.T, err error) {
@@ -361,7 +361,7 @@ func TestService_RegisterTicket(t *testing.T) {
 			svc := newTestService(repo, storage)
 			tc.setupMock(repo, tx)
 
-			err := svc.RegisterTicket(context.Background(), tc.req, nil)
+			err := svc.CreateTicket(context.Background(), tc.req, nil)
 			tc.assertFn(t, err)
 		})
 	}

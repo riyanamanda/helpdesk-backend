@@ -14,9 +14,9 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	profile "github.com/riyanamanda/helpdesk-backend/internal/profile"
 	profilemocks "github.com/riyanamanda/helpdesk-backend/internal/profile/mocks"
-	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	testingutil "github.com/riyanamanda/helpdesk-backend/internal/shared/testing"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	storagemocks "github.com/riyanamanda/helpdesk-backend/internal/storage/mocks"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
@@ -26,7 +26,7 @@ func newProfileService(repo profile.ProfileRepository, storage *storagemocks.Sto
 }
 
 func ctxWithUser(id uuid.UUID) context.Context {
-	return utils.SetUserIDToContext(context.Background(), id)
+	return ctxkey.SetUserIDToContext(context.Background(), id)
 }
 
 func TestService_GetProfile(t *testing.T) {
@@ -53,8 +53,8 @@ func TestService_GetProfile(t *testing.T) {
 		{
 			name:      "no user in context",
 			ctx:       context.Background(),
-			setupMock: func(repo *profilemocks.ProfileRepository) {},
-			assertFn: func(t *testing.T, result profile.ProfileResponse, err error) {
+			setupMock: func(_ *profilemocks.ProfileRepository) {},
+			assertFn: func(t *testing.T, _ profile.ProfileResponse, err error) {
 				require.Error(t, err)
 				testingutil.AssertAppError(t, err, apperror.CodeForbidden, http.StatusForbidden, "unauthorized")
 			},
@@ -65,7 +65,7 @@ func TestService_GetProfile(t *testing.T) {
 			setupMock: func(repo *profilemocks.ProfileRepository) {
 				repo.On("GetByID", mock.Anything, userID).Return(nil, profile.ErrProfileNotFound).Once()
 			},
-			assertFn: func(t *testing.T, result profile.ProfileResponse, err error) {
+			assertFn: func(t *testing.T, _ profile.ProfileResponse, err error) {
 				require.Error(t, err)
 				testingutil.AssertAppError(t, err, apperror.CodeNotFound, http.StatusNotFound, "profile not found")
 			},
@@ -76,7 +76,7 @@ func TestService_GetProfile(t *testing.T) {
 			setupMock: func(repo *profilemocks.ProfileRepository) {
 				repo.On("GetByID", mock.Anything, userID).Return(nil, errors.New("database error")).Once()
 			},
-			assertFn: func(t *testing.T, result profile.ProfileResponse, err error) {
+			assertFn: func(t *testing.T, _ profile.ProfileResponse, err error) {
 				require.Error(t, err)
 				assert.EqualError(t, err, "database error")
 			},
@@ -122,7 +122,7 @@ func TestService_UpdateProfile(t *testing.T) {
 			name:      "no user in context",
 			ctx:       context.Background(),
 			req:       &profile.UpdateProfileRequest{Name: "Alice"},
-			setupMock: func(repo *profilemocks.ProfileRepository) {},
+			setupMock: func(_ *profilemocks.ProfileRepository) {},
 			assertFn: func(t *testing.T, err error) {
 				require.Error(t, err)
 				testingutil.AssertAppError(t, err, apperror.CodeForbidden, http.StatusForbidden, "unauthorized")

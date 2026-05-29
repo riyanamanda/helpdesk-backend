@@ -1,43 +1,66 @@
 package profile
 
 import (
-	"github.com/riyanamanda/helpdesk-backend/internal/division"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
 func toProfileResponse(p user.UserProjection, storageConfig config.Storage) ProfileResponse {
+
 	var avatarURL *string
+
 	var createdBy *user.UserBrief
 
 	if p.AvatarKey != nil {
-		url := utils.BuildPublicURL(storageConfig.PublicURL, storageConfig.Bucket, *p.AvatarKey)
+
+		url := httputil.BuildPublicURL(storageConfig.PublicURL, storageConfig.Bucket, *p.AvatarKey)
+
 		avatarURL = &url
+
 	}
 
 	if p.CreatedByID != nil && p.CreatedByName != nil {
+
 		createdBy = &user.UserBrief{
-			ID:   *p.CreatedByID,
+
+			ID: *p.CreatedByID,
+
 			Name: *p.CreatedByName,
 		}
+
 	}
 
 	return ProfileResponse{
-		ID:        p.ID,
-		Name:      p.Name,
-		Email:     p.Email,
-		GoogleID:  p.GoogleID,
+
+		ID: p.ID,
+
+		Name: p.Name,
+
+		Email: p.Email,
+
+		GoogleID: p.GoogleID,
+
 		AvatarURL: avatarURL,
-		Phone:     p.Phone,
-		Role:      p.Role,
-		Division: division.DivisionBrief{
-			ID:   p.DivisionID,
+
+		Phone: p.Phone,
+
+		Role: p.Role,
+
+		Division: DivisionBrief{
+
+			ID: p.DivisionID,
+
 			Name: p.DivisionName,
 		},
-		IsActive:  p.IsActive,
+
+		IsActive: p.IsActive,
+
 		CreatedBy: createdBy,
+
 		CreatedAt: p.CreatedAt,
+
 		UpdatedAt: p.UpdatedAt,
 	}
+
 }

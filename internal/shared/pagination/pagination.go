@@ -11,20 +11,14 @@ type Params struct {
 	Limit int `query:"limit"`
 }
 
-func (p *Params) Normalize() (page, limit, offset int) {
-	page = p.Page
-	if page <= 0 {
-		page = DefaultPage
+func (p *Params) Normalize() {
+	if p.Page <= 0 {
+		p.Page = DefaultPage
 	}
-
-	limit = p.Limit
-	if limit <= 0 {
-		limit = DefaultLimit
+	if p.Limit <= 0 {
+		p.Limit = DefaultLimit
 	}
-	if limit > MaxLimit {
-		limit = MaxLimit
+	if p.Limit > MaxLimit {
+		p.Limit = MaxLimit
 	}
-
-	offset = (page - 1) * limit
-	return
 }

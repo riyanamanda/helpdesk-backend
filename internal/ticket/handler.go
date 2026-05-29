@@ -6,40 +6,41 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
-	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
+
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 )
 
-type handler struct {
+type Handler struct {
 	svc TicketService
 }
 
-func NewTicketHandler(svc TicketService) *handler {
-	return &handler{
+func NewTicketHandler(svc TicketService) *Handler {
+	return &Handler{
 		svc: svc,
 	}
 }
 
-func (h *handler) ListTickets(c *echo.Context) error {
-	var param GetTicketParams
+func (h *Handler) ListTickets(c *echo.Context) error {
+	var params GetTicketParams
 
-	if err := c.Bind(&param); err != nil {
+	if err := c.Bind(&params); err != nil {
 		return response.Error(c, apperror.BadRequest("invalid query params"))
 	}
 
-	tickets, total, err := h.svc.FetchAllTickets(c.Request().Context(), &param)
+	tickets, total, err := h.svc.ListTickets(c.Request().Context(), &params)
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	return response.WithPagination(c, http.StatusOK, tickets, param.Page, param.Limit, total)
+	return response.WithPagination(c, http.StatusOK, tickets, params.Page, params.Limit, total)
 }
 
-func (h *handler) CreateTicket(c *echo.Context) error {
+func (h *Handler) CreateTicket(c *echo.Context) error {
 	req, err := request.BindAndValidate[TicketCreateRequest](c)
 	if err != nil {
 		return response.Error(c, err)
@@ -75,20 +76,20 @@ func (h *handler) CreateTicket(c *echo.Context) error {
 		}
 	}
 
-	if err := h.svc.RegisterTicket(c.Request().Context(), req, file); err != nil {
+	if err := h.svc.CreateTicket(c.Request().Context(), req, file); err != nil {
 		return response.Error(c, err)
 	}
 
 	return response.Message(c, http.StatusCreated, "ticket created successfully")
 }
 
-func (h *handler) GetTicket(c *echo.Context) error {
-	id, err := utils.ParsePositiveInt64PathParam(c, "id", "ticket")
+func (h *Handler) GetTicket(c *echo.Context) error {
+	id, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	ticket, err := h.svc.FindTicketByID(c.Request().Context(), id)
+	ticket, err := h.svc.GetTicket(c.Request().Context(), id)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -96,8 +97,8 @@ func (h *handler) GetTicket(c *echo.Context) error {
 	return response.Success(c, http.StatusOK, ticket)
 }
 
-func (h *handler) AssignTicket(c *echo.Context) error {
-	ticketID, err := utils.ParsePositiveInt64PathParam(c, "id", "ticket")
+func (h *Handler) AssignTicket(c *echo.Context) error {
+	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -114,8 +115,8 @@ func (h *handler) AssignTicket(c *echo.Context) error {
 	return response.Message(c, http.StatusOK, "ticket assigned successfully")
 }
 
-func (h *handler) SetPriority(c *echo.Context) error {
-	ticketID, err := utils.ParsePositiveInt64PathParam(c, "id", "ticket")
+func (h *Handler) SetPriority(c *echo.Context) error {
+	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -132,8 +133,8 @@ func (h *handler) SetPriority(c *echo.Context) error {
 	return response.Message(c, http.StatusOK, "priority has been set successfully")
 }
 
-func (h *handler) CreateResolution(c *echo.Context) error {
-	ticketID, err := utils.ParsePositiveInt64PathParam(c, "id", "ticket")
+func (h *Handler) CreateResolution(c *echo.Context) error {
+	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -173,15 +174,15 @@ func (h *handler) CreateResolution(c *echo.Context) error {
 		}
 	}
 
-	if err := h.svc.RegisterResolution(c.Request().Context(), ticketID, *req, file); err != nil {
+	if err := h.svc.CreateResolution(c.Request().Context(), ticketID, *req, file); err != nil {
 		return response.Error(c, err)
 	}
 
 	return response.Message(c, http.StatusCreated, "resolution created successfully")
 }
 
-func (h *handler) CloseTicket(c *echo.Context) error {
-	ticketID, err := utils.ParsePositiveInt64PathParam(c, "id", "ticket")
+func (h *Handler) CloseTicket(c *echo.Context) error {
+	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
 		return response.Error(c, err)
 	}

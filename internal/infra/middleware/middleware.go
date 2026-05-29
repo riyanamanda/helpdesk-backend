@@ -1,16 +1,15 @@
 package middleware
 
-import "github.com/labstack/echo/v5"
+import (
+	"github.com/labstack/echo/v5"
 
-func Register(e *echo.Echo) {
-	registerCore(e)
-	registerObservability(e)
-}
+	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
+)
 
-func registerCore(e *echo.Echo) {
-	e.Use(corsMiddleware())
-}
+func Register(e *echo.Echo, cfg config.App) {
 
-func registerObservability(e *echo.Echo) {
+	e.Use(corsMiddleware(cfg.CORSOrigins))
+
 	e.Use(requestID())
+
 }

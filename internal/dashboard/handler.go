@@ -4,20 +4,21 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
+
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
-type handler struct {
+type Handler struct {
 	svc DashboardService
 }
 
-func NewDashboardHandler(svc DashboardService) *handler {
-	return &handler{
+func NewDashboardHandler(svc DashboardService) *Handler {
+	return &Handler{
 		svc: svc,
 	}
 }
 
-func (h *handler) GetSummary(c *echo.Context) error {
+func (h *Handler) GetSummary(c *echo.Context) error {
 	summary, err := h.svc.GetSummary(c.Request().Context())
 	if err != nil {
 		return response.Error(c, err)
@@ -26,7 +27,7 @@ func (h *handler) GetSummary(c *echo.Context) error {
 	return response.Success(c, http.StatusOK, summary)
 }
 
-func (h *handler) GetRecentTickets(c *echo.Context) error {
+func (h *Handler) GetRecentTickets(c *echo.Context) error {
 	tickets, err := h.svc.GetRecentTickets(c.Request().Context())
 	if err != nil {
 		return response.Error(c, err)

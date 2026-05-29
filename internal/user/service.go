@@ -6,86 +6,127 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
-	apperror "github.com/riyanamanda/helpdesk-backend/internal/shared/errors"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/utils"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 )
 
 type UserService interface {
-	FetchAllUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error)
-	RegisterUser(ctx context.Context, req *UserCreateRequest) error
-	FindUserByID(ctx context.Context, id *uuid.UUID) (UserResponse, error)
+	ListUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error)
+
+	CreateUser(ctx context.Context, req *UserCreateRequest) error
+
+	GetUser(ctx context.Context, id *uuid.UUID) (UserResponse, error)
 }
 
 type service struct {
-	repo          UserRepository
+	repo UserRepository
+
 	storageConfig config.Storage
 }
 
 func NewUserService(repo UserRepository, storageConfig config.Storage) UserService {
+
 	return &service{
-		repo:          repo,
+
+		repo: repo,
+
 		storageConfig: storageConfig,
 	}
+
 }
 
-func (svc *service) FetchAllUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error) {
+func (s *service) ListUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error) {
+
 	if params == nil {
+
 		params = &GetUserParams{}
+
 	}
 
 	params.Normalize()
 
-	users, total, err := svc.repo.GetAll(ctx, *params)
+	users, total, err := s.repo.GetAll(ctx, *params)
+
 	if err != nil {
+
 		return []UserResponse{}, 0, err
+
 	}
 
-	return toUserResponses(users, svc.storageConfig), total, nil
+	return toUserResponses(users, s.storageConfig), total, nil
+
 }
 
-func (svc *service) RegisterUser(ctx context.Context, req *UserCreateRequest) error {
+func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error {
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+
 	if err != nil {
+
 		return err
+
 	}
 
 	var createdBy *uuid.UUID
-	if currentUserID, ok := utils.GetUserIDFromContext(ctx); ok {
+
+	if currentUserID, ok := ctxkey.GetUserIDFromContext(ctx); ok {
+
 		createdBy = &currentUserID
+
 	}
 
 	normalizedEmail := strings.TrimSpace(strings.ToLower(req.Email))
 
 	user := &User{
-		Name:       req.Name,
-		Email:      normalizedEmail,
-		Password:   string(hashedPassword),
-		Role:       req.Role,
+
+		Name: req.Name,
+
+		Email: normalizedEmail,
+
+		Password: string(hashedPassword),
+
+		Role: req.Role,
+
 		DivisionID: req.DivisionID,
-		CreatedBy:  createdBy,
+
+		CreatedBy: createdBy,
 	}
 
-	if err := svc.repo.Create(ctx, user); err != nil {
+	if err := s.repo.Create(ctx, user); err != nil {
+
 		if errors.Is(err, ErrUserAlreadyExists) {
+
 			return apperror.AlreadyExists("user")
+
 		}
+
 		return err
+
 	}
 
 	return nil
+
 }
 
-func (svc *service) FindUserByID(ctx context.Context, id *uuid.UUID) (UserResponse, error) {
-	user, err := svc.repo.GetByID(ctx, *id)
+func (s *service) GetUser(ctx context.Context, id *uuid.UUID) (UserResponse, error) {
+
+	user, err := s.repo.GetByID(ctx, *id)
+
 	if err != nil {
+
 		if errors.Is(err, ErrUserNotFound) {
+
 			return UserResponse{}, apperror.NotFound("user")
+
 		}
+
 		return UserResponse{}, err
+
 	}
 
-	return toUserResponse(*user, svc.storageConfig), nil
-}
+	return toUserResponse(*user, s.storageConfig), nil
 
+}

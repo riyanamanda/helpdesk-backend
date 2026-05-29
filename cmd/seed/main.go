@@ -10,20 +10,31 @@ import (
 )
 
 func main() {
+
 	slog.Info("starting database seeding")
 
 	cfg := config.Load()
+
 	db := database.NewPostgres(cfg.Database.ConnString())
+
 	defer func() {
+
 		if err := db.Close(); err != nil {
+
 			slog.Error("failed to close database", "error", err)
+
 		}
+
 	}()
 
 	if err := seed.Run(db); err != nil {
+
 		slog.Error("database seeding failed", "error", err)
+
 		os.Exit(1)
+
 	}
 
 	slog.Info("database seeding completed")
+
 }

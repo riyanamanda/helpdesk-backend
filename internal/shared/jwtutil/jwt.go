@@ -1,4 +1,4 @@
-package utils
+package jwtutil
 
 import (
 	"errors"
@@ -13,7 +13,7 @@ type JWTCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID uuid.UUID, role string, secret string, expiresIn time.Duration) (string, string, error) {
+func GenerateToken(userID uuid.UUID, role, secret string, expiresIn time.Duration) (string, string, error) {
 	jti := uuid.NewString()
 
 	claims := JWTCustomClaims{
@@ -39,7 +39,7 @@ func GenerateToken(userID uuid.UUID, role string, secret string, expiresIn time.
 	return signedToken, jti, nil
 }
 
-func ParseToken(tokenString string, secret string) (*JWTCustomClaims, error) {
+func ParseToken(tokenString, secret string) (*JWTCustomClaims, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&JWTCustomClaims{},

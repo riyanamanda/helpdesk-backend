@@ -1,11 +1,11 @@
 package category
 
-import "github.com/riyanamanda/helpdesk-backend/internal/shared/collection"
+import "github.com/riyanamanda/helpdesk-backend/internal/shared/sliceutil"
 
 func toCategoryResponse(c Category) CategoryResponse {
 	return CategoryResponse(c)
 }
 
 func toCategoryResponses(categories []Category) []CategoryResponse {
-	return collection.MapSlice(categories, toCategoryResponse)
+	return sliceutil.Map(categories, toCategoryResponse)
 }

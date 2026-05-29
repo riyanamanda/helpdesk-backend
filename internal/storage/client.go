@@ -6,14 +6,20 @@ import (
 )
 
 func NewMinioClient(endpoint, accessKey, secretKey string, useSSL bool) (*minio.Client, error) {
+
 	client, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+
+		Creds: credentials.NewStaticV4(accessKey, secretKey, ""),
+
 		Secure: useSSL,
 	})
 
 	if err != nil {
+
 		return nil, err
+
 	}
 
 	return client, nil
+
 }
