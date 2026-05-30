@@ -41,6 +41,7 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*user.UserProje
 			u.avatar_key,
 			u.phone,
 			u.role,
+			u.gender,
 			d.id   AS division_id,
 			d.name AS division_name,
 			u.is_active,
