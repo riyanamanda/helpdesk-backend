@@ -13,7 +13,7 @@ import (
 
 type ProfileRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*user.UserProjection, error)
-	UpdateProfile(ctx context.Context, id uuid.UUID, name string, phone *string, gender string) error
+	UpdateProfile(ctx context.Context, id uuid.UUID, name string, email string, phone *string, gender string) error
 	UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error
 	SetGoogleID(ctx context.Context, id uuid.UUID, googleID string) error
 	UnsetGoogleID(ctx context.Context, id uuid.UUID) error
@@ -64,17 +64,18 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*user.UserProje
 	return &user, nil
 }
 
-func (r *repository) UpdateProfile(ctx context.Context, id uuid.UUID, name string, phone *string, gender string) error {
+func (r *repository) UpdateProfile(ctx context.Context, id uuid.UUID, name string, email string, phone *string, gender string) error {
 	const query = `
 		UPDATE users
 		SET name       	= $2,
-		    phone     	= $3,
-			gender		= $4,
+			email		= $3,
+		    phone     	= $4,
+			gender		= $5,
 		    updated_at 	= NOW()
 		WHERE id = $1
 	`
 
-	result, err := r.db.ExecContext(ctx, query, id, name, phone, gender)
+	result, err := r.db.ExecContext(ctx, query, id, name, email, phone, gender)
 	if err != nil {
 		return err
 	}

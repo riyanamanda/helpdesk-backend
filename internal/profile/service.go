@@ -61,7 +61,16 @@ func (s *service) UpdateProfile(ctx context.Context, req *UpdateProfileRequest) 
 		return apperror.Unauthorized(apperror.CodeUnauthorized, "unauthorized")
 	}
 
-	if err := s.profileRepo.UpdateProfile(ctx, userID, req.Name, req.Phone, strings.ToUpper(req.Gender)); err != nil {
+	currentUser, err := s.profileRepo.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	if currentUser.GoogleID != nil {
+		return apperror.Forbidden("Please unlink your google before change your email")
+	}
+
+	if err := s.profileRepo.UpdateProfile(ctx, userID, req.Name, req.Email, req.Phone, strings.ToUpper(req.Gender)); err != nil {
 		if errors.Is(err, ErrProfileNotFound) {
 			return apperror.NotFound("profile")
 		}

@@ -30,6 +30,7 @@ type ProfileResponse struct {
 
 type UpdateProfileRequest struct {
 	Name   string  `json:"name" validate:"required,min=3,max=50"`
+	Email  string  `json:"email" validate:"required"`
 	Phone  *string `json:"phone" validate:"omitempty,min=10,max=15"`
 	Gender string  `json:"gender" validate:"required"`
 }
