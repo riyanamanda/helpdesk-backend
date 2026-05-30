@@ -66,8 +66,10 @@ func (s *service) UpdateProfile(ctx context.Context, req *UpdateProfileRequest) 
 		return err
 	}
 
-	if currentUser.GoogleID != nil {
-		return apperror.Forbidden("Please unlink your google before change your email")
+	if req.Email != currentUser.Email {
+		if currentUser.GoogleID != nil {
+			return apperror.Forbidden("Please unlink your google before change your email")
+		}
 	}
 
 	if err := s.profileRepo.UpdateProfile(ctx, userID, req.Name, req.Email, req.Phone, strings.ToUpper(req.Gender)); err != nil {
