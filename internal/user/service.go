@@ -16,6 +16,7 @@ type UserService interface {
 	ListUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error)
 	CreateUser(ctx context.Context, req *UserCreateRequest) error
 	GetUser(ctx context.Context, id *uuid.UUID) (UserResponse, error)
+	UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error
 }
 
 type service struct {
@@ -88,4 +89,27 @@ func (s *service) GetUser(ctx context.Context, id *uuid.UUID) (UserResponse, err
 	}
 
 	return toUserResponse(*user, s.storageConfig), nil
+}
+
+func (s *service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error {
+	user := User{
+		Name:       req.Name,
+		Email:      req.Email,
+		Role:       req.Role,
+		DivisionID: req.Division,
+		Gender:     req.Gender,
+		IsActive:   req.IsActive,
+	}
+
+	if err := s.repo.UpdateByID(ctx, userID, user); err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			return apperror.NotFound("user")
+		}
+		if errors.Is(err, ErrUserAlreadyExists) {
+			return apperror.AlreadyExists("user")
+		}
+		return err
+	}
+
+	return nil
 }

@@ -16,6 +16,7 @@ type UserRepository interface {
 	Create(ctx context.Context, user *User) error
 	GetByID(ctx context.Context, id uuid.UUID) (*UserProjection, error)
 	GetByEmail(ctx context.Context, email string) (*UserProjection, error)
+	UpdateByID(ctx context.Context, id uuid.UUID, user User) error
 }
 
 type repository struct {
@@ -207,4 +208,28 @@ func (r *repository) GetByEmail(ctx context.Context, email string) (*UserProject
 	}
 
 	return &user, nil
+}
+
+func (r *repository) UpdateByID(ctx context.Context, id uuid.UUID, user User) error {
+	const query = `
+		UPDATE users
+		SET name 		= $2,
+			email 		= $3,
+			role 		= $4,
+			division_id	= $5,
+			gender 		= $6,
+			is_active	= $7,
+			updated_at	= NOW()
+		WHERE id = $1
+	`
+
+	result, err := r.db.ExecContext(ctx, query, id, user.Name, user.Email, user.Role, user.DivisionID, user.Gender, user.IsActive)
+	if err != nil {
+		if dberror.IsUniqueViolation(err) {
+			return ErrUserAlreadyExists
+		}
+		return err
+	}
+
+	return dberror.CheckRowsAffected(result, ErrUserNotFound)
 }

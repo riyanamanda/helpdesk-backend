@@ -52,6 +52,15 @@ type UserCreateRequest struct {
 	Gender     string   `json:"gender" validate:"required"`
 }
 
+type UserUpdateRequest struct {
+	Name     string   `json:"name" validate:"required,min=3,max=20"`
+	Email    string   `json:"email" validate:"required,email"`
+	Role     UserRole `json:"role" validate:"required,oneof=ADMIN EMPLOYEE"`
+	Division int64    `json:"division" validate:"required,gt=0"`
+	Gender   string   `json:"gender" validate:"required"`
+	IsActive bool     `json:"is_active" validate:"required"`
+}
+
 func (p *GetUserParams) Normalize() {
 	p.Params.Normalize()
 }
