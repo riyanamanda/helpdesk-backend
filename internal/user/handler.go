@@ -81,3 +81,22 @@ func (h *Handler) UpdateUser(c *echo.Context) error {
 
 	return response.Message(c, http.StatusOK, "user updated successfully")
 }
+
+func (h *Handler) UpdatePassword(c *echo.Context) error {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return response.Error(c, apperror.BadRequest("invalid user id"))
+	}
+
+	req, err := request.BindAndValidate[UserUpdatePassword](c)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	err = h.svc.UpdatePassword(c.Request().Context(), id, req)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Message(c, http.StatusOK, "user password updated successfully")
+}

@@ -13,4 +13,5 @@ func Register(e *echo.Group, repo UserRepository, storageConfig config.Storage) 
 	e.POST("/users", handler.CreateUser)
 	e.GET("/users/:id", handler.GetUser)
 	e.PATCH("/users/:id", handler.UpdateUser)
+	e.PATCH("/users/:id/password", handler.UpdatePassword)
 }

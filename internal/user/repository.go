@@ -17,6 +17,7 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*UserProjection, error)
 	GetByEmail(ctx context.Context, email string) (*UserProjection, error)
 	UpdateByID(ctx context.Context, id uuid.UUID, user User) error
+	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 }
 
 type repository struct {
@@ -228,6 +229,22 @@ func (r *repository) UpdateByID(ctx context.Context, id uuid.UUID, user User) er
 		if dberror.IsUniqueViolation(err) {
 			return ErrUserAlreadyExists
 		}
+		return err
+	}
+
+	return dberror.CheckRowsAffected(result, ErrUserNotFound)
+}
+
+func (r *repository) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
+	const query = `
+		UPDATE users
+		SET password	= $2,
+			updated_at	= NOW()
+		WHERE id = $1
+	`
+
+	result, err := r.db.ExecContext(ctx, query, id, password)
+	if err != nil {
 		return err
 	}
 

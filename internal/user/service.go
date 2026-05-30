@@ -17,6 +17,7 @@ type UserService interface {
 	CreateUser(ctx context.Context, req *UserCreateRequest) error
 	GetUser(ctx context.Context, id *uuid.UUID) (UserResponse, error)
 	UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error
+	UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePassword) error
 }
 
 type service struct {
@@ -107,6 +108,22 @@ func (s *service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpd
 		}
 		if errors.Is(err, ErrUserAlreadyExists) {
 			return apperror.AlreadyExists("user")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePassword) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.UpdatePassword(ctx, userID, string(hashedPassword)); err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			return apperror.NotFound("user")
 		}
 		return err
 	}

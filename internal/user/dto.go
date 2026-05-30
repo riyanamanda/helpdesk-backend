@@ -61,6 +61,10 @@ type UserUpdateRequest struct {
 	IsActive bool     `json:"is_active" validate:"required"`
 }
 
+type UserUpdatePassword struct {
+	Password string `json:"password" validate:"required,min=8"`
+}
+
 func (p *GetUserParams) Normalize() {
 	p.Params.Normalize()
 }
