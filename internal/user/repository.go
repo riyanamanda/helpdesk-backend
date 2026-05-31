@@ -55,8 +55,8 @@ func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]UserPr
 		where += fmt.Sprintf(" AND u.role = $%d", len(args))
 	}
 
-	if params.DivisionID != nil {
-		args = append(args, *params.DivisionID)
+	if params.Division != nil {
+		args = append(args, *params.Division)
 		where += fmt.Sprintf(" AND u.division_id = $%d", len(args))
 	}
 
@@ -68,7 +68,7 @@ func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]UserPr
 	offset := (params.Page - 1) * params.Limit
 	args = append(args, params.Limit, offset)
 	sortCols := map[string]string{
-		"name": "u.name", "role": "u.role", "division_id": "u.division_id",
+		"name": "u.name", "role": "u.role", "division": "u.division_id",
 		"is_active": "u.is_active", "created_at": "u.created_at",
 	}
 

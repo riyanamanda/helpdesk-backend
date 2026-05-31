@@ -35,12 +35,12 @@ type UserBrief struct {
 
 type GetUserParams struct {
 	pagination.Params
-	Search     string   `query:"search"`
-	SortBy     string   `query:"sort_by"`
-	SortType   string   `query:"sort_type"`
-	IsActive   *bool    `query:"is_active"`
-	Role       UserRole `query:"role"`
-	DivisionID *int64   `query:"division_id"`
+	Search   string   `query:"search"`
+	SortBy   string   `query:"sort_by"`
+	SortType string   `query:"sort_type"`
+	IsActive *bool    `query:"is_active"`
+	Role     UserRole `query:"role"`
+	Division *int64   `query:"division"`
 }
 
 type UserCreateRequest struct {
