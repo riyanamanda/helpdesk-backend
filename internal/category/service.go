@@ -63,9 +63,11 @@ func (s *service) ListOptions(ctx context.Context) ([]CategoryOptionResponse, er
 
 	categories := toCategoryOptionResponses(projection)
 
-	data, err := json.Marshal(categories)
-	if err == nil {
-		_ = s.cache.Set(ctx, CategoryOptionsCacheKey, string(data), 24*time.Hour)
+	if len(categories) > 0 {
+		data, err := json.Marshal(categories)
+		if err == nil {
+			_ = s.cache.Set(ctx, CategoryOptionsCacheKey, string(data), 24*time.Hour)
+		}
 	}
 
 	return categories, nil
@@ -82,6 +84,8 @@ func (s *service) CreateCategory(ctx context.Context, req *CreateCategoryRequest
 		}
 		return CategoryResponse{}, err
 	}
+
+	InvalidateCache(ctx, s.cache)
 
 	return toCategoryResponse(category), nil
 }
@@ -127,8 +131,11 @@ func (s *service) UpdateCategory(ctx context.Context, id int64, req *UpdateCateg
 		return err
 	}
 
+	InvalidateCache(ctx, s.cache)
+
 	return nil
 }
+
 func (s *service) DeleteCategory(ctx context.Context, id int64) error {
 	if err := s.repo.Delete(ctx, id); err != nil {
 		if errors.Is(err, ErrCategoryNotFound) {
@@ -136,6 +143,8 @@ func (s *service) DeleteCategory(ctx context.Context, id int64) error {
 		}
 		return err
 	}
+
+	InvalidateCache(ctx, s.cache)
 
 	return nil
 }

@@ -24,3 +24,8 @@ type UserProjection struct {
 	CreatedAt     time.Time  `db:"created_at"`
 	UpdatedAt     time.Time  `db:"updated_at"`
 }
+
+type AssignableUserProjection struct {
+	ID   uuid.UUID `db:"id"`
+	Name string    `db:"name"`
+}

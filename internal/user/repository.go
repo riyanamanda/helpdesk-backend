@@ -18,6 +18,7 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*UserProjection, error)
 	UpdateByID(ctx context.Context, id uuid.UUID, user User) error
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
+	AssignableUser(ctx context.Context) ([]AssignableUserProjection, error)
 }
 
 type repository struct {
@@ -249,4 +250,24 @@ func (r *repository) UpdatePassword(ctx context.Context, id uuid.UUID, password 
 	}
 
 	return dberror.CheckRowsAffected(result, ErrUserNotFound)
+}
+
+func (r *repository) AssignableUser(ctx context.Context) ([]AssignableUserProjection, error) {
+	var users []AssignableUserProjection
+
+	const query = `
+		SELECT
+			id,
+			name
+		FROM users
+		WHERE is_active = true
+		AND division_id = 1
+		ORDER BY name ASC
+	`
+
+	if err := r.db.SelectContext(ctx, &users, query); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

@@ -28,6 +28,11 @@ type UserResponse struct {
 	UpdatedAt time.Time     `json:"updated_at"`
 }
 
+type AssignableUserResponse struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
 type UserBrief struct {
 	ID   uuid.UUID `json:"id"`
 	Name string    `json:"name"`

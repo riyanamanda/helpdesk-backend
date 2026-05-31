@@ -47,3 +47,13 @@ func toUserResponses(users []UserProjection, storageConfig config.Storage) []Use
 		return toUserResponse(u, storageConfig)
 	})
 }
+
+func toAssignableUserResponse(u AssignableUserProjection) UserBrief {
+	return UserBrief(u)
+}
+
+func toAssignableUserResponses(users []AssignableUserProjection) []AssignableUserResponse {
+	return sliceutil.Map(users, func(u AssignableUserProjection) AssignableUserResponse {
+		return AssignableUserResponse(toAssignableUserResponse(u))
+	})
+}

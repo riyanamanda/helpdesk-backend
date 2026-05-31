@@ -62,9 +62,11 @@ func (s *service) ListOptions(ctx context.Context) ([]DivisionOptionResponse, er
 
 	divisions := toDivisionOptionResponses(projection)
 
-	data, err := json.Marshal(divisions)
-	if err == nil {
-		_ = s.cache.Set(ctx, DivisionOptionsCacheKey, string(data), 24*time.Hour)
+	if len(divisions) > 0 {
+		data, err := json.Marshal(divisions)
+		if err == nil {
+			_ = s.cache.Set(ctx, DivisionOptionsCacheKey, string(data), 24*time.Hour)
+		}
 	}
 
 	return divisions, nil
@@ -81,6 +83,8 @@ func (s *service) CreateDivision(ctx context.Context, req *CreateDivisionRequest
 		}
 		return DivisionResponse{}, err
 	}
+
+	InvalidateCache(ctx, s.cache)
 
 	return toDivisionResponse(division), nil
 }
@@ -126,6 +130,8 @@ func (s *service) UpdateDivision(ctx context.Context, id int64, req *UpdateDivis
 		return err
 	}
 
+	InvalidateCache(ctx, s.cache)
+
 	return nil
 }
 
@@ -136,6 +142,8 @@ func (s *service) DeleteDivision(ctx context.Context, id int64) error {
 		}
 		return err
 	}
+
+	InvalidateCache(ctx, s.cache)
 
 	return nil
 }

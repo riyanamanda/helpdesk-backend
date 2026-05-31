@@ -2,12 +2,15 @@ package user
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,17 +21,20 @@ type UserService interface {
 	GetUser(ctx context.Context, id *uuid.UUID) (UserResponse, error)
 	UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error
 	UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePassword) error
+	ListAssignableUser(ctx context.Context) ([]AssignableUserResponse, error)
 }
 
 type service struct {
 	repo          UserRepository
 	storageConfig config.Storage
+	cache         cache.Cache
 }
 
-func NewUserService(repo UserRepository, storageConfig config.Storage) UserService {
+func NewUserService(repo UserRepository, storageConfig config.Storage, cache cache.Cache) UserService {
 	return &service{
 		repo:          repo,
 		storageConfig: storageConfig,
+		cache:         cache,
 	}
 }
 
@@ -76,6 +82,8 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 		return err
 	}
 
+	InvalidateCache(ctx, s.cache)
+
 	return nil
 }
 
@@ -112,6 +120,8 @@ func (s *service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpd
 		return err
 	}
 
+	InvalidateCache(ctx, s.cache)
+
 	return nil
 }
 
@@ -129,4 +139,31 @@ func (s *service) UpdatePassword(ctx context.Context, userID uuid.UUID, req *Use
 	}
 
 	return nil
+}
+
+func (s *service) ListAssignableUser(ctx context.Context) ([]AssignableUserResponse, error) {
+	cached, err := s.cache.Get(ctx, AssignableCacheKey)
+	if err == nil {
+		var users []AssignableUserResponse
+
+		if err := json.Unmarshal([]byte(cached), &users); err == nil {
+			return users, nil
+		}
+	}
+
+	projection, err := s.repo.AssignableUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	users := toAssignableUserResponses(projection)
+
+	if len(users) > 0 {
+		data, err := json.Marshal(users)
+		if err == nil {
+			_ = s.cache.Set(ctx, AssignableCacheKey, string(data), 24*time.Hour)
+		}
+	}
+
+	return users, nil
 }

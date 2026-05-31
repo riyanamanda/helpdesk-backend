@@ -36,6 +36,15 @@ func (h *Handler) ListUsers(c *echo.Context) error {
 	return response.WithPagination(c, http.StatusOK, users, params.Page, params.Limit, total)
 }
 
+func (h *Handler) ListAssignableUser(c *echo.Context) error {
+	users, err := h.svc.ListAssignableUser(c.Request().Context())
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, http.StatusOK, users)
+}
+
 func (h *Handler) CreateUser(c *echo.Context) error {
 	req, err := request.BindAndValidate[UserCreateRequest](c)
 	if err != nil {
