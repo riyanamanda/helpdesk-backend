@@ -82,7 +82,7 @@ func main() {
 		middleware.AuthMiddleware(cfg.Auth, redisClient),
 	)
 
-	category.Register(protected, db)
+	category.Register(protected, db, cacheStore)
 	division.Register(protected, db)
 	user.Register(protected, userRepo, cfg.Storage)
 	ticket.Register(protected, db, storageService, cfg.Storage, cacheStore)

@@ -36,6 +36,15 @@ func (h *Handler) ListCategories(c *echo.Context) error {
 	return response.WithPagination(c, http.StatusOK, categories, params.Page, params.Limit, total)
 }
 
+func (h *Handler) ListCategoryOption(c *echo.Context) error {
+	categories, err := h.svc.ListOptions(c.Request().Context())
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, http.StatusOK, categories)
+}
+
 func (h *Handler) CreateCategory(c *echo.Context) error {
 	req, err := request.BindAndValidate[CreateCategoryRequest](c)
 	if err != nil {

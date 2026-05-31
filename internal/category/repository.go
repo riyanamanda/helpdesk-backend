@@ -13,6 +13,7 @@ import (
 
 type CategoryRepository interface {
 	GetAll(ctx context.Context, params GetCategoryParams) ([]Category, int64, error)
+	GetOptions(ctx context.Context) ([]CategoryOptionProjection, error)
 	Create(ctx context.Context, category *Category) error
 	GetByID(ctx context.Context, id int64) (*Category, error)
 	Update(ctx context.Context, id int64, category *Category) error
@@ -87,6 +88,25 @@ func (r *repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Ca
 	}
 
 	return categories, total, nil
+}
+
+func (r *repository) GetOptions(ctx context.Context) ([]CategoryOptionProjection, error) {
+	var categories []CategoryOptionProjection
+
+	const query = `
+		SELECT
+			id,
+			name
+		FROM categories
+		WHERE is_active = true
+		ORDER BY name ASC
+	`
+
+	if err := r.db.SelectContext(ctx, &categories, query); err != nil {
+		return []CategoryOptionProjection{}, err
+	}
+
+	return categories, nil
 }
 
 func (r *repository) Create(ctx context.Context, category *Category) error {

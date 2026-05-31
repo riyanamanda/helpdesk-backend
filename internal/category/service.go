@@ -2,13 +2,17 @@ package category
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 )
 
 type CategoryService interface {
 	ListCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int64, error)
+	ListOptions(ctx context.Context) ([]CategoryOptionResponse, error)
 	CreateCategory(ctx context.Context, req *CreateCategoryRequest) (CategoryResponse, error)
 	GetCategory(ctx context.Context, id int64) (CategoryResponse, error)
 	UpdateCategory(ctx context.Context, id int64, req *UpdateCategoryRequest) error
@@ -16,12 +20,14 @@ type CategoryService interface {
 }
 
 type service struct {
-	repo CategoryRepository
+	repo  CategoryRepository
+	cache cache.Cache
 }
 
-func NewCategoryService(repo CategoryRepository) CategoryService {
+func NewCategoryService(repo CategoryRepository, cache cache.Cache) CategoryService {
 	return &service{
-		repo: repo,
+		repo:  repo,
+		cache: cache,
 	}
 }
 
@@ -38,6 +44,31 @@ func (s *service) ListCategories(ctx context.Context, params *GetCategoryParams)
 	}
 
 	return toCategoryResponses(categories), total, nil
+}
+
+func (s *service) ListOptions(ctx context.Context) ([]CategoryOptionResponse, error) {
+	cached, err := s.cache.Get(ctx, CategoryOptionsCacheKey)
+	if err == nil {
+		var categories []CategoryOptionResponse
+
+		if err := json.Unmarshal([]byte(cached), &categories); err == nil {
+			return categories, nil
+		}
+	}
+
+	projection, err := s.repo.GetOptions(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	categories := toCategoryOptionResponses(projection)
+
+	data, err := json.Marshal(categories)
+	if err == nil {
+		_ = s.cache.Set(ctx, CategoryOptionsCacheKey, string(data), 24*time.Hour)
+	}
+
+	return categories, nil
 }
 
 func (s *service) CreateCategory(ctx context.Context, req *CreateCategoryRequest) (CategoryResponse, error) {
