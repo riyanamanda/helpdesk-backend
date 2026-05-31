@@ -1,6 +1,12 @@
 package dashboard
 
-import "context"
+import (
+	"context"
+	"encoding/json"
+	"time"
+
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
+)
 
 type DashboardService interface {
 	GetSummary(ctx context.Context) (SummaryResponse, error)
@@ -8,22 +14,40 @@ type DashboardService interface {
 }
 
 type service struct {
-	repo DashboardRepository
+	repo  DashboardRepository
+	cache cache.Cache
 }
 
-func NewDashboardService(repo DashboardRepository) DashboardService {
+func NewDashboardService(repo DashboardRepository, cache cache.Cache) DashboardService {
 	return &service{
-		repo: repo,
+		repo:  repo,
+		cache: cache,
 	}
 }
 
 func (s *service) GetSummary(ctx context.Context) (SummaryResponse, error) {
-	summary, err := s.repo.GetSummary(ctx)
+	cached, err := s.cache.Get(ctx, SummaryCacheKey)
+	if err == nil {
+		var summary SummaryResponse
+
+		if err := json.Unmarshal([]byte(cached), &summary); err == nil {
+			return summary, nil
+		}
+	}
+
+	projection, err := s.repo.GetSummary(ctx)
 	if err != nil {
 		return SummaryResponse{}, err
 	}
 
-	return toSummary(summary), nil
+	summary := toSummary(projection)
+
+	data, err := json.Marshal(summary)
+	if err == nil {
+		_ = s.cache.Set(ctx, SummaryCacheKey, string(data), 30*time.Second)
+	}
+
+	return summary, nil
 }
 
 func (s *service) GetRecentTickets(ctx context.Context) ([]RecentTicketResponse, error) {

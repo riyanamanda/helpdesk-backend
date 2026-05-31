@@ -4,12 +4,13 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, store storage.Storage, storageConfig config.Storage) {
+func Register(e *echo.Group, db *sqlx.DB, store storage.Storage, storageConfig config.Storage, cache cache.Cache) {
 	repo := NewTicketRepository(db)
-	svc := NewTicketService(repo, store, storageConfig)
+	svc := NewTicketService(repo, store, storageConfig, cache)
 	handler := NewTicketHandler(svc)
 
 	e.GET("/tickets", handler.ListTickets)

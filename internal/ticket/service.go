@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
@@ -29,13 +31,15 @@ type service struct {
 	repo          TicketRepository
 	storage       storage.Storage
 	storageConfig config.Storage
+	cache         cache.Cache
 }
 
-func NewTicketService(repo TicketRepository, store storage.Storage, storageConfig config.Storage) TicketService {
+func NewTicketService(repo TicketRepository, store storage.Storage, storageConfig config.Storage, cache cache.Cache) TicketService {
 	return &service{
 		repo:          repo,
 		storage:       store,
 		storageConfig: storageConfig,
+		cache:         cache,
 	}
 }
 
@@ -106,6 +110,9 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 	}
 
 	err = tx.Commit()
+	if err == nil {
+		dashboard.InvalidateCache(ctx, s.cache)
+	}
 
 	return err
 }
@@ -152,6 +159,8 @@ func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAs
 		return err
 	}
 
+	dashboard.InvalidateCache(ctx, s.cache)
+
 	return nil
 }
 
@@ -163,6 +172,8 @@ func (s *service) SetPriority(ctx context.Context, ticketID int64, req TicketPri
 
 		return err
 	}
+
+	dashboard.InvalidateCache(ctx, s.cache)
 
 	return nil
 }
@@ -227,6 +238,9 @@ func (s *service) CreateResolution(ctx context.Context, ticketID int64, req Tick
 	}
 
 	err = tx.Commit()
+	if err == nil {
+		dashboard.InvalidateCache(ctx, s.cache)
+	}
 
 	return err
 }
@@ -244,6 +258,8 @@ func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
 
 		return err
 	}
+
+	dashboard.InvalidateCache(ctx, s.cache)
 
 	return nil
 }

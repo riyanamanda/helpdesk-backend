@@ -3,11 +3,12 @@ package dashboard
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 )
 
-func Register(e *echo.Group, db *sqlx.DB) {
+func Register(e *echo.Group, db *sqlx.DB, cache cache.Cache) {
 	repo := NewDashboardRepository(db)
-	svc := NewDashboardService(repo)
+	svc := NewDashboardService(repo, cache)
 	handler := NewDashboardHandler(svc)
 
 	e.GET("/dashboard/summary", handler.GetSummary)

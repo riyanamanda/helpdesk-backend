@@ -21,6 +21,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/infra/redis"
 	"github.com/riyanamanda/helpdesk-backend/internal/profile"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/ticket"
@@ -69,6 +70,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	cacheStore := cache.NewRedisCache(redisClient)
+
 	userRepo := user.NewUserRepository(db)
 	api := e.Group("/api/v1")
 
@@ -82,8 +85,8 @@ func main() {
 	category.Register(protected, db)
 	division.Register(protected, db)
 	user.Register(protected, userRepo, cfg.Storage)
-	ticket.Register(protected, db, storageService, cfg.Storage)
-	dashboard.Register(protected, db)
+	ticket.Register(protected, db, storageService, cfg.Storage, cacheStore)
+	dashboard.Register(protected, db, cacheStore)
 	profile.Register(protected, db, storageService, cfg.Storage, cfg.Auth)
 
 	server := &http.Server{
