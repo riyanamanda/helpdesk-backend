@@ -83,7 +83,7 @@ func main() {
 	)
 
 	category.Register(protected, db, cacheStore)
-	division.Register(protected, db)
+	division.Register(protected, db, cacheStore)
 	user.Register(protected, userRepo, cfg.Storage)
 	ticket.Register(protected, db, storageService, cfg.Storage, cacheStore)
 	dashboard.Register(protected, db, cacheStore)

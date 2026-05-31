@@ -103,7 +103,7 @@ func (r *repository) GetOptions(ctx context.Context) ([]CategoryOptionProjection
 	`
 
 	if err := r.db.SelectContext(ctx, &categories, query); err != nil {
-		return []CategoryOptionProjection{}, err
+		return nil, err
 	}
 
 	return categories, nil

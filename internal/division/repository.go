@@ -12,6 +12,7 @@ import (
 
 type DivisionRepository interface {
 	GetAll(ctx context.Context, params GetDivisionParams) ([]Division, int64, error)
+	GetOptions(ctx context.Context) ([]DivisionOptionProjection, error)
 	Create(ctx context.Context, division *Division) error
 	GetByID(ctx context.Context, id int64) (*Division, error)
 	Update(ctx context.Context, id int64, division *Division) error
@@ -87,6 +88,25 @@ func (r *repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Di
 	}
 
 	return divisions, total, nil
+}
+
+func (r *repository) GetOptions(ctx context.Context) ([]DivisionOptionProjection, error) {
+	var divisions []DivisionOptionProjection
+
+	const query = `
+		SELECT
+			id,
+			name
+		FROM divisions
+		WHERE is_active = true
+		ORDER BY name ASC
+	`
+
+	if err := r.db.SelectContext(ctx, &divisions, query); err != nil {
+		return nil, err
+	}
+
+	return divisions, nil
 }
 
 func (r *repository) Create(ctx context.Context, division *Division) error {

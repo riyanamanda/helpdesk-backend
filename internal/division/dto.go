@@ -14,7 +14,7 @@ type DivisionResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type DivisionBrief struct {
+type DivisionOptionResponse struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
 }

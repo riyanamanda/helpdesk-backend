@@ -36,6 +36,15 @@ func (h *Handler) ListDivisions(c *echo.Context) error {
 	return response.WithPagination(c, http.StatusOK, divisions, params.Page, params.Limit, total)
 }
 
+func (h *Handler) ListDivisionOption(c *echo.Context) error {
+	divisions, err := h.svc.ListOptions(c.Request().Context())
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, http.StatusOK, divisions)
+}
+
 func (h *Handler) CreateDivision(c *echo.Context) error {
 	req, err := request.BindAndValidate[CreateDivisionRequest](c)
 	if err != nil {

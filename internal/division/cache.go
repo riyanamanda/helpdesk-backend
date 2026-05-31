@@ -1,4 +1,4 @@
-package category
+package division
 
 import (
 	"context"
@@ -7,5 +7,5 @@ import (
 )
 
 func InvalidateCache(ctx context.Context, c cache.Cache) {
-	_ = c.Delete(ctx, CategoryOptionsCacheKey)
+	_ = c.Delete(ctx, DivisionOptionsCacheKey)
 }
