@@ -21,7 +21,7 @@ type UserService interface {
 	GetUser(ctx context.Context, id *uuid.UUID) (UserResponse, error)
 	UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error
 	UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePassword) error
-	ListAssignableUser(ctx context.Context) ([]AssignableUserResponse, error)
+	ListAssignableUser(ctx context.Context) ([]UserBrief, error)
 }
 
 type service struct {
@@ -69,7 +69,7 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 		Email:      normalizedEmail,
 		Password:   string(hashedPassword),
 		Role:       req.Role,
-		DivisionID: req.DivisionID,
+		DivisionID: req.Division,
 		Gender:     strings.ToUpper(req.Gender),
 		CreatedBy:  createdBy,
 	}
@@ -141,10 +141,10 @@ func (s *service) UpdatePassword(ctx context.Context, userID uuid.UUID, req *Use
 	return nil
 }
 
-func (s *service) ListAssignableUser(ctx context.Context) ([]AssignableUserResponse, error) {
+func (s *service) ListAssignableUser(ctx context.Context) ([]UserBrief, error) {
 	cached, err := s.cache.Get(ctx, AssignableCacheKey)
 	if err == nil {
-		var users []AssignableUserResponse
+		var users []UserBrief
 
 		if err := json.Unmarshal([]byte(cached), &users); err == nil {
 			return users, nil
@@ -156,7 +156,7 @@ func (s *service) ListAssignableUser(ctx context.Context) ([]AssignableUserRespo
 		return nil, err
 	}
 
-	users := toAssignableUserResponses(projection)
+	users := toUserBriefs(projection)
 
 	if len(users) > 0 {
 		data, err := json.Marshal(users)

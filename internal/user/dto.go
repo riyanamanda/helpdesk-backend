@@ -7,11 +7,6 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/pagination"
 )
 
-type DivisionBrief struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
-}
-
 type UserResponse struct {
 	ID        uuid.UUID     `json:"id"`
 	Name      string        `json:"name"`
@@ -28,9 +23,9 @@ type UserResponse struct {
 	UpdatedAt time.Time     `json:"updated_at"`
 }
 
-type AssignableUserResponse struct {
-	ID   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
+type DivisionBrief struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 type UserBrief struct {
@@ -49,12 +44,12 @@ type GetUserParams struct {
 }
 
 type UserCreateRequest struct {
-	Name       string   `json:"name" validate:"required,min=3,max=20"`
-	Email      string   `json:"email" validate:"required,email"`
-	Password   string   `json:"password" validate:"required,min=8"`
-	Role       UserRole `json:"role" validate:"required,oneof=ADMIN EMPLOYEE"`
-	DivisionID int64    `json:"division_id" validate:"required,gt=0"`
-	Gender     string   `json:"gender" validate:"required"`
+	Name     string   `json:"name" validate:"required,min=3,max=20"`
+	Email    string   `json:"email" validate:"required,email"`
+	Password string   `json:"password" validate:"required,min=8"`
+	Role     UserRole `json:"role" validate:"required,oneof=ADMIN EMPLOYEE"`
+	Division int64    `json:"division" validate:"required,gt=0"`
+	Gender   string   `json:"gender" validate:"required"`
 }
 
 type UserUpdateRequest struct {
