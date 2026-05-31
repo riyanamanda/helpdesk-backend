@@ -58,7 +58,7 @@ type UserUpdateRequest struct {
 	Role     UserRole `json:"role" validate:"required,oneof=ADMIN EMPLOYEE"`
 	Division int64    `json:"division" validate:"required,gt=0"`
 	Gender   string   `json:"gender" validate:"required"`
-	IsActive bool     `json:"is_active" validate:"required"`
+	IsActive *bool    `json:"is_active" validate:"required"`
 }
 
 type UserUpdatePassword struct {

@@ -99,7 +99,7 @@ func (s *service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpd
 		Role:       req.Role,
 		DivisionID: req.Division,
 		Gender:     req.Gender,
-		IsActive:   req.IsActive,
+		IsActive:   *req.IsActive,
 	}
 
 	if err := s.repo.UpdateByID(ctx, userID, user); err != nil {
