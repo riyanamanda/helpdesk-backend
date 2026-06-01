@@ -8,7 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	dberror "github.com/riyanamanda/helpdesk-backend/internal/infra/database"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 )
 
 type CategoryRepository interface {
@@ -117,7 +117,7 @@ func (r *repository) Create(ctx context.Context, category *Category) error {
 
 	_, err := r.db.ExecContext(ctx, query, category.Name)
 	if err != nil {
-		if dberror.IsUniqueViolation(err) {
+		if database.IsUniqueViolation(err) {
 			return ErrCategoryAlreadyExists
 		}
 		return err
@@ -156,13 +156,13 @@ func (r *repository) Update(ctx context.Context, id int64, category *Category) e
 
 	result, err := r.db.ExecContext(ctx, query, id, category.Name, category.IsActive)
 	if err != nil {
-		if dberror.IsUniqueViolation(err) {
+		if database.IsUniqueViolation(err) {
 			return ErrCategoryAlreadyExists
 		}
 		return err
 	}
 
-	return dberror.CheckRowsAffected(result, ErrCategoryNotFound)
+	return database.CheckRowsAffected(result, ErrCategoryNotFound)
 }
 
 func (r *repository) Delete(ctx context.Context, id int64) error {
@@ -176,5 +176,5 @@ func (r *repository) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	return dberror.CheckRowsAffected(result, ErrCategoryNotFound)
+	return database.CheckRowsAffected(result, ErrCategoryNotFound)
 }

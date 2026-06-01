@@ -4,8 +4,8 @@ import (
 	"github.com/labstack/echo/v5"
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
-	"github.com/riyanamanda/helpdesk-backend/internal/infra/middleware"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 

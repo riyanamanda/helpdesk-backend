@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
-	"github.com/riyanamanda/helpdesk-backend/internal/infra/database"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/seed"
 )
 

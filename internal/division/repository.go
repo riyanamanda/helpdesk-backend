@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
-	dberror "github.com/riyanamanda/helpdesk-backend/internal/infra/database"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 )
 
 type DivisionRepository interface {
@@ -117,7 +117,7 @@ func (r *repository) Create(ctx context.Context, division *Division) error {
 
 	_, err := r.db.ExecContext(ctx, query, division.Name)
 	if err != nil {
-		if dberror.IsUniqueViolation(err) {
+		if database.IsUniqueViolation(err) {
 			return ErrDivisionAlreadyExists
 		}
 		return err
@@ -156,13 +156,13 @@ func (r *repository) Update(ctx context.Context, id int64, division *Division) e
 
 	result, err := r.db.ExecContext(ctx, query, id, division.Name, division.IsActive)
 	if err != nil {
-		if dberror.IsUniqueViolation(err) {
+		if database.IsUniqueViolation(err) {
 			return ErrDivisionAlreadyExists
 		}
 		return err
 	}
 
-	return dberror.CheckRowsAffected(result, ErrDivisionNotFound)
+	return database.CheckRowsAffected(result, ErrDivisionNotFound)
 }
 
 func (r *repository) Delete(ctx context.Context, id int64) error {
@@ -176,5 +176,5 @@ func (r *repository) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	return dberror.CheckRowsAffected(result, ErrDivisionNotFound)
+	return database.CheckRowsAffected(result, ErrDivisionNotFound)
 }

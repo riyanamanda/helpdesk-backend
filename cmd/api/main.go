@@ -16,10 +16,11 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
-	"github.com/riyanamanda/helpdesk-backend/internal/infra/config"
-	"github.com/riyanamanda/helpdesk-backend/internal/infra/database"
-	"github.com/riyanamanda/helpdesk-backend/internal/infra/middleware"
-	"github.com/riyanamanda/helpdesk-backend/internal/infra/redis"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/minio"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/redis"
 	"github.com/riyanamanda/helpdesk-backend/internal/profile"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
@@ -47,7 +48,7 @@ func main() {
 	db := database.NewPostgres(cfg.Database.ConnString())
 	defer db.Close()
 
-	minioClient, err := storage.NewMinioClient(
+	minioClient, err := minio.NewMinioClient(
 		cfg.Storage.Endpoint,
 		cfg.Storage.AccessKey,
 		cfg.Storage.SecretKey,

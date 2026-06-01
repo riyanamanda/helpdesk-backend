@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	dberror "github.com/riyanamanda/helpdesk-backend/internal/infra/database"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 )
 
 type UserRepository interface {
@@ -123,7 +123,7 @@ func (r *repository) Create(ctx context.Context, user *User) error {
 
 	_, err := r.db.ExecContext(ctx, query, user.Name, user.Email, user.Password, user.Role, user.Gender, user.DivisionID, user.CreatedBy)
 	if err != nil {
-		if dberror.IsUniqueViolation(err) {
+		if database.IsUniqueViolation(err) {
 			return ErrUserAlreadyExists
 		}
 
@@ -227,13 +227,13 @@ func (r *repository) UpdateByID(ctx context.Context, id uuid.UUID, user User) er
 
 	result, err := r.db.ExecContext(ctx, query, id, user.Name, user.Email, user.Role, user.DivisionID, user.Gender, user.IsActive)
 	if err != nil {
-		if dberror.IsUniqueViolation(err) {
+		if database.IsUniqueViolation(err) {
 			return ErrUserAlreadyExists
 		}
 		return err
 	}
 
-	return dberror.CheckRowsAffected(result, ErrUserNotFound)
+	return database.CheckRowsAffected(result, ErrUserNotFound)
 }
 
 func (r *repository) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
@@ -249,7 +249,7 @@ func (r *repository) UpdatePassword(ctx context.Context, id uuid.UUID, password 
 		return err
 	}
 
-	return dberror.CheckRowsAffected(result, ErrUserNotFound)
+	return database.CheckRowsAffected(result, ErrUserNotFound)
 }
 
 func (r *repository) AssignableUser(ctx context.Context) ([]AssignableUserProjection, error) {

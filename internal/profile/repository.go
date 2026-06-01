@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	dberror "github.com/riyanamanda/helpdesk-backend/internal/infra/database"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -81,7 +81,7 @@ func (r *repository) UpdateProfile(ctx context.Context, id uuid.UUID, name strin
 		return err
 	}
 
-	return dberror.CheckRowsAffected(result, ErrProfileNotFound)
+	return database.CheckRowsAffected(result, ErrProfileNotFound)
 }
 
 func (r *repository) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error {
@@ -97,7 +97,7 @@ func (r *repository) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey s
 		return err
 	}
 
-	return dberror.CheckRowsAffected(result, ErrProfileNotFound)
+	return database.CheckRowsAffected(result, ErrProfileNotFound)
 }
 
 func (r *repository) SetGoogleID(ctx context.Context, id uuid.UUID, googleID string) error {
@@ -110,13 +110,13 @@ func (r *repository) SetGoogleID(ctx context.Context, id uuid.UUID, googleID str
 
 	result, err := r.db.ExecContext(ctx, query, id, googleID)
 	if err != nil {
-		if dberror.IsUniqueViolation(err) {
+		if database.IsUniqueViolation(err) {
 			return ErrGoogleIDAlreadyLinked
 		}
 		return err
 	}
 
-	return dberror.CheckRowsAffected(result, ErrProfileNotFound)
+	return database.CheckRowsAffected(result, ErrProfileNotFound)
 }
 
 func (r *repository) UnsetGoogleID(ctx context.Context, id uuid.UUID) error {
@@ -132,5 +132,5 @@ func (r *repository) UnsetGoogleID(ctx context.Context, id uuid.UUID) error {
 		return err
 	}
 
-	return dberror.CheckRowsAffected(result, ErrProfileNotFound)
+	return database.CheckRowsAffected(result, ErrProfileNotFound)
 }
