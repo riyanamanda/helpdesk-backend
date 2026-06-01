@@ -21,17 +21,15 @@ type CategoryOptionResponse struct {
 
 type GetCategoryParams struct {
 	pagination.Params
-	Search   string `query:"search"`
-	SortBy   string `query:"sort_by"`
-	SortType string `query:"sort_type"`
-	IsActive *bool  `query:"is_active"`
+
+	IsActive *bool `query:"is_active"`
 }
 
-type CreateCategoryRequest struct {
+type CategoryCreateRequest struct {
 	Name string `json:"name" validate:"required,min=3,max=50"`
 }
 
-type UpdateCategoryRequest struct {
+type CategoryUpdateRequest struct {
 	Name     string `json:"name" validate:"required,min=3,max=50"`
 	IsActive *bool  `json:"is_active"`
 }

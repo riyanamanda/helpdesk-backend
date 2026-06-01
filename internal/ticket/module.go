@@ -8,9 +8,9 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, store storage.Storage, storageConfig config.Storage, cache cache.Cache) {
+func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache) {
 	repo := NewTicketRepository(db)
-	svc := NewTicketService(repo, store, storageConfig, cache)
+	svc := NewTicketService(repo, storageService, storageConfig, cache)
 	handler := NewTicketHandler(svc)
 
 	e.GET("/tickets", handler.ListTickets)

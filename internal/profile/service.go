@@ -23,15 +23,15 @@ type ProfileService interface {
 }
 
 type service struct {
-	profileRepo   ProfileRepository
+	repo   ProfileRepository
 	storage       storage.Storage
 	storageConfig config.Storage
 	authConfig    config.Auth
 }
 
-func NewProfileService(profileRepo ProfileRepository, store storage.Storage, storageConfig config.Storage, authConfig config.Auth) ProfileService {
+func NewProfileService(repo ProfileRepository, store storage.Storage, storageConfig config.Storage, authConfig config.Auth) ProfileService {
 	return &service{
-		profileRepo:   profileRepo,
+		repo:   repo,
 		storage:       store,
 		storageConfig: storageConfig,
 		authConfig:    authConfig,
@@ -44,7 +44,7 @@ func (s *service) GetProfile(ctx context.Context) (ProfileResponse, error) {
 		return ProfileResponse{}, apperror.Unauthorized(apperror.CodeUnauthorized, "unauthorized")
 	}
 
-	p, err := s.profileRepo.GetByID(ctx, userID)
+	p, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, ErrProfileNotFound) {
 			return ProfileResponse{}, apperror.NotFound("profile")
@@ -61,7 +61,7 @@ func (s *service) UpdateProfile(ctx context.Context, req *UpdateProfileRequest) 
 		return apperror.Unauthorized(apperror.CodeUnauthorized, "unauthorized")
 	}
 
-	currentUser, err := s.profileRepo.GetByID(ctx, userID)
+	currentUser, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func (s *service) UpdateProfile(ctx context.Context, req *UpdateProfileRequest) 
 		}
 	}
 
-	if err := s.profileRepo.UpdateProfile(ctx, userID, req.Name, req.Email, req.Phone, strings.ToUpper(req.Gender)); err != nil {
+	if err := s.repo.UpdateProfile(ctx, userID, req.Name, req.Email, req.Phone, strings.ToUpper(req.Gender)); err != nil {
 		if errors.Is(err, ErrProfileNotFound) {
 			return apperror.NotFound("profile")
 		}
@@ -93,7 +93,7 @@ func (s *service) UpdateAvatar(ctx context.Context, file *upload.File) error {
 		return err
 	}
 
-	return s.profileRepo.UpdateAvatar(ctx, userID, objectKey)
+	return s.repo.UpdateAvatar(ctx, userID, objectKey)
 }
 
 func (s *service) SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error {
@@ -107,7 +107,7 @@ func (s *service) SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error 
 		return apperror.Unauthorized(apperror.CodeUnauthorized, "invalid google token")
 	}
 
-	currentProfile, err := s.profileRepo.GetByID(ctx, userID)
+	currentProfile, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (s *service) SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error 
 		return apperror.BadRequest("google account email does not match your account email")
 	}
 
-	if err := s.profileRepo.SetGoogleID(ctx, userID, claims.Subject); err != nil {
+	if err := s.repo.SetGoogleID(ctx, userID, claims.Subject); err != nil {
 		if errors.Is(err, ErrGoogleIDAlreadyLinked) {
 			return apperror.AlreadyExists("google account")
 		}
@@ -132,7 +132,7 @@ func (s *service) RevokeGoogle(ctx context.Context) error {
 		return apperror.Unauthorized(apperror.CodeUnauthorized, "unauthorized")
 	}
 
-	currentProfile, err := s.profileRepo.GetByID(ctx, userID)
+	currentProfile, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func (s *service) RevokeGoogle(ctx context.Context) error {
 		return apperror.NotFound("your account is not linked to google")
 	}
 
-	if err := s.profileRepo.UnsetGoogleID(ctx, userID); err != nil {
+	if err := s.repo.UnsetGoogleID(ctx, userID); err != nil {
 		return err
 	}
 

@@ -7,17 +7,22 @@ const (
 )
 
 type Params struct {
-	Page  int `query:"page"`
-	Limit int `query:"limit"`
+	Page     int    `query:"page"`
+	Limit    int    `query:"limit"`
+	Search   string `query:"search"`
+	SortBy   string `query:"sort_by"`
+	SortType string `query:"sort_type"`
 }
 
 func (p *Params) Normalize() {
 	if p.Page <= 0 {
 		p.Page = DefaultPage
 	}
+
 	if p.Limit <= 0 {
 		p.Limit = DefaultLimit
 	}
+
 	if p.Limit > MaxLimit {
 		p.Limit = MaxLimit
 	}

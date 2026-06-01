@@ -36,7 +36,7 @@ func (h *Handler) ListDivisions(c *echo.Context) error {
 	return response.WithPagination(c, http.StatusOK, divisions, params.Page, params.Limit, total)
 }
 
-func (h *Handler) ListDivisionOption(c *echo.Context) error {
+func (h *Handler) ListDivisionOptions(c *echo.Context) error {
 	divisions, err := h.svc.ListOptions(c.Request().Context())
 	if err != nil {
 		return response.Error(c, err)
@@ -46,7 +46,7 @@ func (h *Handler) ListDivisionOption(c *echo.Context) error {
 }
 
 func (h *Handler) CreateDivision(c *echo.Context) error {
-	req, err := request.BindAndValidate[CreateDivisionRequest](c)
+	req, err := request.BindAndValidate[DivisionCreateRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -79,7 +79,7 @@ func (h *Handler) UpdateDivision(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	req, err := request.BindAndValidate[UpdateDivisionRequest](c)
+	req, err := request.BindAndValidate[DivisionUpdateRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}

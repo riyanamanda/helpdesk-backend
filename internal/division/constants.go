@@ -1,5 +1,5 @@
 package division
 
 const (
-	DivisionOptionsCacheKey = "division:option"
+	DivisionOptionsCacheKey = "division:options"
 )

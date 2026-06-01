@@ -97,7 +97,7 @@ func (h *Handler) UpdatePassword(c *echo.Context) error {
 		return response.Error(c, apperror.BadRequest("invalid user id"))
 	}
 
-	req, err := request.BindAndValidate[UserUpdatePassword](c)
+	req, err := request.BindAndValidate[UserUpdatePasswordRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}

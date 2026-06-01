@@ -51,10 +51,26 @@ func (s *service) GetSummary(ctx context.Context) (SummaryResponse, error) {
 }
 
 func (s *service) GetRecentTickets(ctx context.Context) ([]RecentTicketResponse, error) {
+	cached, err := s.cache.Get(ctx, RecentTicketsCacheKey)
+	if err == nil {
+		var tickets []RecentTicketResponse
+
+		if err := json.Unmarshal([]byte(cached), &tickets); err == nil {
+			return tickets, nil
+		}
+	}
+
 	recentTickets, err := s.repo.GetRecentTickets(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return toRecentTickets(recentTickets), nil
+	tickets := toRecentTickets(recentTickets)
+
+	data, err := json.Marshal(tickets)
+	if err == nil {
+		_ = s.cache.Set(ctx, RecentTicketsCacheKey, string(data), 30*time.Second)
+	}
+
+	return tickets, nil
 }

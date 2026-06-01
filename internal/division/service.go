@@ -13,9 +13,9 @@ import (
 type DivisionService interface {
 	ListDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int64, error)
 	ListOptions(ctx context.Context) ([]DivisionOptionResponse, error)
-	CreateDivision(ctx context.Context, req *CreateDivisionRequest) (DivisionResponse, error)
+	CreateDivision(ctx context.Context, req *DivisionCreateRequest) (DivisionResponse, error)
 	GetDivision(ctx context.Context, id int64) (DivisionResponse, error)
-	UpdateDivision(ctx context.Context, id int64, req *UpdateDivisionRequest) error
+	UpdateDivision(ctx context.Context, id int64, req *DivisionUpdateRequest) error
 	DeleteDivision(ctx context.Context, id int64) error
 }
 
@@ -72,7 +72,7 @@ func (s *service) ListOptions(ctx context.Context) ([]DivisionOptionResponse, er
 	return divisions, nil
 }
 
-func (s *service) CreateDivision(ctx context.Context, req *CreateDivisionRequest) (DivisionResponse, error) {
+func (s *service) CreateDivision(ctx context.Context, req *DivisionCreateRequest) (DivisionResponse, error) {
 	division := Division{
 		Name: req.Name,
 	}
@@ -101,7 +101,7 @@ func (s *service) GetDivision(ctx context.Context, id int64) (DivisionResponse, 
 	return toDivisionResponse(*division), nil
 }
 
-func (s *service) UpdateDivision(ctx context.Context, id int64, req *UpdateDivisionRequest) error {
+func (s *service) UpdateDivision(ctx context.Context, id int64, req *DivisionUpdateRequest) error {
 	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {

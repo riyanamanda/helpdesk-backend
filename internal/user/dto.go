@@ -35,9 +35,7 @@ type UserBrief struct {
 
 type GetUserParams struct {
 	pagination.Params
-	Search   string   `query:"search"`
-	SortBy   string   `query:"sort_by"`
-	SortType string   `query:"sort_type"`
+
 	IsActive *bool    `query:"is_active"`
 	Role     UserRole `query:"role"`
 	Division *int64   `query:"division"`
@@ -61,7 +59,7 @@ type UserUpdateRequest struct {
 	IsActive *bool    `json:"is_active" validate:"required"`
 }
 
-type UserUpdatePassword struct {
+type UserUpdatePasswordRequest struct {
 	Password string `json:"password" validate:"required,min=8"`
 }
 

@@ -21,17 +21,15 @@ type DivisionOptionResponse struct {
 
 type GetDivisionParams struct {
 	pagination.Params
-	Search   string `query:"search"`
-	SortBy   string `query:"sort_by"`
-	SortType string `query:"sort_type"`
-	IsActive *bool  `query:"is_active"`
+
+	IsActive *bool `query:"is_active"`
 }
 
-type CreateDivisionRequest struct {
+type DivisionCreateRequest struct {
 	Name string `json:"name" validate:"required,min=2,max=50"`
 }
 
-type UpdateDivisionRequest struct {
+type DivisionUpdateRequest struct {
 	Name     string `json:"name" validate:"required,min=2,max=50"`
 	IsActive *bool  `json:"is_active"`
 }

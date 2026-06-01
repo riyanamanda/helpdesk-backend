@@ -12,7 +12,7 @@ func Register(e *echo.Group, db *sqlx.DB, cache cache.Cache) {
 	handler := NewDivisionHandler(svc)
 
 	e.GET("/divisions", handler.ListDivisions)
-	e.GET("/divisions/options", handler.ListDivisionOption)
+	e.GET("/divisions/options", handler.ListDivisionOptions)
 	e.GET("/divisions/:id", handler.GetDivision)
 	e.POST("/divisions", handler.CreateDivision)
 	e.PATCH("/divisions/:id", handler.UpdateDivision)

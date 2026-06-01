@@ -12,7 +12,7 @@ func Register(e *echo.Group, db *sqlx.DB, cache cache.Cache) {
 	handler := NewCategoryHandler(svc)
 
 	e.GET("/categories", handler.ListCategories)
-	e.GET("/categories/options", handler.ListCategoryOption)
+	e.GET("/categories/options", handler.ListCategoryOptions)
 	e.GET("/categories/:id", handler.GetCategory)
 	e.POST("/categories", handler.CreateCategory)
 	e.PATCH("/categories/:id", handler.UpdateCategory)

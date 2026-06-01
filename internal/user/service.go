@@ -20,7 +20,7 @@ type UserService interface {
 	CreateUser(ctx context.Context, req *UserCreateRequest) error
 	GetUser(ctx context.Context, id *uuid.UUID) (UserResponse, error)
 	UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error
-	UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePassword) error
+	UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePasswordRequest) error
 	ListAssignableUser(ctx context.Context) ([]UserBrief, error)
 }
 
@@ -125,7 +125,7 @@ func (s *service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpd
 	return nil
 }
 
-func (s *service) UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePassword) error {
+func (s *service) UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePasswordRequest) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err

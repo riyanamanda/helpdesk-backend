@@ -13,9 +13,9 @@ import (
 type CategoryService interface {
 	ListCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int64, error)
 	ListOptions(ctx context.Context) ([]CategoryOptionResponse, error)
-	CreateCategory(ctx context.Context, req *CreateCategoryRequest) (CategoryResponse, error)
+	CreateCategory(ctx context.Context, req *CategoryCreateRequest) (CategoryResponse, error)
 	GetCategory(ctx context.Context, id int64) (CategoryResponse, error)
-	UpdateCategory(ctx context.Context, id int64, req *UpdateCategoryRequest) error
+	UpdateCategory(ctx context.Context, id int64, req *CategoryUpdateRequest) error
 	DeleteCategory(ctx context.Context, id int64) error
 }
 
@@ -73,7 +73,7 @@ func (s *service) ListOptions(ctx context.Context) ([]CategoryOptionResponse, er
 	return categories, nil
 }
 
-func (s *service) CreateCategory(ctx context.Context, req *CreateCategoryRequest) (CategoryResponse, error) {
+func (s *service) CreateCategory(ctx context.Context, req *CategoryCreateRequest) (CategoryResponse, error) {
 	category := Category{
 		Name: req.Name,
 	}
@@ -102,7 +102,7 @@ func (s *service) GetCategory(ctx context.Context, id int64) (CategoryResponse, 
 	return toCategoryResponse(*category), nil
 }
 
-func (s *service) UpdateCategory(ctx context.Context, id int64, req *UpdateCategoryRequest) error {
+func (s *service) UpdateCategory(ctx context.Context, id int64, req *CategoryUpdateRequest) error {
 	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrCategoryNotFound) {

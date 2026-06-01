@@ -54,13 +54,12 @@ type TicketAttachmentResponse struct {
 
 type GetTicketParams struct {
 	pagination.Params
+
 	Status       TicketStatus   `query:"status"`
 	Priority     TicketPriority `query:"priority"`
 	CategoryID   *int64         `query:"category_id"`
 	DivisionID   *int64         `query:"division_id"`
 	AssignedToID *uuid.UUID     `query:"assigned_to_id"`
-	SortBy       string         `query:"sort_by"`
-	SortType     string         `query:"sort_type"`
 }
 
 func (p *GetTicketParams) Normalize() {
