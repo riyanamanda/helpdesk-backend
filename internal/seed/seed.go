@@ -1,18 +1,32 @@
 package seed
 
-import "github.com/jmoiron/sqlx"
+import (
+	"log/slog"
+
+	"github.com/jmoiron/sqlx"
+)
 
 func Run(db *sqlx.DB) error {
-	if err := SeedCategory(db); err != nil {
+	categoryInserted, err := SeedCategory(db)
+	if err != nil {
 		return err
 	}
+	slog.Info("seed categories finished", "inserted", categoryInserted)
 
-	if err := SeedDivision(db); err != nil {
+	divisionInserted, err := SeedDivision(db)
+	if err != nil {
 		return err
 	}
+	slog.Info("seed divisions finished", "inserted", divisionInserted)
 
-	if err := SeedUserAdmin(db); err != nil {
+	adminInserted, err := SeedUserAdmin(db)
+	if err != nil {
 		return err
+	}
+	if adminInserted {
+		slog.Info("seed admin user finished", "inserted", true)
+	} else {
+		slog.Info("seed admin user finished", "inserted", false)
 	}
 
 	return nil

@@ -7,7 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func SeedUserAdmin(db *sqlx.DB) error {
+func SeedUserAdmin(db *sqlx.DB) (bool, error) {
 	const email = "admin@email.com"
 	var exists bool
 
@@ -21,17 +21,17 @@ func SeedUserAdmin(db *sqlx.DB) error {
 
 	err := db.Get(&exists, query, email)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if exists {
-		slog.Info("User admin already exists")
-		return nil
+		slog.Info("user admin already exists")
+		return false, nil
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	const queryInsert = `
@@ -41,8 +41,8 @@ func SeedUserAdmin(db *sqlx.DB) error {
 
 	_, err = db.Exec(queryInsert, "Riyan Amanda", email, hashedPassword, "ADMIN", 1, "MALE")
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
