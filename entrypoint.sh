@@ -16,10 +16,5 @@ fi
 echo "Running database migrations..."
 goose -dir ./migrations up
 
-if [ "${RUN_SEED:-true}" = "true" ]; then
-  echo "Running database seed..."
-  ./seed
-fi
-
 echo "Starting API server..."
 exec ./api
