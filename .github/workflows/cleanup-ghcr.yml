@@ -1,0 +1,41 @@
+name: Cleanup GHCR
+
+on:
+  workflow_run:
+    workflows:
+      - Build and Push Backend
+    types:
+      - completed
+
+permissions:
+  packages: write
+
+jobs:
+  cleanup:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Keep latest 5 versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: riyanamanda
+          PACKAGE: helpdesk-backend
+        run: |
+          OLD_VERSIONS=$(gh api \
+            "/users/$OWNER/packages/container/$PACKAGE/versions" \
+            --paginate \
+            --jq 'sort_by(.created_at) | reverse | .[5:] | .[].id')
+
+          if [ -z "$OLD_VERSIONS" ]; then
+            echo "Nothing to delete"
+            exit 0
+          fi
+
+          echo "$OLD_VERSIONS" | while read VERSION_ID; do
+            echo "Deleting version $VERSION_ID"
+
+            gh api \
+              --method DELETE \
+              "/users/$OWNER/packages/container/$PACKAGE/versions/$VERSION_ID"
+          done
