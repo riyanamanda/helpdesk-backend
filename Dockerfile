@@ -15,17 +15,15 @@ FROM alpine:latest
 ARG TARGETARCH
 ARG GOOSE_VERSION=v3.24.2
 
-RUN apk --no-cache add ca-certificates tzdata curl tar
+RUN apk --no-cache add ca-certificates tzdata curl
 
 RUN case "$TARGETARCH" in \
 			amd64) GOOSE_ARCH="x86_64" ;; \
 			arm64) GOOSE_ARCH="arm64" ;; \
 			*) echo "unsupported TARGETARCH: $TARGETARCH" && exit 1 ;; \
 		esac && \
-		curl -fsSL -o /tmp/goose.tar.gz "https://github.com/pressly/goose/releases/download/${GOOSE_VERSION}/goose_linux_${GOOSE_ARCH}.tar.gz" && \
-		tar -xzf /tmp/goose.tar.gz -C /usr/local/bin goose && \
-		chmod +x /usr/local/bin/goose && \
-		rm -f /tmp/goose.tar.gz
+		curl -fsSL -o /usr/local/bin/goose "https://github.com/pressly/goose/releases/download/${GOOSE_VERSION}/goose_linux_${GOOSE_ARCH}" && \
+		chmod +x /usr/local/bin/goose
 
 WORKDIR /app
 
