@@ -42,10 +42,10 @@ func GenerateObjectKey(prefix, filename string) string {
 	)
 }
 
-func BuildPublicURL(publicURL, bucket, key string) string {
+func BuildPublicURL(bucket, key string) string {
 	if key == "" {
 		return ""
 	}
 
-	return fmt.Sprintf("%s/%s/%s", publicURL, bucket, key)
+	return fmt.Sprintf("/storage/%s/%s", bucket, key)
 }

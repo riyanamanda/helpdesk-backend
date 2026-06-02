@@ -62,7 +62,6 @@ func main() {
 	storageService := storage.NewMinioStorage(
 		minioClient,
 		cfg.Storage.Bucket,
-		cfg.Storage.PublicURL,
 	)
 
 	redisClient, err := redis.NewRedisClient(ctx, cfg.Redis)

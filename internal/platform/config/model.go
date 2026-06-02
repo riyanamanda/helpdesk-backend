@@ -41,7 +41,6 @@ type Storage struct {
 	SecretKey string
 	Bucket    string
 	UseSSL    bool
-	PublicURL string
 }
 
 type Redis struct {

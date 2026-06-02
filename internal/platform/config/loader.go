@@ -41,7 +41,6 @@ func Load() *Config {
 			SecretKey: getEnv("MINIO_SECRET_KEY", "minioadmin"),
 			Bucket:    getEnv("MINIO_BUCKET", "helpdesk-dev"),
 			UseSSL:    getBoolEnv("MINIO_USE_SSL", false),
-			PublicURL: getEnv("MINIO_PUBLIC_URL", "http://localhost:9000"),
 		},
 		Redis: Redis{
 			Host:     getEnv("REDIS_HOST", "localhost"),

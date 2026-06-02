@@ -10,14 +10,12 @@ import (
 type minioStorage struct {
 	client     *minio.Client
 	bucketName string
-	publicURL  string
 }
 
-func NewMinioStorage(client *minio.Client, bucketName, publicURL string) Storage {
+func NewMinioStorage(client *minio.Client, bucketName string) Storage {
 	return &minioStorage{
 		client:     client,
 		bucketName: bucketName,
-		publicURL:  publicURL,
 	}
 }
 

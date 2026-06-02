@@ -69,7 +69,7 @@ func toTicketAttachmentResponse(ta TicketAttachmentProjection, storageConfig con
 	return TicketAttachmentResponse{
 		ID:             ta.ID,
 		TicketID:       ta.TicketID,
-		FileURL:        httputil.BuildPublicURL(storageConfig.PublicURL, storageConfig.Bucket, ta.FileKey),
+		FileURL:        httputil.BuildPublicURL(storageConfig.Bucket, ta.FileKey),
 		AttachmentType: ta.AttachmentType,
 		UploadedBy: user.UserBrief{
 			ID:   ta.UploadedByID,
