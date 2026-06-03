@@ -1,12 +1,10 @@
 package user
 
 import (
-	"net/http"
-
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
@@ -25,7 +23,7 @@ func (h *Handler) ListUsers(c *echo.Context) error {
 	var params GetUserParams
 
 	if err := c.Bind(&params); err != nil {
-		return response.Error(c, apperror.BadRequest("invalid query params"))
+		return response.Error(c, apperr.BadRequest("invalid query params"))
 	}
 
 	users, total, err := h.svc.ListUsers(c.Request().Context(), &params)
@@ -33,7 +31,7 @@ func (h *Handler) ListUsers(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.WithPagination(c, http.StatusOK, users, params.Page, params.Limit, total)
+	return response.Paginated(c, users, params.Page, params.Limit, total)
 }
 
 func (h *Handler) ListAssignableUser(c *echo.Context) error {
@@ -42,7 +40,7 @@ func (h *Handler) ListAssignableUser(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, users)
+	return response.OK(c, users)
 }
 
 func (h *Handler) CreateUser(c *echo.Context) error {
@@ -55,13 +53,13 @@ func (h *Handler) CreateUser(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusCreated, "user created successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) GetUser(c *echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		return response.Error(c, apperror.BadRequest("invalid user id"))
+		return response.Error(c, apperr.BadRequest("invalid user id"))
 	}
 
 	user, err := h.svc.GetUser(c.Request().Context(), &id)
@@ -69,13 +67,13 @@ func (h *Handler) GetUser(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, user)
+	return response.OK(c, user)
 }
 
 func (h *Handler) UpdateUser(c *echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		return response.Error(c, apperror.BadRequest("invalid user id"))
+		return response.Error(c, apperr.BadRequest("invalid user id"))
 	}
 
 	req, err := request.BindAndValidate[UserUpdateRequest](c)
@@ -88,13 +86,13 @@ func (h *Handler) UpdateUser(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "user updated successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) UpdatePassword(c *echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		return response.Error(c, apperror.BadRequest("invalid user id"))
+		return response.Error(c, apperr.BadRequest("invalid user id"))
 	}
 
 	req, err := request.BindAndValidate[UserUpdatePasswordRequest](c)
@@ -107,5 +105,5 @@ func (h *Handler) UpdatePassword(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "user password updated successfully")
+	return response.NoContent(c)
 }

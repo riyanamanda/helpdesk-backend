@@ -8,7 +8,7 @@ import (
 
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
@@ -20,7 +20,7 @@ import (
 type TicketService interface {
 	ListTickets(ctx context.Context, params *GetTicketParams) ([]TicketResponse, int64, error)
 	CreateTicket(ctx context.Context, req *TicketCreateRequest, file *upload.File) error
-	GetTicket(ctx context.Context, id int64) (TicketDetailResponse, error)
+	GetTicket(ctx context.Context, id int64) (*TicketDetailResponse, error)
 	AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error
 	SetPriority(ctx context.Context, ticketID int64, req TicketPriorityRequest) error
 	CreateResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file *upload.File) error
@@ -51,7 +51,7 @@ func (s *service) ListTickets(ctx context.Context, params *GetTicketParams) ([]T
 
 	tickets, total, err := s.repo.GetAll(ctx, *params)
 	if err != nil {
-		return []TicketResponse{}, 0, err
+		return nil, 0, err
 	}
 
 	return toTicketResponses(tickets), total, nil
@@ -60,7 +60,7 @@ func (s *service) ListTickets(ctx context.Context, params *GetTicketParams) ([]T
 func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, file *upload.File) error {
 	createdBy, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
-		return apperror.Unauthorized(apperror.CodeUnauthorized, "unauthorized")
+		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
 	ticket := Ticket{
@@ -117,44 +117,46 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 	return err
 }
 
-func (s *service) GetTicket(ctx context.Context, id int64) (TicketDetailResponse, error) {
+func (s *service) GetTicket(ctx context.Context, id int64) (*TicketDetailResponse, error) {
 	ticket, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			return TicketDetailResponse{}, apperror.NotFound("ticket")
+			return nil, apperr.NotFound("ticket")
 		}
-		return TicketDetailResponse{}, err
+		return nil, err
 	}
 
 	attachments, err := s.repo.GetAttachmentsByTicketID(ctx, id)
 	if err != nil {
-		return TicketDetailResponse{}, err
+		return nil, err
 	}
 
-	return toTicketDetailResponse(*ticket, attachments, s.storageConfig), nil
+	result := toTicketDetailResponse(*ticket, attachments, s.storageConfig)
+
+	return &result, nil
 }
 
 func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error {
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			return apperror.NotFound("ticket")
+			return apperr.NotFound("ticket")
 		}
 
 		return err
 	}
 
 	if existing.Priority == nil {
-		return apperror.BadRequest("Please set priority before assign a ticket")
+		return apperr.BadRequest("please set priority before assigning a ticket")
 	}
 
 	if err := s.repo.Assign(ctx, ticketID, req.AssignedTo); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			return apperror.NotFound("ticket")
+			return apperr.NotFound("ticket")
 		}
 
 		if errors.Is(err, user.ErrUserNotFound) {
-			return apperror.NotFound("user")
+			return apperr.NotFound("user")
 		}
 		return err
 	}
@@ -167,7 +169,7 @@ func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAs
 func (s *service) SetPriority(ctx context.Context, ticketID int64, req TicketPriorityRequest) error {
 	if err := s.repo.UpdatePriority(ctx, ticketID, req.Priority); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			return apperror.NotFound("ticket")
+			return apperr.NotFound("ticket")
 		}
 
 		return err
@@ -182,14 +184,14 @@ func (s *service) CreateResolution(ctx context.Context, ticketID int64, req Tick
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			return apperror.NotFound("ticket")
+			return apperr.NotFound("ticket")
 		}
 
 		return err
 	}
 
 	if existing.AssignedToID == nil {
-		return apperror.BadRequest("Please assign the ticket before add resolution")
+		return apperr.BadRequest("please assign the ticket before adding a resolution")
 	}
 
 	tx, err := s.repo.Begin(ctx)
@@ -207,12 +209,12 @@ func (s *service) CreateResolution(ctx context.Context, ticketID int64, req Tick
 
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
-		return apperror.Unauthorized(apperror.CodeUnauthorized, "unauthorized")
+		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
 	if err = tx.UpdateResolution(ctx, ticketID, userID, req.Resolution); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			return apperror.NotFound("ticket")
+			return apperr.NotFound("ticket")
 		}
 		return err
 	}
@@ -248,12 +250,12 @@ func (s *service) CreateResolution(ctx context.Context, ticketID int64, req Tick
 func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
-		return apperror.Unauthorized(apperror.CodeUnauthorized, "unauthorized")
+		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
 	if err := s.repo.CloseTicket(ctx, ticketID, userID); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			return apperror.NotFound("ticket")
+			return apperr.NotFound("ticket")
 		}
 
 		return err

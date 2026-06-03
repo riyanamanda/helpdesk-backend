@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"golang.org/x/crypto/bcrypt"
@@ -18,7 +18,7 @@ import (
 type UserService interface {
 	ListUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error)
 	CreateUser(ctx context.Context, req *UserCreateRequest) error
-	GetUser(ctx context.Context, id *uuid.UUID) (UserResponse, error)
+	GetUser(ctx context.Context, id *uuid.UUID) (*UserResponse, error)
 	UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error
 	UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePasswordRequest) error
 	ListAssignableUser(ctx context.Context) ([]UserBrief, error)
@@ -46,7 +46,7 @@ func (s *service) ListUsers(ctx context.Context, params *GetUserParams) ([]UserR
 
 	users, total, err := s.repo.GetAll(ctx, *params)
 	if err != nil {
-		return []UserResponse{}, 0, err
+		return nil, 0, err
 	}
 
 	return toUserResponses(users, s.storageConfig), total, nil
@@ -76,7 +76,7 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 
 	if err := s.repo.Create(ctx, user); err != nil {
 		if errors.Is(err, ErrUserAlreadyExists) {
-			return apperror.AlreadyExists("user")
+			return apperr.AlreadyExists("user")
 		}
 
 		return err
@@ -87,17 +87,19 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 	return nil
 }
 
-func (s *service) GetUser(ctx context.Context, id *uuid.UUID) (UserResponse, error) {
+func (s *service) GetUser(ctx context.Context, id *uuid.UUID) (*UserResponse, error) {
 	user, err := s.repo.GetByID(ctx, *id)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
-			return UserResponse{}, apperror.NotFound("user")
+			return nil, apperr.NotFound("user")
 		}
 
-		return UserResponse{}, err
+		return nil, err
 	}
 
-	return toUserResponse(*user, s.storageConfig), nil
+	result := toUserResponse(*user, s.storageConfig)
+
+	return &result, nil
 }
 
 func (s *service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error {
@@ -112,10 +114,10 @@ func (s *service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpd
 
 	if err := s.repo.UpdateByID(ctx, userID, user); err != nil {
 		if errors.Is(err, ErrUserNotFound) {
-			return apperror.NotFound("user")
+			return apperr.NotFound("user")
 		}
 		if errors.Is(err, ErrUserAlreadyExists) {
-			return apperror.AlreadyExists("user")
+			return apperr.AlreadyExists("user")
 		}
 		return err
 	}
@@ -133,7 +135,7 @@ func (s *service) UpdatePassword(ctx context.Context, userID uuid.UUID, req *Use
 
 	if err := s.repo.UpdatePassword(ctx, userID, string(hashedPassword)); err != nil {
 		if errors.Is(err, ErrUserNotFound) {
-			return apperror.NotFound("user")
+			return apperr.NotFound("user")
 		}
 		return err
 	}

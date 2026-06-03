@@ -1,8 +1,6 @@
 package auth
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v5"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
@@ -30,7 +28,7 @@ func (h *Handler) Login(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, result)
+	return response.OK(c, result)
 }
 
 func (h *Handler) LoginWithGoogle(c *echo.Context) error {
@@ -44,7 +42,7 @@ func (h *Handler) LoginWithGoogle(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, result)
+	return response.OK(c, result)
 }
 
 func (h *Handler) Logout(c *echo.Context) error {
@@ -52,7 +50,7 @@ func (h *Handler) Logout(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "logged out successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) Me(c *echo.Context) error {
@@ -61,5 +59,5 @@ func (h *Handler) Me(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, user)
+	return response.OK(c, user)
 }

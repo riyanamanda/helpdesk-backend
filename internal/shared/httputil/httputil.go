@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 )
 
 func ParsePositiveInt64PathParam(c *echo.Context, paramName, resourceName string) (int64, error) {
@@ -18,9 +18,9 @@ func ParsePositiveInt64PathParam(c *echo.Context, paramName, resourceName string
 	id, err := strconv.ParseInt(value, 10, 64)
 	if err != nil || id <= 0 {
 		if resourceName != "" {
-			return 0, apperror.BadRequest(fmt.Sprintf("invalid %s %s", resourceName, paramName))
+			return 0, apperr.BadRequest(fmt.Sprintf("invalid %s %s", resourceName, paramName))
 		}
-		return 0, apperror.BadRequest(fmt.Sprintf("invalid %s", paramName))
+		return 0, apperr.BadRequest(fmt.Sprintf("invalid %s", paramName))
 	}
 
 	return id, nil

@@ -3,7 +3,7 @@ package validation
 import (
 	"mime/multipart"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 )
 
 func ValidateImage(header *multipart.FileHeader, maxSize int64, allowedTypes map[string]bool) error {
@@ -12,13 +12,13 @@ func ValidateImage(header *multipart.FileHeader, maxSize int64, allowedTypes map
 	}
 
 	if header.Size > maxSize {
-		return apperror.BadRequest("file is too large")
+		return apperr.BadRequest("file is too large")
 	}
 
 	contentType := header.Header.Get("Content-Type")
 
 	if !allowedTypes[contentType] {
-		return apperror.BadRequest("invalid image format")
+		return apperr.BadRequest("invalid image format")
 	}
 
 	return nil

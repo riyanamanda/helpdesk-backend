@@ -1,8 +1,6 @@
 package dashboard
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v5"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
@@ -24,7 +22,7 @@ func (h *Handler) GetSummary(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, summary)
+	return response.OK(c, summary)
 }
 
 func (h *Handler) GetRecentTickets(c *echo.Context) error {
@@ -33,5 +31,5 @@ func (h *Handler) GetRecentTickets(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, tickets)
+	return response.OK(c, tickets)
 }

@@ -6,15 +6,15 @@ import (
 	"errors"
 	"time"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 )
 
 type DivisionService interface {
 	ListDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int64, error)
 	ListOptions(ctx context.Context) ([]DivisionOptionResponse, error)
-	CreateDivision(ctx context.Context, req *DivisionCreateRequest) (DivisionResponse, error)
-	GetDivision(ctx context.Context, id int64) (DivisionResponse, error)
+	CreateDivision(ctx context.Context, req *DivisionCreateRequest) (*DivisionResponse, error)
+	GetDivision(ctx context.Context, id int64) (*DivisionResponse, error)
 	UpdateDivision(ctx context.Context, id int64, req *DivisionUpdateRequest) error
 	DeleteDivision(ctx context.Context, id int64) error
 }
@@ -39,7 +39,7 @@ func (s *service) ListDivisions(ctx context.Context, params *GetDivisionParams) 
 
 	divisions, total, err := s.repo.GetAll(ctx, *params)
 	if err != nil {
-		return []DivisionResponse{}, 0, err
+		return nil, 0, err
 	}
 
 	return toDivisionResponses(divisions), total, nil
@@ -72,40 +72,44 @@ func (s *service) ListOptions(ctx context.Context) ([]DivisionOptionResponse, er
 	return divisions, nil
 }
 
-func (s *service) CreateDivision(ctx context.Context, req *DivisionCreateRequest) (DivisionResponse, error) {
+func (s *service) CreateDivision(ctx context.Context, req *DivisionCreateRequest) (*DivisionResponse, error) {
 	division := Division{
 		Name: req.Name,
 	}
 
 	if err := s.repo.Create(ctx, &division); err != nil {
 		if errors.Is(err, ErrDivisionAlreadyExists) {
-			return DivisionResponse{}, apperror.AlreadyExists("division")
+			return nil, apperr.AlreadyExists("division")
 		}
-		return DivisionResponse{}, err
+		return nil, err
 	}
 
 	InvalidateCache(ctx, s.cache)
 
-	return toDivisionResponse(division), nil
+	result := toDivisionResponse(division)
+
+	return &result, nil
 }
 
-func (s *service) GetDivision(ctx context.Context, id int64) (DivisionResponse, error) {
+func (s *service) GetDivision(ctx context.Context, id int64) (*DivisionResponse, error) {
 	division, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {
-			return DivisionResponse{}, apperror.NotFound("division")
+			return nil, apperr.NotFound("division")
 		}
-		return DivisionResponse{}, err
+		return nil, err
 	}
 
-	return toDivisionResponse(*division), nil
+	result := toDivisionResponse(*division)
+
+	return &result, nil
 }
 
 func (s *service) UpdateDivision(ctx context.Context, id int64, req *DivisionUpdateRequest) error {
 	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {
-			return apperror.NotFound("division")
+			return apperr.NotFound("division")
 		}
 		return err
 	}
@@ -122,10 +126,10 @@ func (s *service) UpdateDivision(ctx context.Context, id int64, req *DivisionUpd
 
 	if err := s.repo.Update(ctx, id, &division); err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {
-			return apperror.NotFound("division")
+			return apperr.NotFound("division")
 		}
 		if errors.Is(err, ErrDivisionAlreadyExists) {
-			return apperror.AlreadyExists("division")
+			return apperr.AlreadyExists("division")
 		}
 		return err
 	}
@@ -138,7 +142,7 @@ func (s *service) UpdateDivision(ctx context.Context, id int64, req *DivisionUpd
 func (s *service) DeleteDivision(ctx context.Context, id int64) error {
 	if err := s.repo.Delete(ctx, id); err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {
-			return apperror.NotFound("division")
+			return apperr.NotFound("division")
 		}
 		return err
 	}

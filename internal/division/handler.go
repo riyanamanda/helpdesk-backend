@@ -1,11 +1,9 @@
 package division
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v5"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
@@ -25,7 +23,7 @@ func (h *Handler) ListDivisions(c *echo.Context) error {
 	var params GetDivisionParams
 
 	if err := c.Bind(&params); err != nil {
-		return response.Error(c, apperror.BadRequest("invalid query params"))
+		return response.Error(c, apperr.BadRequest("invalid query params"))
 	}
 
 	divisions, total, err := h.svc.ListDivisions(c.Request().Context(), &params)
@@ -33,7 +31,7 @@ func (h *Handler) ListDivisions(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.WithPagination(c, http.StatusOK, divisions, params.Page, params.Limit, total)
+	return response.Paginated(c, divisions, params.Page, params.Limit, total)
 }
 
 func (h *Handler) ListDivisionOptions(c *echo.Context) error {
@@ -42,7 +40,7 @@ func (h *Handler) ListDivisionOptions(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, divisions)
+	return response.OK(c, divisions)
 }
 
 func (h *Handler) CreateDivision(c *echo.Context) error {
@@ -56,7 +54,7 @@ func (h *Handler) CreateDivision(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusCreated, division)
+	return response.Created(c, division)
 }
 
 func (h *Handler) GetDivision(c *echo.Context) error {
@@ -70,7 +68,7 @@ func (h *Handler) GetDivision(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, division)
+	return response.OK(c, division)
 }
 
 func (h *Handler) UpdateDivision(c *echo.Context) error {
@@ -88,7 +86,7 @@ func (h *Handler) UpdateDivision(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "division updated successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) DeleteDivision(c *echo.Context) error {
@@ -101,5 +99,5 @@ func (h *Handler) DeleteDivision(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	return response.NoContent(c)
 }

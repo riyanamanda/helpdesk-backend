@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
@@ -25,7 +25,7 @@ func NewTicketHandler(svc TicketService) *Handler {
 func (h *Handler) ListTickets(c *echo.Context) error {
 	var params GetTicketParams
 	if err := c.Bind(&params); err != nil {
-		return response.Error(c, apperror.BadRequest("invalid query params"))
+		return response.Error(c, apperr.BadRequest("invalid query params"))
 	}
 
 	tickets, total, err := h.svc.ListTickets(c.Request().Context(), &params)
@@ -33,7 +33,7 @@ func (h *Handler) ListTickets(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.WithPagination(c, http.StatusOK, tickets, params.Page, params.Limit, total)
+	return response.Paginated(c, tickets, params.Page, params.Limit, total)
 }
 
 func (h *Handler) CreateTicket(c *echo.Context) error {
@@ -56,7 +56,7 @@ func (h *Handler) CreateTicket(c *echo.Context) error {
 
 		f, err := fileHeader.Open()
 		if err != nil {
-			return response.Error(c, apperror.Internal("failed to open uploaded attachment"))
+			return response.Error(c, apperr.Internal())
 		}
 		defer f.Close()
 
@@ -72,7 +72,7 @@ func (h *Handler) CreateTicket(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusCreated, "ticket created successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) GetTicket(c *echo.Context) error {
@@ -86,7 +86,7 @@ func (h *Handler) GetTicket(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, ticket)
+	return response.OK(c, ticket)
 }
 
 func (h *Handler) AssignTicket(c *echo.Context) error {
@@ -104,7 +104,7 @@ func (h *Handler) AssignTicket(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "ticket assigned successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) SetPriority(c *echo.Context) error {
@@ -122,7 +122,7 @@ func (h *Handler) SetPriority(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "priority has been set successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) CreateResolution(c *echo.Context) error {
@@ -149,7 +149,7 @@ func (h *Handler) CreateResolution(c *echo.Context) error {
 
 		f, err := fileHeader.Open()
 		if err != nil {
-			return response.Error(c, apperror.Internal("failed to open uploaded attachment"))
+			return response.Error(c, apperr.Internal())
 		}
 		defer f.Close()
 
@@ -165,7 +165,7 @@ func (h *Handler) CreateResolution(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusCreated, "resolution created successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) CloseTicket(c *echo.Context) error {
@@ -178,5 +178,5 @@ func (h *Handler) CloseTicket(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "ticket closed successfully")
+	return response.NoContent(c)
 }

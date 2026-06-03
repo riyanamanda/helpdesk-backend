@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 )
 
 type CustomValidator struct {
@@ -33,9 +33,6 @@ func (cv *CustomValidator) Validate(i any) error {
 	return cv.validator.Struct(i)
 }
 
-func Parse(err error) *apperror.AppError {
-	return apperror.Validation(
-
-		apperror.ValidationErrors(err),
-	)
+func Parse(err error) *apperr.Error {
+	return apperr.Validation(apperr.ValidationErrors(err))
 }

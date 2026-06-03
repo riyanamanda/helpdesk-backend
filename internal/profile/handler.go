@@ -1,10 +1,8 @@
 package profile
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v5"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
@@ -27,7 +25,7 @@ func (h *Handler) GetProfile(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, profile)
+	return response.OK(c, profile)
 }
 
 func (h *Handler) UpdateProfile(c *echo.Context) error {
@@ -40,13 +38,13 @@ func (h *Handler) UpdateProfile(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "profile updated successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) UpdateAvatar(c *echo.Context) error {
 	fileHeader, err := c.FormFile("avatar")
 	if err != nil {
-		return response.Error(c, apperror.BadRequest("avatar is required"))
+		return response.Error(c, apperr.BadRequest("avatar is required"))
 	}
 
 	if err := validation.ValidateImage(fileHeader, maxAvatarSize, allowedAvatarTypes); err != nil {
@@ -55,7 +53,7 @@ func (h *Handler) UpdateAvatar(c *echo.Context) error {
 
 	f, err := fileHeader.Open()
 	if err != nil {
-		return response.Error(c, apperror.Internal("failed to open uploaded file"))
+		return response.Error(c, apperr.Internal())
 	}
 	defer f.Close()
 
@@ -70,7 +68,7 @@ func (h *Handler) UpdateAvatar(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "avatar updated successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) SyncGoogle(c *echo.Context) error {
@@ -83,7 +81,7 @@ func (h *Handler) SyncGoogle(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "google account linked successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) RevokeGoogle(c *echo.Context) error {
@@ -91,7 +89,7 @@ func (h *Handler) RevokeGoogle(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "google account unlinked successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) UpdatePassword(c *echo.Context) error {
@@ -104,5 +102,5 @@ func (h *Handler) UpdatePassword(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "Password updated successfully")
+	return response.NoContent(c)
 }

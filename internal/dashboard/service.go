@@ -9,7 +9,7 @@ import (
 )
 
 type DashboardService interface {
-	GetSummary(ctx context.Context) (SummaryResponse, error)
+	GetSummary(ctx context.Context) (*SummaryResponse, error)
 	GetRecentTickets(ctx context.Context) ([]RecentTicketResponse, error)
 }
 
@@ -25,19 +25,19 @@ func NewDashboardService(repo DashboardRepository, cache cache.Cache) DashboardS
 	}
 }
 
-func (s *service) GetSummary(ctx context.Context) (SummaryResponse, error) {
+func (s *service) GetSummary(ctx context.Context) (*SummaryResponse, error) {
 	cached, err := s.cache.Get(ctx, SummaryCacheKey)
 	if err == nil {
 		var summary SummaryResponse
 
 		if err := json.Unmarshal([]byte(cached), &summary); err == nil {
-			return summary, nil
+			return &summary, nil
 		}
 	}
 
 	projection, err := s.repo.GetSummary(ctx)
 	if err != nil {
-		return SummaryResponse{}, err
+		return nil, err
 	}
 
 	summary := toSummary(projection)
@@ -47,7 +47,7 @@ func (s *service) GetSummary(ctx context.Context) (SummaryResponse, error) {
 		_ = s.cache.Set(ctx, SummaryCacheKey, string(data), 30*time.Second)
 	}
 
-	return summary, nil
+	return &summary, nil
 }
 
 func (s *service) GetRecentTickets(ctx context.Context) ([]RecentTicketResponse, error) {

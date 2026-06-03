@@ -1,11 +1,9 @@
 package category
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v5"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
@@ -25,7 +23,7 @@ func (h *Handler) ListCategories(c *echo.Context) error {
 	var params GetCategoryParams
 
 	if err := c.Bind(&params); err != nil {
-		return response.Error(c, apperror.BadRequest("invalid query params"))
+		return response.Error(c, apperr.BadRequest("invalid query params"))
 	}
 
 	categories, total, err := h.svc.ListCategories(c.Request().Context(), &params)
@@ -33,7 +31,7 @@ func (h *Handler) ListCategories(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.WithPagination(c, http.StatusOK, categories, params.Page, params.Limit, total)
+	return response.Paginated(c, categories, params.Page, params.Limit, total)
 }
 
 func (h *Handler) ListCategoryOptions(c *echo.Context) error {
@@ -42,7 +40,7 @@ func (h *Handler) ListCategoryOptions(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, categories)
+	return response.OK(c, categories)
 }
 
 func (h *Handler) CreateCategory(c *echo.Context) error {
@@ -56,7 +54,7 @@ func (h *Handler) CreateCategory(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusCreated, category)
+	return response.Created(c, category)
 }
 
 func (h *Handler) GetCategory(c *echo.Context) error {
@@ -70,7 +68,7 @@ func (h *Handler) GetCategory(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, http.StatusOK, category)
+	return response.OK(c, category)
 }
 
 func (h *Handler) UpdateCategory(c *echo.Context) error {
@@ -88,7 +86,7 @@ func (h *Handler) UpdateCategory(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.Message(c, http.StatusOK, "category updated successfully")
+	return response.NoContent(c)
 }
 
 func (h *Handler) DeleteCategory(c *echo.Context) error {
@@ -101,5 +99,5 @@ func (h *Handler) DeleteCategory(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	return response.NoContent(c)
 }

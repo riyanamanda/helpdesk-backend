@@ -5,12 +5,11 @@ import (
 	"errors"
 	"time"
 
-	"github.com/google/uuid"
 	goredis "github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/firebase"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/jwtutil"
@@ -37,10 +36,10 @@ func (r *redisAdapter) Delete(ctx context.Context, key string) error {
 }
 
 type AuthService interface {
-	Login(ctx context.Context, req *LoginRequest) (LoginResponse, error)
-	LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (LoginResponse, error)
+	Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error)
+	LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (*LoginResponse, error)
 	Logout(ctx context.Context) error
-	Me(ctx context.Context) (CurrentUserResponse, error)
+	Me(ctx context.Context) (*CurrentUserResponse, error)
 }
 
 type service struct {
@@ -59,95 +58,100 @@ func NewAuthService(repo user.UserRepository, cfg config.Auth, storageConfig con
 	}
 }
 
-func (s *service) Login(ctx context.Context, req *LoginRequest) (LoginResponse, error) {
+func (s *service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
 	currentUser, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		if errors.Is(err, user.ErrUserNotFound) {
-			return LoginResponse{}, apperror.BadRequest("invalid email or password")
+			return nil, apperr.BadRequest("invalid email or password")
 		}
-		return LoginResponse{}, err
+		return nil, err
 	}
 
 	if !currentUser.IsActive {
-		return LoginResponse{}, apperror.Forbidden("user is inactive")
+		return nil, apperr.Forbidden("user is inactive")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(currentUser.Password), []byte(req.Password)); err != nil {
-		return LoginResponse{}, apperror.BadRequest("invalid email or password")
+		return nil, apperr.BadRequest("invalid email or password")
 	}
 
 	token, jti, err := jwtutil.GenerateToken(currentUser.ID, string(currentUser.Role), s.config.JWTSecret, s.config.JWTExp)
 	if err != nil {
-		return LoginResponse{}, err
+		return nil, err
 	}
 
 	if err := s.redis.Set(ctx, tokenKeyPrefix+jti, currentUser.ID.String(), s.config.JWTExp); err != nil {
-		return LoginResponse{}, err
+		return nil, err
 	}
 
-	return LoginResponse{
+	result := LoginResponse{
 		User:        toCurrentUserResponse(*currentUser, s.storageConfig),
 		AccessToken: token,
-	}, nil
+	}
+
+	return &result, nil
 }
 
-func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (LoginResponse, error) {
+func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (*LoginResponse, error) {
 	firebaseClaims, err := firebase.VerifyIDToken(req.IDToken, s.config.FirebaseProjectID)
 	if err != nil {
-		return LoginResponse{}, apperror.Unauthorized(apperror.CodeUnauthorized, "invalid google token")
+		return nil, apperr.Unauthorized(apperr.CodeUnauthorized, "invalid google token")
 	}
 
 	currentUser, err := s.userRepo.GetByEmail(ctx, firebaseClaims.Email)
 	if err != nil {
 		if errors.Is(err, user.ErrUserNotFound) {
-			return LoginResponse{}, apperror.Forbidden("your google account is not registered")
+			return nil, apperr.Forbidden("your google account is not registered")
 		}
-		return LoginResponse{}, err
+		return nil, err
 	}
 
 	if currentUser.GoogleID == nil {
-		return LoginResponse{}, apperror.Forbidden("google account is not linked to this account")
+		return nil, apperr.Forbidden("google account is not linked to this account")
 	}
 
 	if !currentUser.IsActive {
-		return LoginResponse{}, apperror.Forbidden("user is inactive")
+		return nil, apperr.Forbidden("user is inactive")
 	}
 
 	token, jti, err := jwtutil.GenerateToken(currentUser.ID, string(currentUser.Role), s.config.JWTSecret, s.config.JWTExp)
 	if err != nil {
-		return LoginResponse{}, err
+		return nil, err
 	}
 
 	if err := s.redis.Set(ctx, tokenKeyPrefix+jti, currentUser.ID.String(), s.config.JWTExp); err != nil {
-		return LoginResponse{}, err
+		return nil, err
 	}
 
-	return LoginResponse{
+	result := LoginResponse{
 		User:        toCurrentUserResponse(*currentUser, s.storageConfig),
 		AccessToken: token,
-	}, nil
+	}
+
+	return &result, nil
 }
 
 func (s *service) Logout(ctx context.Context) error {
 	jti, ok := ctxkey.GetJTIFromContext(ctx)
 	if !ok || jti == "" {
-		return apperror.Unauthorized(apperror.CodeInvalidToken, "invalid token")
+		return apperr.Unauthorized(apperr.CodeInvalidToken, "invalid token")
 	}
 
 	return s.redis.Delete(ctx, tokenKeyPrefix+jti)
 }
 
-func (s *service) Me(ctx context.Context) (CurrentUserResponse, error) {
-	var userID uuid.UUID
-
-	if currentUserID, ok := ctxkey.GetUserIDFromContext(ctx); ok {
-		userID = currentUserID
+func (s *service) Me(ctx context.Context) (*CurrentUserResponse, error) {
+	userID, ok := ctxkey.GetUserIDFromContext(ctx)
+	if !ok {
+		return nil, apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
 	u, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		return CurrentUserResponse{}, err
+		return nil, err
 	}
 
-	return toCurrentUserResponse(*u, s.storageConfig), nil
+	result := toCurrentUserResponse(*u, s.storageConfig)
+
+	return &result, nil
 }

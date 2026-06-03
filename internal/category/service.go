@@ -6,15 +6,15 @@ import (
 	"errors"
 	"time"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperror"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 )
 
 type CategoryService interface {
 	ListCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int64, error)
 	ListOptions(ctx context.Context) ([]CategoryOptionResponse, error)
-	CreateCategory(ctx context.Context, req *CategoryCreateRequest) (CategoryResponse, error)
-	GetCategory(ctx context.Context, id int64) (CategoryResponse, error)
+	CreateCategory(ctx context.Context, req *CategoryCreateRequest) (*CategoryResponse, error)
+	GetCategory(ctx context.Context, id int64) (*CategoryResponse, error)
 	UpdateCategory(ctx context.Context, id int64, req *CategoryUpdateRequest) error
 	DeleteCategory(ctx context.Context, id int64) error
 }
@@ -40,7 +40,7 @@ func (s *service) ListCategories(ctx context.Context, params *GetCategoryParams)
 
 	categories, total, err := s.repo.GetAll(ctx, *params)
 	if err != nil {
-		return []CategoryResponse{}, 0, err
+		return nil, 0, err
 	}
 
 	return toCategoryResponses(categories), total, nil
@@ -73,40 +73,44 @@ func (s *service) ListOptions(ctx context.Context) ([]CategoryOptionResponse, er
 	return categories, nil
 }
 
-func (s *service) CreateCategory(ctx context.Context, req *CategoryCreateRequest) (CategoryResponse, error) {
+func (s *service) CreateCategory(ctx context.Context, req *CategoryCreateRequest) (*CategoryResponse, error) {
 	category := Category{
 		Name: req.Name,
 	}
 
 	if err := s.repo.Create(ctx, &category); err != nil {
 		if errors.Is(err, ErrCategoryAlreadyExists) {
-			return CategoryResponse{}, apperror.AlreadyExists("category")
+			return nil, apperr.AlreadyExists("category")
 		}
-		return CategoryResponse{}, err
+		return nil, err
 	}
 
 	InvalidateCache(ctx, s.cache)
 
-	return toCategoryResponse(category), nil
+	result := toCategoryResponse(category)
+
+	return &result, nil
 }
 
-func (s *service) GetCategory(ctx context.Context, id int64) (CategoryResponse, error) {
+func (s *service) GetCategory(ctx context.Context, id int64) (*CategoryResponse, error) {
 	category, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrCategoryNotFound) {
-			return CategoryResponse{}, apperror.NotFound("category")
+			return nil, apperr.NotFound("category")
 		}
-		return CategoryResponse{}, err
+		return nil, err
 	}
 
-	return toCategoryResponse(*category), nil
+	result := toCategoryResponse(*category)
+
+	return &result, nil
 }
 
 func (s *service) UpdateCategory(ctx context.Context, id int64, req *CategoryUpdateRequest) error {
 	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrCategoryNotFound) {
-			return apperror.NotFound("category")
+			return apperr.NotFound("category")
 		}
 		return err
 	}
@@ -123,10 +127,10 @@ func (s *service) UpdateCategory(ctx context.Context, id int64, req *CategoryUpd
 
 	if err := s.repo.Update(ctx, id, &category); err != nil {
 		if errors.Is(err, ErrCategoryNotFound) {
-			return apperror.NotFound("category")
+			return apperr.NotFound("category")
 		}
 		if errors.Is(err, ErrCategoryAlreadyExists) {
-			return apperror.AlreadyExists("category")
+			return apperr.AlreadyExists("category")
 		}
 		return err
 	}
@@ -139,7 +143,7 @@ func (s *service) UpdateCategory(ctx context.Context, id int64, req *CategoryUpd
 func (s *service) DeleteCategory(ctx context.Context, id int64) error {
 	if err := s.repo.Delete(ctx, id); err != nil {
 		if errors.Is(err, ErrCategoryNotFound) {
-			return apperror.NotFound("category")
+			return apperr.NotFound("category")
 		}
 		return err
 	}
