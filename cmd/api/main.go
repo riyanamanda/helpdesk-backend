@@ -59,6 +59,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err := minio.InitBucket(ctx, minioClient, cfg.Storage.Bucket); err != nil {
+		slog.Error("failed to initialize storage bucket", "error", err)
+		os.Exit(1)
+	}
+
 	storageService := storage.NewMinioStorage(
 		minioClient,
 		cfg.Storage.Bucket,
