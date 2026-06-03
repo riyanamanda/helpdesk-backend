@@ -38,3 +38,8 @@ type UpdateProfileRequest struct {
 type SyncGoogleRequest struct {
 	IDToken string `json:"id_token" validate:"required"`
 }
+
+type UpdatePasswordRequest struct {
+	CurrentPassword string `json:"current_password" validate:"required,min=8"`
+	NewPassword     string `json:"new_password" validate:"required,min=8"`
+}

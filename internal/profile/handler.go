@@ -93,3 +93,16 @@ func (h *Handler) RevokeGoogle(c *echo.Context) error {
 
 	return response.Message(c, http.StatusOK, "google account unlinked successfully")
 }
+
+func (h *Handler) UpdatePassword(c *echo.Context) error {
+	req, err := request.BindAndValidate[UpdatePasswordRequest](c)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	if err := h.svc.UpdatePassword(c.Request().Context(), *req); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Message(c, http.StatusOK, "Password updated successfully")
+}

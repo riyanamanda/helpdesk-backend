@@ -17,6 +17,7 @@ type ProfileRepository interface {
 	UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error
 	SetGoogleID(ctx context.Context, id uuid.UUID, googleID string) error
 	UnsetGoogleID(ctx context.Context, id uuid.UUID) error
+	UpdatePassword(ctx context.Context, userID uuid.UUID, password string) error
 }
 
 type repository struct {
@@ -37,6 +38,7 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*user.UserProje
 			u.id,
 			u.name,
 			u.email,
+			u.password,
 			u.google_id,
 			u.avatar_key,
 			u.phone,
@@ -128,6 +130,22 @@ func (r *repository) UnsetGoogleID(ctx context.Context, id uuid.UUID) error {
 	`
 
 	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	return database.CheckRowsAffected(result, ErrProfileNotFound)
+}
+
+func (r *repository) UpdatePassword(ctx context.Context, userID uuid.UUID, password string) error {
+	const query = `
+		UPDATE users
+		SET password   = $2,
+		    updated_at = NOW()
+		WHERE id = $1
+	`
+
+	result, err := r.db.ExecContext(ctx, query, userID, password)
 	if err != nil {
 		return err
 	}

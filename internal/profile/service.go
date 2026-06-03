@@ -12,6 +12,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/firebase"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type ProfileService interface {
@@ -20,10 +21,11 @@ type ProfileService interface {
 	UpdateAvatar(ctx context.Context, file *upload.File) error
 	SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error
 	RevokeGoogle(ctx context.Context) error
+	UpdatePassword(ctx context.Context, req UpdatePasswordRequest) error
 }
 
 type service struct {
-	repo   ProfileRepository
+	repo          ProfileRepository
 	storage       storage.Storage
 	storageConfig config.Storage
 	authConfig    config.Auth
@@ -31,7 +33,7 @@ type service struct {
 
 func NewProfileService(repo ProfileRepository, store storage.Storage, storageConfig config.Storage, authConfig config.Auth) ProfileService {
 	return &service{
-		repo:   repo,
+		repo:          repo,
 		storage:       store,
 		storageConfig: storageConfig,
 		authConfig:    authConfig,
@@ -142,6 +144,33 @@ func (s *service) RevokeGoogle(ctx context.Context) error {
 	}
 
 	if err := s.repo.UnsetGoogleID(ctx, userID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) UpdatePassword(ctx context.Context, req UpdatePasswordRequest) error {
+	userID, ok := ctxkey.GetUserIDFromContext(ctx)
+	if !ok {
+		return apperror.Unauthorized(apperror.CodeUnauthorized, "unauthorized")
+	}
+
+	currentUser, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(currentUser.Password), []byte(req.CurrentPassword)); err != nil {
+		return apperror.BadRequest("invalid password")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.UpdatePassword(ctx, userID, string(hashedPassword)); err != nil {
 		return err
 	}
 
