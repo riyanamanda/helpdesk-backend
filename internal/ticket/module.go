@@ -4,6 +4,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 )
@@ -13,11 +14,14 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storag
 	svc := NewTicketService(repo, storageService, storageConfig, cache)
 	handler := NewTicketHandler(svc)
 
+	adminOnly := middleware.RequireRole("ADMIN")
+	employeeOnly := middleware.RequireRole("EMPLOYEE")
+
 	e.GET("/tickets", handler.ListTickets)
-	e.POST("/tickets", handler.CreateTicket)
+	e.POST("/tickets", handler.CreateTicket, employeeOnly)
 	e.GET("/tickets/:id", handler.GetTicket)
-	e.PATCH("/tickets/:id/assign", handler.AssignTicket)
-	e.PATCH("/tickets/:id/priority", handler.SetPriority)
-	e.PATCH("/tickets/:id/resolution", handler.CreateResolution)
-	e.PATCH("/tickets/:id/close", handler.CloseTicket)
+	e.PATCH("/tickets/:id/assign", handler.AssignTicket, adminOnly)
+	e.PATCH("/tickets/:id/priority", handler.SetPriority, adminOnly)
+	e.PATCH("/tickets/:id/resolution", handler.CreateResolution, adminOnly)
+	e.PATCH("/tickets/:id/close", handler.CloseTicket, adminOnly)
 }

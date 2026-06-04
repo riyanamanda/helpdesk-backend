@@ -3,6 +3,7 @@ package user
 import (
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 )
 
@@ -10,10 +11,12 @@ func Register(e *echo.Group, repo UserRepository, storageConfig config.Storage, 
 	svc := NewUserService(repo, storageConfig, cache)
 	handler := NewUserHandler(svc)
 
-	e.GET("/users", handler.ListUsers)
-	e.POST("/users", handler.CreateUser)
-	e.GET("/users/:id", handler.GetUser)
-	e.PATCH("/users/:id", handler.UpdateUser)
-	e.PATCH("/users/:id/password", handler.UpdatePassword)
-	e.GET("/users/assignable", handler.ListAssignableUser)
+	adminOnly := middleware.RequireRole("ADMIN")
+
+	e.GET("/users", handler.ListUsers, adminOnly)
+	e.POST("/users", handler.CreateUser, adminOnly)
+	e.GET("/users/assignable", handler.ListAssignableUser, adminOnly)
+	e.GET("/users/:id", handler.GetUser, adminOnly)
+	e.PATCH("/users/:id", handler.UpdateUser, adminOnly)
+	e.PATCH("/users/:id/password", handler.UpdatePassword, adminOnly)
 }

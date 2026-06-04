@@ -58,6 +58,7 @@ func AuthMiddleware(cfg config.Auth, redisClient *redis.Client) echo.MiddlewareF
 
 			ctx := ctxkey.SetUserIDToContext(c.Request().Context(), userID)
 			ctx = ctxkey.SetJTIToContext(ctx, claims.ID)
+			ctx = ctxkey.SetRoleToContext(ctx, claims.Role)
 			c.SetRequest(c.Request().WithContext(ctx))
 
 			return next(c)
