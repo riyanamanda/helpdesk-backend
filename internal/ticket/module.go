@@ -15,10 +15,9 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storag
 	handler := NewTicketHandler(svc)
 
 	adminOnly := middleware.RequireRole("ADMIN")
-	employeeOnly := middleware.RequireRole("EMPLOYEE")
 
 	e.GET("/tickets", handler.ListTickets)
-	e.POST("/tickets", handler.CreateTicket, employeeOnly)
+	e.POST("/tickets", handler.CreateTicket)
 	e.GET("/tickets/:id", handler.GetTicket)
 	e.PATCH("/tickets/:id/assign", handler.AssignTicket, adminOnly)
 	e.PATCH("/tickets/:id/priority", handler.SetPriority, adminOnly)
