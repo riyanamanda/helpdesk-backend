@@ -16,6 +16,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
+	"github.com/riyanamanda/helpdesk-backend/internal/feedback"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
@@ -93,6 +94,7 @@ func main() {
 	ticket.Register(protected, db, storageService, cfg.Storage, cacheStore)
 	dashboard.Register(protected, db, cacheStore)
 	profile.Register(protected, db, storageService, cfg.Storage, cfg.Auth)
+	feedback.Register(protected, db)
 
 	server := &http.Server{
 		Addr:    net.JoinHostPort(cfg.App.Host, cfg.App.Port),

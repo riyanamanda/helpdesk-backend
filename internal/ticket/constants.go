@@ -3,10 +3,8 @@ package ticket
 type (
 	TicketStatus   string
 	TicketPriority string
+	AttachmentType string
 )
-
-type AttachmentType string
-
 
 const (
 	Report     AttachmentType = "REPORT"
