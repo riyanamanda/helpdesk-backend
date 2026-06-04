@@ -25,6 +25,7 @@ func corsMiddleware(allowedOrigins []string) echo.MiddlewareFunc {
 				echo.HeaderAccept,
 				echo.HeaderAuthorization,
 			},
+			ExposeHeaders: []string{"X-Request-ID"},
 		},
 	)
 }
