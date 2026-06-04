@@ -15,7 +15,7 @@ func Register(e *echo.Group, repo UserRepository, storageConfig config.Storage, 
 
 	e.GET("/users", handler.ListUsers, adminOnly)
 	e.POST("/users", handler.CreateUser, adminOnly)
-	e.GET("/users/assignable", handler.ListAssignableUser, adminOnly)
+	e.GET("/users/assignable", handler.ListAssignableUser)
 	e.GET("/users/:id", handler.GetUser, adminOnly)
 	e.PATCH("/users/:id", handler.UpdateUser, adminOnly)
 	e.PATCH("/users/:id/password", handler.UpdatePassword, adminOnly)
