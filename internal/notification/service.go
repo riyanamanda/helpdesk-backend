@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/smtp"
 	"net/textproto"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -49,18 +50,20 @@ func (s *service) NewTicket(ctx context.Context, ticketID int64, title, descript
 			return
 		}
 
-		subject := fmt.Sprintf("New Ticket #%d: %s", ticketID, title)
+		if len(adminEmails) == 0 {
+			return
+		}
+
 		msg := Message{
-			Subject:  subject,
+			To:       adminEmails[0],
+			CC:       adminEmails[1:],
+			Subject:  fmt.Sprintf("New Ticket #%d: %s", ticketID, title),
 			Body:     newTicketHTMLBody(ticketID, title, description, submitterName),
 			TextBody: newTicketTextBody(ticketID, title, description, submitterName),
 		}
 
-		for _, to := range adminEmails {
-			msg.To = to
-			if err := s.send(ctx, msg); err != nil {
-				slog.ErrorContext(ctx, "notification: failed to send email", "to", to, "error", err)
-			}
+		if err := s.send(ctx, msg); err != nil {
+			slog.ErrorContext(ctx, "notification: failed to send email", "error", err)
 		}
 	}()
 }
@@ -71,6 +74,7 @@ func (s *service) send(_ context.Context, msg Message) error {
 	auth := smtp.PlainAuth("", cfg.Username, cfg.Password, cfg.Host)
 
 	raw := s.buildRaw(cfg.From, msg)
+	recipients := append([]string{msg.To}, msg.CC...)
 
 	if cfg.UseSSL {
 		// port 465: implicit TLS — must dial TLS first, then hand to smtp.NewClient
@@ -92,8 +96,10 @@ func (s *service) send(_ context.Context, msg Message) error {
 		if err := client.Mail(cfg.From); err != nil {
 			return err
 		}
-		if err := client.Rcpt(msg.To); err != nil {
-			return err
+		for _, rcpt := range recipients {
+			if err := client.Rcpt(rcpt); err != nil {
+				return err
+			}
 		}
 		w, err := client.Data()
 		if err != nil {
@@ -109,7 +115,7 @@ func (s *service) send(_ context.Context, msg Message) error {
 	}
 
 	// port 587: STARTTLS — smtp.SendMail handles the upgrade automatically
-	return smtp.SendMail(addr, auth, cfg.From, []string{msg.To}, raw)
+	return smtp.SendMail(addr, auth, cfg.From, recipients, raw)
 }
 
 func (s *service) buildRaw(from string, msg Message) []byte {
@@ -137,20 +143,19 @@ func (s *service) buildRaw(from string, msg Message) []byte {
 	_ = mw.Close()
 
 	now := time.Now()
-	header := fmt.Sprintf(
-		"From: IT Helpdesk <%s>\r\n"+
-			"Reply-To: %s\r\n"+
-			"To: %s\r\n"+
-			"Subject: %s\r\n"+
-			"Date: %s\r\n"+
-			"Message-ID: <%d.%d@rs-erba.go.id>\r\n"+
-			"MIME-Version: 1.0\r\n"+
-			"Content-Type: multipart/alternative; boundary=%q\r\n\r\n",
-		from, from, msg.To, msg.Subject,
-		now.Format(time.RFC1123Z),
-		now.UnixNano(), now.Unix(),
-		mw.Boundary(),
-	)
+	var hdr strings.Builder
+	fmt.Fprintf(&hdr, "From: IT Helpdesk <%s>\r\n", from)
+	fmt.Fprintf(&hdr, "Reply-To: %s\r\n", from)
+	fmt.Fprintf(&hdr, "To: %s\r\n", msg.To)
+	if len(msg.CC) > 0 {
+		fmt.Fprintf(&hdr, "Cc: %s\r\n", strings.Join(msg.CC, ", "))
+	}
+	fmt.Fprintf(&hdr, "Subject: %s\r\n", msg.Subject)
+	fmt.Fprintf(&hdr, "Date: %s\r\n", now.Format(time.RFC1123Z))
+	fmt.Fprintf(&hdr, "Message-ID: <%d.%d@rs-erba.go.id>\r\n", now.UnixNano(), now.Unix())
+	fmt.Fprintf(&hdr, "MIME-Version: 1.0\r\n")
+	fmt.Fprintf(&hdr, "Content-Type: multipart/alternative; boundary=%q\r\n\r\n", mw.Boundary())
+	header := hdr.String()
 
 	return []byte(header + body.String())
 }
