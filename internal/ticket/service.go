@@ -22,6 +22,8 @@ type TicketService interface {
 	ListTickets(ctx context.Context, params *GetTicketParams) ([]TicketResponse, int64, error)
 	CreateTicket(ctx context.Context, req *TicketCreateRequest, file *upload.File) error
 	GetTicket(ctx context.Context, id int64) (*TicketDetailResponse, error)
+	UpdateTicket(ctx context.Context, ticketID int64, req TicketUpdateRequest) error
+	DeleteTicket(ctx context.Context, ticketID int64) error
 	AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error
 	SetPriority(ctx context.Context, ticketID int64, req TicketPriorityRequest) error
 	CreateResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file *upload.File) error
@@ -138,6 +140,106 @@ func (s *service) GetTicket(ctx context.Context, id int64) (*TicketDetailRespons
 	result := toTicketDetailResponse(*ticket, attachments, s.storageConfig)
 
 	return &result, nil
+}
+
+func (s *service) UpdateTicket(ctx context.Context, ticketID int64, req TicketUpdateRequest) error {
+	existing, err := s.repo.GetByID(ctx, ticketID)
+	if err != nil {
+		if errors.Is(err, ErrTicketNotFound) {
+			return apperr.NotFound("ticket")
+		}
+		return err
+	}
+
+	userID, ok := ctxkey.GetUserIDFromContext(ctx)
+	if !ok {
+		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
+	}
+
+	if existing.CreatedByID != userID {
+		return apperr.Forbidden("you can only edit your own tickets")
+	}
+
+	if TicketStatus(existing.Status) != StatusOpen {
+		return apperr.BadRequest("only open tickets can be edited")
+	}
+
+	return s.repo.Update(ctx, ticketID, Ticket{
+		Title:       req.Title,
+		Description: req.Description,
+		CategoryID:  req.CategoryID,
+		DivisionID:  req.DivisionID,
+		CreatedBy:   userID,
+	})
+}
+
+func (s *service) DeleteTicket(ctx context.Context, ticketID int64) error {
+	existing, err := s.repo.GetByID(ctx, ticketID)
+	if err != nil {
+		if errors.Is(err, ErrTicketNotFound) {
+			return apperr.NotFound("ticket")
+		}
+		return err
+	}
+
+	if TicketStatus(existing.Status) != StatusOpen {
+		return apperr.BadRequest("only open tickets can be deleted")
+	}
+
+	userID, ok := ctxkey.GetUserIDFromContext(ctx)
+	if !ok {
+		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
+	}
+
+	role, _ := ctxkey.GetRoleFromContext(ctx)
+	if role != string(user.ADMIN) && existing.CreatedByID != userID {
+		return apperr.Forbidden("you can only delete your own tickets")
+	}
+
+	attachments, err := s.repo.GetAttachmentsByTicketID(ctx, ticketID)
+	if err != nil {
+		return err
+	}
+
+	tx, err := s.repo.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			if rbErr := tx.Rollback(); rbErr != nil {
+				slog.ErrorContext(ctx, "rollback failed", "error", rbErr)
+			}
+		}
+	}()
+
+	if err = tx.DeleteAttachmentsByTicketID(ctx, ticketID); err != nil {
+		return err
+	}
+
+	if err = tx.Delete(ctx, ticketID); err != nil {
+		if errors.Is(err, ErrTicketNotFound) {
+			return apperr.NotFound("ticket")
+		}
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	dashboard.InvalidateCache(ctx, s.cache)
+
+	if attachments != nil {
+		for _, a := range *attachments {
+			if delErr := s.storage.Delete(ctx, a.FileKey); delErr != nil {
+				slog.ErrorContext(ctx, "failed to delete attachment from storage", "key", a.FileKey, "error", delErr)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error {

@@ -20,6 +20,8 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storag
 	e.GET("/tickets", handler.ListTickets)
 	e.POST("/tickets", handler.CreateTicket)
 	e.GET("/tickets/:id", handler.GetTicket)
+	e.PUT("/tickets/:id", handler.UpdateTicket)
+	e.DELETE("/tickets/:id", handler.DeleteTicket)
 	e.PATCH("/tickets/:id/assign", handler.AssignTicket, adminOnly)
 	e.PATCH("/tickets/:id/priority", handler.SetPriority, adminOnly)
 	e.PATCH("/tickets/:id/resolution", handler.CreateResolution, adminOnly)

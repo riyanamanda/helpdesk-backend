@@ -73,6 +73,13 @@ type TicketCreateRequest struct {
 	DivisionID  int64  `json:"division" form:"division" validate:"required,gt=0"`
 }
 
+type TicketUpdateRequest struct {
+	Title       string `json:"title" validate:"required,min=5,max=100"`
+	Description string `json:"description" validate:"required,min=5,max=255"`
+	CategoryID  int64  `json:"category" validate:"required,gt=0"`
+	DivisionID  int64  `json:"division" validate:"required,gt=0"`
+}
+
 type TicketAssignRequest struct {
 	AssignedTo uuid.UUID `json:"assigned_to" validate:"required"`
 }

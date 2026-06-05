@@ -7,6 +7,13 @@ type (
 )
 
 const (
+	StatusOpen       TicketStatus = "OPEN"
+	StatusInProgress TicketStatus = "IN_PROGRESS"
+	StatusResolved   TicketStatus = "RESOLVED"
+	StatusClosed     TicketStatus = "CLOSED"
+)
+
+const (
 	Report     AttachmentType = "REPORT"
 	Resolution AttachmentType = "RESOLUTION"
 )

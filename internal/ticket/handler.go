@@ -89,6 +89,37 @@ func (h *Handler) GetTicket(c *echo.Context) error {
 	return response.OK(c, ticket)
 }
 
+func (h *Handler) UpdateTicket(c *echo.Context) error {
+	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	req, err := request.BindAndValidate[TicketUpdateRequest](c)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	if err := h.svc.UpdateTicket(c.Request().Context(), ticketID, *req); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.NoContent(c)
+}
+
+func (h *Handler) DeleteTicket(c *echo.Context) error {
+	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	if err := h.svc.DeleteTicket(c.Request().Context(), ticketID); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.NoContent(c)
+}
+
 func (h *Handler) AssignTicket(c *echo.Context) error {
 	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {

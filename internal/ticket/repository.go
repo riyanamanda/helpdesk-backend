@@ -18,6 +18,7 @@ type TicketRepository interface {
 	GetAttachmentsByTicketID(ctx context.Context, ticketID int64) (*[]TicketAttachmentProjection, error)
 	Assign(ctx context.Context, ticketID int64, userID uuid.UUID) error
 	UpdatePriority(ctx context.Context, ticketID int64, priority TicketPriority) error
+	Update(ctx context.Context, ticketID int64, ticket Ticket) error
 	CloseTicket(ctx context.Context, ticketID int64, userID uuid.UUID) error
 	Begin(ctx context.Context) (TicketTx, error)
 }
@@ -26,6 +27,8 @@ type TicketTx interface {
 	Create(ctx context.Context, ticket Ticket) (int64, error)
 	CreateAttachment(ctx context.Context, attachment TicketAttachment) error
 	UpdateResolution(ctx context.Context, ticketID int64, userID uuid.UUID, resolution string) error
+	DeleteAttachmentsByTicketID(ctx context.Context, ticketID int64) error
+	Delete(ctx context.Context, ticketID int64) error
 	Commit() error
 	Rollback() error
 }
@@ -315,6 +318,44 @@ func (r *repository) UpdatePriority(ctx context.Context, ticketID int64, priorit
 	`
 
 	result, err := r.db.ExecContext(ctx, query, ticketID, priority)
+	if err != nil {
+		return err
+	}
+
+	return database.CheckRowsAffected(result, ErrTicketNotFound)
+}
+
+func (t *txRepository) DeleteAttachmentsByTicketID(ctx context.Context, ticketID int64) error {
+	const query = `DELETE FROM ticket_attachments WHERE ticket_id = $1`
+	_, err := t.tx.ExecContext(ctx, query, ticketID)
+	return err
+}
+
+func (t *txRepository) Delete(ctx context.Context, ticketID int64) error {
+	const query = `DELETE FROM tickets WHERE id = $1`
+	result, err := t.tx.ExecContext(ctx, query, ticketID)
+	if err != nil {
+		return err
+	}
+	return database.CheckRowsAffected(result, ErrTicketNotFound)
+}
+
+func (r *repository) Update(ctx context.Context, ticketID int64, ticket Ticket) error {
+	const query = `
+		UPDATE tickets
+		SET title       = $2,
+			description = $3,
+			category_id = $4,
+			division_id = $5,
+			updated_at  = NOW()
+		WHERE id = $1
+		AND created_by = $6
+		AND status = 'OPEN'
+	`
+
+	result, err := r.db.ExecContext(ctx, query,
+		ticketID, ticket.Title, ticket.Description, ticket.CategoryID, ticket.DivisionID, ticket.CreatedBy,
+	)
 	if err != nil {
 		return err
 	}
