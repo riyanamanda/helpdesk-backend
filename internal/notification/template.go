@@ -24,7 +24,7 @@ func newTicketHTMLBody(ticketID int64, title, description, submittedBy string) s
           <!-- Header -->
           <tr>
             <td bgcolor="#0f172a" style="background-color:#0f172a;padding:40px 48px;text-align:center;">
-              <p style="margin:0;color:#475569;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Helpdesk System</p>
+              <p style="margin:0;color:#475569;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">IT Helpdesk</p>
               <h1 style="margin:12px 0 0;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:26px;font-weight:700;letter-spacing:-0.5px;line-height:1.3;">New Ticket Submitted</h1>
             </td>
           </tr>
@@ -86,7 +86,7 @@ func newTicketHTMLBody(ticketID int64, title, description, submittedBy string) s
           <!-- Footer -->
           <tr>
             <td bgcolor="#f8fafc" style="background-color:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 48px;text-align:center;">
-              <p style="margin:0;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:1.8;">This is an automated notification. Please do not reply to this email.<br>&copy; Helpdesk System. All rights reserved.</p>
+              <p style="margin:0;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:1.8;">This is an automated notification. Please do not reply to this email.<br>&copy; IT Helpdesk. Ernaldi Bahar Hospital. All rights reserved.</p>
             </td>
           </tr>
 

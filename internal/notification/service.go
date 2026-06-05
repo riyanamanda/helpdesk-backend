@@ -138,12 +138,12 @@ func (s *service) buildRaw(from string, msg Message) []byte {
 
 	now := time.Now()
 	header := fmt.Sprintf(
-		"From: Helpdesk <%s>\r\n"+
+		"From: IT Helpdesk <%s>\r\n"+
 			"Reply-To: %s\r\n"+
 			"To: %s\r\n"+
 			"Subject: %s\r\n"+
 			"Date: %s\r\n"+
-			"Message-ID: <%d.%d@helpdesk>\r\n"+
+			"Message-ID: <%d.%d@rs-erba.go.id>\r\n"+
 			"MIME-Version: 1.0\r\n"+
 			"Content-Type: multipart/alternative; boundary=%q\r\n\r\n",
 		from, from, msg.To, msg.Subject,
