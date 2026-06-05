@@ -1,6 +1,16 @@
-package notification
+package mailer
 
 import "fmt"
+
+func NewTicketMessage(ticketID int64, title, description, submitterName string, adminEmails []string) Message {
+	return Message{
+		To:       adminEmails[0],
+		CC:       adminEmails[1:],
+		Subject:  fmt.Sprintf("New Ticket #%d: %s", ticketID, title),
+		Body:     newTicketHTMLBody(ticketID, title, description, submitterName),
+		TextBody: newTicketTextBody(ticketID, title, description, submitterName),
+	}
+}
 
 func newTicketHTMLBody(ticketID int64, title, description, submittedBy string) string {
 	return fmt.Sprintf(`<!DOCTYPE html>

@@ -117,7 +117,7 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 	err = tx.Commit()
 	if err == nil {
 		dashboard.InvalidateCache(ctx, s.cache)
-		s.notifier.NewTicket(ctx, ticketID, req.Title, req.Description, createdBy)
+		s.notifier.NewTicketEmail(ctx, ticketID, req.Title, req.Description, createdBy)
 	}
 
 	return err

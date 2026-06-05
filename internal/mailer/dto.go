@@ -1,4 +1,4 @@
-package notification
+package mailer
 
 type Message struct {
 	To       string

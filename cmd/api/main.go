@@ -16,11 +16,12 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
-	"github.com/riyanamanda/helpdesk-backend/internal/notification"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/email"
 	"github.com/riyanamanda/helpdesk-backend/internal/feedback"
+	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
+	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/email"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/minio"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/redis"
@@ -81,8 +82,9 @@ func main() {
 	cacheStore := cache.NewRedisCache(redisClient)
 
 	smtpClient := email.NewSMTPClient(cfg.Email)
+	mailerSvc := mailer.NewMailerService(smtpClient)
 	userRepo := user.NewUserRepository(db)
-	notifier := notification.NewNotificationService(smtpClient, userRepo)
+	notifier := notification.NewNotificationService(mailerSvc, userRepo)
 
 	api := e.Group("/api/v1")
 
