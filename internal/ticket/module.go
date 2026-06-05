@@ -3,15 +3,16 @@ package ticket
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
+	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache) {
+func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier notification.NotificationService) {
 	repo := NewTicketRepository(db)
-	svc := NewTicketService(repo, storageService, storageConfig, cache)
+	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier)
 	handler := NewTicketHandler(svc)
 
 	adminOnly := middleware.RequireRole("ADMIN")

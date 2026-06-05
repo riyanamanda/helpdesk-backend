@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
+	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
@@ -32,14 +33,16 @@ type service struct {
 	storage       storage.Storage
 	storageConfig config.Storage
 	cache         cache.Cache
+	notifier      notification.NotificationService
 }
 
-func NewTicketService(repo TicketRepository, store storage.Storage, storageConfig config.Storage, cache cache.Cache) TicketService {
+func NewTicketService(repo TicketRepository, store storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier notification.NotificationService) TicketService {
 	return &service{
 		repo:          repo,
 		storage:       store,
 		storageConfig: storageConfig,
 		cache:         cache,
+		notifier:      notifier,
 	}
 }
 
@@ -112,6 +115,7 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 	err = tx.Commit()
 	if err == nil {
 		dashboard.InvalidateCache(ctx, s.cache)
+		s.notifier.NewTicket(ctx, ticketID, req.Title, req.Description, createdBy)
 	}
 
 	return err

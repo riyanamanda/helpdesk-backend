@@ -47,6 +47,13 @@ func Load() *Config {
 			Port:     getEnv("REDIS_PORT", "6379"),
 			Password: getEnv("REDIS_PASSWORD", ""),
 		},
+		Email: Email{
+			Host:     getEnv("MAIL_HOST", ""),
+			Port:     getEnv("MAIL_PORT", ""),
+			Username: getEnv("MAIL_USERNAME", ""),
+			Password: getEnv("MAIL_PASSWORD", ""),
+			From:     getEnv("MAIL_FROM", ""),
+		},
 	}
 }
 

@@ -11,6 +11,7 @@ type Config struct {
 	Auth     Auth
 	Storage  Storage
 	Redis    Redis
+	Email    Email
 }
 
 type App struct {
@@ -47,6 +48,14 @@ type Redis struct {
 	Host     string
 	Port     string
 	Password string
+}
+
+type Email struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+	From     string
 }
 
 func (d Database) ConnString() string {

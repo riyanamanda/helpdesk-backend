@@ -19,6 +19,7 @@ type UserRepository interface {
 	UpdateByID(ctx context.Context, id uuid.UUID, user User) error
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	AssignableUser(ctx context.Context) ([]AssignableUserProjection, error)
+	GetEmailsByRole(ctx context.Context, role UserRole) ([]string, error)
 }
 
 type repository struct {
@@ -250,6 +251,15 @@ func (r *repository) UpdatePassword(ctx context.Context, id uuid.UUID, password 
 	}
 
 	return database.CheckRowsAffected(result, ErrUserNotFound)
+}
+
+func (r *repository) GetEmailsByRole(ctx context.Context, role UserRole) ([]string, error) {
+	var emails []string
+	const query = `SELECT email FROM users WHERE role = $1 AND is_active = true`
+	if err := r.db.SelectContext(ctx, &emails, query, role); err != nil {
+		return nil, err
+	}
+	return emails, nil
 }
 
 func (r *repository) AssignableUser(ctx context.Context) ([]AssignableUserProjection, error) {

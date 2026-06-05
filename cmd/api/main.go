@@ -16,6 +16,8 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
+	"github.com/riyanamanda/helpdesk-backend/internal/notification"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/email"
 	"github.com/riyanamanda/helpdesk-backend/internal/feedback"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
@@ -78,7 +80,10 @@ func main() {
 
 	cacheStore := cache.NewRedisCache(redisClient)
 
+	smtpClient := email.NewSMTPClient(cfg.Email)
 	userRepo := user.NewUserRepository(db)
+	notifier := notification.NewNotificationService(smtpClient, userRepo)
+
 	api := e.Group("/api/v1")
 
 	auth.Register(api, userRepo, cfg.Auth, cfg.Storage, redisClient)
@@ -91,7 +96,7 @@ func main() {
 	category.Register(protected, db, cacheStore)
 	division.Register(protected, db, cacheStore)
 	user.Register(protected, userRepo, cfg.Storage, cacheStore)
-	ticket.Register(protected, db, storageService, cfg.Storage, cacheStore)
+	ticket.Register(protected, db, storageService, cfg.Storage, cacheStore, notifier)
 	dashboard.Register(protected, db, cacheStore)
 	profile.Register(protected, db, storageService, cfg.Storage, cfg.Auth)
 	feedback.Register(protected, db)
