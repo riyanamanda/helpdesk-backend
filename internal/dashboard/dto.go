@@ -29,3 +29,10 @@ type RecentTicketResponse struct {
 	AssignedTo *string `json:"assigned_to"`
 	CreatedAt  string  `json:"created_at"`
 }
+
+type MonthlyTrendResponse struct {
+	Month     int   `json:"month"`
+	Submitted int64 `json:"submitted"`
+	Resolved  int64 `json:"resolved"`
+	Closed    int64 `json:"closed"`
+}

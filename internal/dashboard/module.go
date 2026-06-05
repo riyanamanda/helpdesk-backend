@@ -13,4 +13,5 @@ func Register(e *echo.Group, db *sqlx.DB, cache cache.Cache) {
 
 	e.GET("/dashboard/summary", handler.GetSummary)
 	e.GET("/dashboard/recent-tickets", handler.GetRecentTickets)
+	e.GET("/dashboard/monthly-trend", handler.GetMonthlyTrend)
 }

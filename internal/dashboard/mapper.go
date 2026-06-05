@@ -26,3 +26,18 @@ func toRecentTickets(tickets []RecentTicketProjection) []RecentTicketResponse {
 
 	return result
 }
+
+func toMonthlyTrend(rows []MonthlyTrendProjection) []MonthlyTrendResponse {
+	result := make([]MonthlyTrendResponse, len(rows))
+
+	for i, row := range rows {
+		result[i] = MonthlyTrendResponse{
+			Month:     row.Month,
+			Submitted: row.Submitted,
+			Resolved:  row.Resolved,
+			Closed:    row.Closed,
+		}
+	}
+
+	return result
+}

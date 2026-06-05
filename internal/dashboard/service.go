@@ -3,6 +3,7 @@ package dashboard
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
@@ -11,6 +12,7 @@ import (
 type DashboardService interface {
 	GetSummary(ctx context.Context) (*SummaryResponse, error)
 	GetRecentTickets(ctx context.Context) ([]RecentTicketResponse, error)
+	GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendResponse, error)
 }
 
 type service struct {
@@ -73,4 +75,29 @@ func (s *service) GetRecentTickets(ctx context.Context) ([]RecentTicketResponse,
 	}
 
 	return tickets, nil
+}
+
+func (s *service) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendResponse, error) {
+	cacheKey := fmt.Sprintf(MonthlyTrendCacheKey, year)
+
+	cached, err := s.cache.Get(ctx, cacheKey)
+	if err == nil {
+		var trend []MonthlyTrendResponse
+		if err := json.Unmarshal([]byte(cached), &trend); err == nil {
+			return trend, nil
+		}
+	}
+
+	rows, err := s.repo.GetMonthlyTrend(ctx, year)
+	if err != nil {
+		return nil, err
+	}
+
+	trend := toMonthlyTrend(rows)
+
+	if data, err := json.Marshal(trend); err == nil {
+		_ = s.cache.Set(ctx, cacheKey, string(data), 5*time.Minute)
+	}
+
+	return trend, nil
 }

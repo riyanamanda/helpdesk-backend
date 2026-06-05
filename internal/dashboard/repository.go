@@ -9,6 +9,7 @@ import (
 type DashboardRepository interface {
 	GetSummary(ctx context.Context) (SummaryProjection, error)
 	GetRecentTickets(ctx context.Context) ([]RecentTicketProjection, error)
+	GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendProjection, error)
 }
 
 type repository struct {
@@ -84,4 +85,26 @@ func (r *repository) GetRecentTickets(ctx context.Context) ([]RecentTicketProjec
 	}
 
 	return tickets, nil
+}
+
+func (r *repository) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendProjection, error) {
+	var rows []MonthlyTrendProjection
+
+	const query = `
+		SELECT
+			EXTRACT(MONTH FROM created_at)::int                          AS month,
+			COUNT(*)                                                      AS submitted,
+			COUNT(*) FILTER (WHERE status IN ('RESOLVED', 'CLOSED'))     AS resolved,
+			COUNT(*) FILTER (WHERE status = 'CLOSED')                    AS closed
+		FROM tickets
+		WHERE EXTRACT(YEAR FROM created_at) = $1
+		GROUP BY month
+		ORDER BY month
+	`
+
+	if err := r.db.SelectContext(ctx, &rows, query, year); err != nil {
+		return nil, err
+	}
+
+	return rows, nil
 }

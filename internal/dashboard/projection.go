@@ -31,3 +31,10 @@ type RecentTicketProjection struct {
 	AssignedTo *string   `db:"assigned_to_name"`
 	CreatedAt  time.Time `db:"created_at"`
 }
+
+type MonthlyTrendProjection struct {
+	Month     int   `db:"month"`
+	Submitted int64 `db:"submitted"`
+	Resolved  int64 `db:"resolved"`
+	Closed    int64 `db:"closed"`
+}
