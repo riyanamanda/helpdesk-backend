@@ -56,6 +56,7 @@ type Email struct {
 	Username string
 	Password string
 	From     string
+	UseSSL   bool
 }
 
 func (d Database) ConnString() string {

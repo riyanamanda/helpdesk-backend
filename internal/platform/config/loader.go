@@ -53,6 +53,7 @@ func Load() *Config {
 			Username: getEnv("MAIL_USERNAME", ""),
 			Password: getEnv("MAIL_PASSWORD", ""),
 			From:     getEnv("MAIL_FROM", ""),
+			UseSSL:   getBoolEnv("MAIL_SSL", false),
 		},
 	}
 }

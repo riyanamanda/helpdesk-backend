@@ -3,6 +3,7 @@ package notification
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log/slog"
 	"mime/multipart"
@@ -69,6 +70,49 @@ func (s *service) send(_ context.Context, msg Message) error {
 	addr := net.JoinHostPort(cfg.Host, cfg.Port)
 	auth := smtp.PlainAuth("", cfg.Username, cfg.Password, cfg.Host)
 
+	raw := s.buildRaw(cfg.From, msg)
+
+	if cfg.UseSSL {
+		// port 465: implicit TLS — must dial TLS first, then hand to smtp.NewClient
+		conn, err := tls.Dial("tcp", addr, &tls.Config{ServerName: cfg.Host})
+		if err != nil {
+			return err
+		}
+		defer conn.Close()
+
+		client, err := smtp.NewClient(conn, cfg.Host)
+		if err != nil {
+			return err
+		}
+		defer client.Close()
+
+		if err := client.Auth(auth); err != nil {
+			return err
+		}
+		if err := client.Mail(cfg.From); err != nil {
+			return err
+		}
+		if err := client.Rcpt(msg.To); err != nil {
+			return err
+		}
+		w, err := client.Data()
+		if err != nil {
+			return err
+		}
+		if _, err := w.Write(raw); err != nil {
+			return err
+		}
+		if err := w.Close(); err != nil {
+			return err
+		}
+		return client.Quit()
+	}
+
+	// port 587: STARTTLS — smtp.SendMail handles the upgrade automatically
+	return smtp.SendMail(addr, auth, cfg.From, []string{msg.To}, raw)
+}
+
+func (s *service) buildRaw(from string, msg Message) []byte {
 	var body bytes.Buffer
 	mw := multipart.NewWriter(&body)
 
@@ -102,11 +146,11 @@ func (s *service) send(_ context.Context, msg Message) error {
 			"Message-ID: <%d.%d@helpdesk>\r\n"+
 			"MIME-Version: 1.0\r\n"+
 			"Content-Type: multipart/alternative; boundary=%q\r\n\r\n",
-		cfg.From, cfg.From, msg.To, msg.Subject,
+		from, from, msg.To, msg.Subject,
 		now.Format(time.RFC1123Z),
 		now.UnixNano(), now.Unix(),
 		mw.Boundary(),
 	)
 
-	return smtp.SendMail(addr, auth, cfg.Username, []string{msg.To}, []byte(header+body.String()))
+	return []byte(header + body.String())
 }
