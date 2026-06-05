@@ -354,9 +354,26 @@ func (s *service) CreateResolution(ctx context.Context, ticketID int64, req Tick
 }
 
 func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
+	existing, err := s.repo.GetByID(ctx, ticketID)
+	if err != nil {
+		if errors.Is(err, ErrTicketNotFound) {
+			return apperr.NotFound("ticket")
+		}
+		return err
+	}
+
+	if TicketStatus(existing.Status) != StatusResolved {
+		return apperr.BadRequest("only resolved tickets can be closed")
+	}
+
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
+	}
+
+	role, _ := ctxkey.GetRoleFromContext(ctx)
+	if role != string(user.ADMIN) && existing.CreatedByID != userID {
+		return apperr.Forbidden("you can only close your own tickets")
 	}
 
 	if err := s.repo.CloseTicket(ctx, ticketID, userID); err != nil {
