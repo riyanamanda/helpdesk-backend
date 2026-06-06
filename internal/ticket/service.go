@@ -7,7 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
-	"github.com/riyanamanda/helpdesk-backend/internal/notification"
+	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
@@ -35,10 +35,10 @@ type service struct {
 	storage       storage.Storage
 	storageConfig config.Storage
 	cache         cache.Cache
-	notifier      notification.NotificationService
+	notifier      mailer.Notifier
 }
 
-func NewTicketService(repo TicketRepository, store storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier notification.NotificationService) TicketService {
+func NewTicketService(repo TicketRepository, store storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier) TicketService {
 	return &service{
 		repo:          repo,
 		storage:       store,

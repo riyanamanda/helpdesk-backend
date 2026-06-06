@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/email"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 )
 
 type MailerService interface {
@@ -21,17 +21,15 @@ type MailerService interface {
 }
 
 type service struct {
-	client *email.SMTPClient
+	cfg config.Email
 }
 
-func NewMailerService(client *email.SMTPClient) MailerService {
-	return &service{
-		client: client,
-	}
+func NewMailerService(cfg config.Email) MailerService {
+	return &service{cfg: cfg}
 }
 
 func (s *service) Send(_ context.Context, msg Message) error {
-	cfg := s.client.Config()
+	cfg := s.cfg
 	addr := net.JoinHostPort(cfg.Host, cfg.Port)
 	auth := smtp.PlainAuth("", cfg.Username, cfg.Password, cfg.Host)
 
