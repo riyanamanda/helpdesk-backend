@@ -33,51 +33,21 @@ func (r *repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Di
 	var (
 		divisions []Division
 		total     int64
-		args      []any
 	)
 
-	where := "WHERE 1=1"
-
-	if params.Search != "" {
-		args = append(args, "%"+params.Search+"%")
-		where += fmt.Sprintf(" AND name ILIKE $%d", len(args))
-	}
-
-	if params.IsActive != nil {
-		args = append(args, *params.IsActive)
-		where += fmt.Sprintf(" AND is_active = $%d", len(args))
-	}
+	where, args := buildDivisionWhere(params)
 
 	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM divisions %s`, where)
-
 	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
 		return nil, 0, err
 	}
 
 	offset := (params.Page - 1) * params.Limit
 	args = append(args, params.Limit, offset)
-	sortCols := map[string]string{
-		"name": "name", "is_active": "is_active", "created_at": "created_at",
-	}
 
-	col, ok := sortCols[params.SortBy]
-	if !ok {
-		col = "created_at"
-	}
+	col, dir := buildDivisionSort(params)
 
-	dir := "DESC"
-	if params.SortType == "ASC" {
-		dir = "ASC"
-	}
-
-	query := fmt.Sprintf(`
-		SELECT
-			id,
-			name,
-			is_active,
-			created_at,
-			updated_at
-		FROM divisions
+	query := fmt.Sprintf(divisionSelectBase+`
 		%s
 		ORDER BY %s %s
 		LIMIT $%d OFFSET $%d
@@ -129,11 +99,7 @@ func (r *repository) Create(ctx context.Context, division *Division) error {
 func (r *repository) GetByID(ctx context.Context, id int64) (*Division, error) {
 	var division Division
 
-	const query = `
-		SELECT id, name, is_active, created_at, updated_at
-		FROM divisions
-		WHERE id = $1
-	`
+	const query = divisionSelectBase + `WHERE id = $1`
 
 	if err := r.db.GetContext(ctx, &division, query, id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

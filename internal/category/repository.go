@@ -34,20 +34,9 @@ func (r *repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Ca
 	var (
 		categories []Category
 		total      int64
-		args       []any
 	)
 
-	where := "WHERE 1=1"
-
-	if params.Search != "" {
-		args = append(args, "%"+params.Search+"%")
-		where += fmt.Sprintf(" AND name ILIKE $%d", len(args))
-	}
-
-	if params.IsActive != nil {
-		args = append(args, *params.IsActive)
-		where += fmt.Sprintf(" AND is_active = $%d", len(args))
-	}
+	where, args := buildCategoryWhere(params)
 
 	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM categories %s`, where)
 	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
@@ -56,28 +45,10 @@ func (r *repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Ca
 
 	offset := (params.Page - 1) * params.Limit
 	args = append(args, params.Limit, offset)
-	sortCols := map[string]string{
-		"name": "name", "is_active": "is_active", "created_at": "created_at",
-	}
 
-	col, ok := sortCols[params.SortBy]
-	if !ok {
-		col = "created_at"
-	}
+	col, dir := buildCategorySort(params)
 
-	dir := "DESC"
-	if params.SortType == "ASC" {
-		dir = "ASC"
-	}
-
-	query := fmt.Sprintf(`
-		SELECT
-			id,
-			name,
-			is_active,
-			created_at,
-			updated_at
-		FROM categories
+	query := fmt.Sprintf(categorySelectBase+`
 		%s
 		ORDER BY %s %s
 		LIMIT $%d OFFSET $%d
@@ -129,11 +100,7 @@ func (r *repository) Create(ctx context.Context, category *Category) error {
 func (r *repository) GetByID(ctx context.Context, id int64) (*Category, error) {
 	var category Category
 
-	const query = `
-		SELECT id, name, is_active, created_at, updated_at
-		FROM categories
-		WHERE id = $1
-	`
+	const query = categorySelectBase + `WHERE id = $1`
 
 	if err := r.db.GetContext(ctx, &category, query, id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

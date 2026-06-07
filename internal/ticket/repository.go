@@ -111,35 +111,9 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 	var (
 		tickets []TicketProjection
 		total   int64
-		args    []any
 	)
 
-	where := "WHERE 1=1"
-
-	if params.Status != "" {
-		args = append(args, params.Status)
-		where += fmt.Sprintf(" AND t.status = $%d", len(args))
-	}
-
-	if params.Priority != "" {
-		args = append(args, params.Priority)
-		where += fmt.Sprintf(" AND t.priority = $%d", len(args))
-	}
-
-	if params.CategoryID != nil {
-		args = append(args, *params.CategoryID)
-		where += fmt.Sprintf(" AND t.category_id = $%d", len(args))
-	}
-
-	if params.DivisionID != nil {
-		args = append(args, *params.DivisionID)
-		where += fmt.Sprintf(" AND t.division_id = $%d", len(args))
-	}
-
-	if params.AssignedToID != nil {
-		args = append(args, *params.AssignedToID)
-		where += fmt.Sprintf(" AND t.assigned_to = $%d", len(args))
-	}
+	where, args := buildTicketWhere(params)
 
 	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM tickets t %s`, where)
 	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
@@ -148,53 +122,10 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 
 	offset := (params.Page - 1) * params.Limit
 	args = append(args, params.Limit, offset)
-	sortCols := map[string]string{
-		"created_at": "t.created_at", "updated_at": "t.updated_at",
-		"status": "t.status", "priority": "t.priority",
-	}
 
-	col, ok := sortCols[params.SortBy]
-	if !ok {
-		col = "t.created_at"
-	}
+	col, dir := buildTicketSort(params)
 
-	dir := "DESC"
-	if params.SortType == "ASC" {
-		dir = "ASC"
-	}
-
-	query := fmt.Sprintf(`
-		SELECT
-			t.id,
-			t.title,
-			t.description,
-			c.id AS category_id,
-			c.name AS category_name,
-			d.id AS division_id,
-			d.name as division_name,
-			t.status,
-			t.priority,
-			u.id AS created_by_id,
-			u.name AS created_by_name,
-			uat.id AS assigned_to_id,
-			uat.name AS assigned_to_name,
-			urb.id AS resolved_by_id,
-			urb.name AS resolved_by_name,
-			ucb.id AS closed_by_id,
-			ucb.name AS closed_by_name,
-			t.resolution,
-			t.assigned_at,
-			t.resolved_at,
-			t.closed_at,
-			t.created_at,
-			t.updated_at
-		FROM tickets t
-		JOIN categories c ON c.id = t.category_id
-		JOIN divisions d ON d.id = t.division_id
-		JOIN users u ON u.id = t.created_by
-		LEFT JOIN users uat ON uat.id = t.assigned_to
-		LEFT JOIN users urb ON urb.id = t.resolved_by
-		LEFT JOIN users ucb ON ucb.id = t.closed_by
+	query := fmt.Sprintf(ticketSelectBase+`
 		%s
 		ORDER BY %s %s
 		LIMIT $%d OFFSET $%d
@@ -209,46 +140,7 @@ func (r *repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 func (r *repository) GetByID(ctx context.Context, id int64) (*TicketProjection, error) {
 	var ticket TicketProjection
 
-	const query = `
-		SELECT
-			t.id,
-			t.title,
-			t.description,
-			c.id AS category_id,
-			c.name AS category_name,
-			d.id AS division_id,
-			d.name AS division_name,
-			t.status,
-			t.priority,
-			u.id AS created_by_id,
-			u.name AS created_by_name,
-			uat.id AS assigned_to_id,
-			uat.name AS assigned_to_name,
-			urb.id AS resolved_by_id,
-			urb.name AS resolved_by_name,
-			ucb.id AS closed_by_id,
-			ucb.name AS closed_by_name,
-			t.resolution,
-			t.assigned_at,
-			t.resolved_at,
-			t.closed_at,
-			t.created_at,
-			t.updated_at
-		FROM tickets t
-		JOIN categories c
-			ON c.id = t.category_id
-		JOIN divisions d
-			ON d.id = t.division_id
-		JOIN users u
-			ON u.id = t.created_by
-		LEFT JOIN users uat
-			ON uat.id = t.assigned_to
-		LEFT JOIN users urb
-			ON urb.id = t.resolved_by
-		LEFT JOIN users ucb
-			ON ucb.id = t.closed_by
-		WHERE t.id = $1
-	`
+	const query = ticketSelectBase + `WHERE t.id = $1`
 
 	if err := r.db.GetContext(ctx, &ticket, query, id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
