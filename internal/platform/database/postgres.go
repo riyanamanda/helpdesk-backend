@@ -6,6 +6,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/pressly/goose/v3"
 )
 
 func NewPostgres(conn string) *sqlx.DB {
@@ -20,4 +21,9 @@ func NewPostgres(conn string) *sqlx.DB {
 	db.SetConnMaxLifetime(30 * time.Minute)
 
 	return db
+}
+
+func RunMigrations(db *sqlx.DB) error {
+	goose.SetDialect("postgres")
+	return goose.Up(db.DB, "migrations")
 }

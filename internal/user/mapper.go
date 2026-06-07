@@ -50,9 +50,6 @@ func toUserResponses(users []UserProjection, storageConfig config.Storage) []Use
 
 func toUserBriefs(users []AssignableUserProjection) []UserBrief {
 	return sliceutil.Map(users, func(u AssignableUserProjection) UserBrief {
-		return UserBrief{
-			ID:   u.ID,
-			Name: u.Name,
-		}
+		return UserBrief(u)
 	})
 }

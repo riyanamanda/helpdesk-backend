@@ -31,12 +31,7 @@ func toMonthlyTrend(rows []MonthlyTrendProjection) []MonthlyTrendResponse {
 	result := make([]MonthlyTrendResponse, len(rows))
 
 	for i, row := range rows {
-		result[i] = MonthlyTrendResponse{
-			Month:     row.Month,
-			Submitted: row.Submitted,
-			Resolved:  row.Resolved,
-			Closed:    row.Closed,
-		}
+		result[i] = MonthlyTrendResponse(row)
 	}
 
 	return result
