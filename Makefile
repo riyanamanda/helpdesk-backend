@@ -1,7 +1,9 @@
-.PHONY: run tidy test clean seed migrate-up migrate-down format
+.PHONY: run run-worker tidy test clean seed migrate-up migrate-down format
 
 run:
-	air
+	@trap 'kill 0' EXIT; \
+	air & \
+	air -c .air.worker.toml
 
 tidy:
 	go mod tidy

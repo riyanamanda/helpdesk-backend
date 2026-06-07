@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	goredis "github.com/redis/go-redis/v9"
+	"github.com/hibiken/asynq"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
@@ -76,7 +77,15 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 
 	cacheStore := cache.NewRedisCache(redisClient)
 	userRepo := user.NewUserRepository(db)
-	notifier := mailer.NewNotifier(mailer.NewMailerService(cfg.Email), userRepo)
+
+	asynqOpt := asynq.RedisClientOpt{
+		Addr:     net.JoinHostPort(cfg.Redis.Host, cfg.Redis.Port),
+		Password: cfg.Redis.Password,
+	}
+	asynqClient := asynq.NewClient(asynqOpt)
+	closers = append(closers, func() { asynqClient.Close() })
+
+	notifier := mailer.NewNotifier(asynqClient)
 
 	d := &deps{
 		db:             db,
