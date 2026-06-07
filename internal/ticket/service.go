@@ -8,6 +8,7 @@ import (
 
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
+	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
@@ -31,20 +32,22 @@ type TicketService interface {
 }
 
 type service struct {
-	repo          TicketRepository
-	storage       storage.Storage
-	storageConfig config.Storage
-	cache         cache.Cache
-	notifier      mailer.Notifier
+	repo            TicketRepository
+	storage         storage.Storage
+	storageConfig   config.Storage
+	cache           cache.Cache
+	notifier        mailer.Notifier
+	notificationSvc notification.Notifier
 }
 
-func NewTicketService(repo TicketRepository, store storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier) TicketService {
+func NewTicketService(repo TicketRepository, store storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier, notificationSvc notification.Notifier) TicketService {
 	return &service{
-		repo:          repo,
-		storage:       store,
-		storageConfig: storageConfig,
-		cache:         cache,
-		notifier:      notifier,
+		repo:            repo,
+		storage:         store,
+		storageConfig:   storageConfig,
+		cache:           cache,
+		notifier:        notifier,
+		notificationSvc: notificationSvc,
 	}
 }
 
@@ -118,6 +121,7 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 	if err == nil {
 		dashboard.InvalidateCache(ctx, s.cache)
 		s.notifier.NewTicketEmail(ctx, ticketID, req.Title, req.Description, createdBy)
+		s.notificationSvc.NewTicket(ctx, ticketID, createdBy)
 	}
 
 	return err
@@ -256,6 +260,11 @@ func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAs
 		return apperr.BadRequest("please set priority before assigning a ticket")
 	}
 
+	actorID, ok := ctxkey.GetUserIDFromContext(ctx)
+	if !ok {
+		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
+	}
+
 	if err := s.repo.Assign(ctx, ticketID, req.AssignedTo); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperr.NotFound("ticket")
@@ -268,6 +277,7 @@ func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAs
 	}
 
 	dashboard.InvalidateCache(ctx, s.cache)
+	s.notificationSvc.TicketAssigned(ctx, ticketID, req.AssignedTo, actorID)
 
 	return nil
 }
@@ -385,6 +395,7 @@ func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
 	}
 
 	dashboard.InvalidateCache(ctx, s.cache)
+	s.notificationSvc.TicketClosed(ctx, ticketID, existing.CreatedByID, userID)
 
 	return nil
 }

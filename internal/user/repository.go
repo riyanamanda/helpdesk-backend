@@ -20,6 +20,7 @@ type UserRepository interface {
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	AssignableUser(ctx context.Context) ([]AssignableUserProjection, error)
 	GetEmailsByRole(ctx context.Context, role UserRole) ([]string, error)
+	GetIDsByRoleAndDivision(ctx context.Context, role UserRole, divisionName string) ([]uuid.UUID, error)
 }
 
 type repository struct {
@@ -166,6 +167,24 @@ func (r *repository) GetEmailsByRole(ctx context.Context, role UserRole) ([]stri
 		return nil, err
 	}
 	return emails, nil
+}
+
+func (r *repository) GetIDsByRoleAndDivision(ctx context.Context, role UserRole, divisionName string) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
+
+	const query = `
+		SELECT u.id
+		FROM users u
+		JOIN divisions d ON d.id = u.division_id
+		WHERE u.role = $1
+		AND u.is_active = true
+		AND LOWER(d.name) = LOWER($2)
+	`
+
+	if err := r.db.SelectContext(ctx, &ids, query, role, divisionName); err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
 
 func (r *repository) AssignableUser(ctx context.Context) ([]AssignableUserProjection, error) {

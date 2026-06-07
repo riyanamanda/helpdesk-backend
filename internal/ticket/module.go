@@ -4,15 +4,19 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
+	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
+	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier) {
+func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier, userRepo user.UserRepository) {
 	repo := NewTicketRepository(db)
-	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier)
+	notificationRepo := notification.NewNotificationRepository(db)
+	notificationNotifier := notification.NewNotifier(notificationRepo, userRepo)
+	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier, notificationNotifier)
 	handler := NewTicketHandler(svc)
 
 	adminOnly := middleware.RequireRole("ADMIN")

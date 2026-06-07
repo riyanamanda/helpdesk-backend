@@ -1,4 +1,4 @@
-.PHONY: run run-worker tidy test clean seed migrate-up migrate-down format
+.PHONY: run run-worker tidy test clean seed migrate-up migrate-down migrate-create format
 
 run:
 	@trap 'kill 0' EXIT; \
@@ -25,6 +25,9 @@ migrate-up:
 
 migrate-down:
 	goose down
+
+migrate-create:
+	goose create -s $(name) sql
 
 format:
 	goimports -w -local github.com/riyanamanda/helpdesk-backend .
