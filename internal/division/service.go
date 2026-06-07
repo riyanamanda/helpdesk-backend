@@ -13,7 +13,7 @@ import (
 type DivisionService interface {
 	ListDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int64, error)
 	ListOptions(ctx context.Context) ([]DivisionOptionResponse, error)
-	CreateDivision(ctx context.Context, req *DivisionCreateRequest) (*DivisionResponse, error)
+	CreateDivision(ctx context.Context, req *DivisionCreateRequest) error
 	GetDivision(ctx context.Context, id int64) (*DivisionResponse, error)
 	UpdateDivision(ctx context.Context, id int64, req *DivisionUpdateRequest) error
 	DeleteDivision(ctx context.Context, id int64) error
@@ -72,23 +72,21 @@ func (s *service) ListOptions(ctx context.Context) ([]DivisionOptionResponse, er
 	return divisions, nil
 }
 
-func (s *service) CreateDivision(ctx context.Context, req *DivisionCreateRequest) (*DivisionResponse, error) {
+func (s *service) CreateDivision(ctx context.Context, req *DivisionCreateRequest) error {
 	division := Division{
 		Name: req.Name,
 	}
 
 	if err := s.repo.Create(ctx, &division); err != nil {
 		if errors.Is(err, ErrDivisionAlreadyExists) {
-			return nil, apperr.AlreadyExists("division")
+			return apperr.AlreadyExists("division")
 		}
-		return nil, err
+		return err
 	}
 
 	InvalidateCache(ctx, s.cache)
 
-	result := toDivisionResponse(division)
-
-	return &result, nil
+	return nil
 }
 
 func (s *service) GetDivision(ctx context.Context, id int64) (*DivisionResponse, error) {

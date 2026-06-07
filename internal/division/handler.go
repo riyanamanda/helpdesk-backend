@@ -49,12 +49,11 @@ func (h *Handler) CreateDivision(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	division, err := h.svc.CreateDivision(c.Request().Context(), req)
-	if err != nil {
+	if err := h.svc.CreateDivision(c.Request().Context(), req); err != nil {
 		return response.Error(c, err)
 	}
 
-	return response.Created(c, division)
+	return response.NoContent(c)
 }
 
 func (h *Handler) GetDivision(c *echo.Context) error {

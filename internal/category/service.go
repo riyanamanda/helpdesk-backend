@@ -13,7 +13,7 @@ import (
 type CategoryService interface {
 	ListCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int64, error)
 	ListOptions(ctx context.Context) ([]CategoryOptionResponse, error)
-	CreateCategory(ctx context.Context, req *CategoryCreateRequest) (*CategoryResponse, error)
+	CreateCategory(ctx context.Context, req *CategoryCreateRequest) error
 	GetCategory(ctx context.Context, id int64) (*CategoryResponse, error)
 	UpdateCategory(ctx context.Context, id int64, req *CategoryUpdateRequest) error
 	DeleteCategory(ctx context.Context, id int64) error
@@ -73,23 +73,21 @@ func (s *service) ListOptions(ctx context.Context) ([]CategoryOptionResponse, er
 	return categories, nil
 }
 
-func (s *service) CreateCategory(ctx context.Context, req *CategoryCreateRequest) (*CategoryResponse, error) {
+func (s *service) CreateCategory(ctx context.Context, req *CategoryCreateRequest) error {
 	category := Category{
 		Name: req.Name,
 	}
 
 	if err := s.repo.Create(ctx, &category); err != nil {
 		if errors.Is(err, ErrCategoryAlreadyExists) {
-			return nil, apperr.AlreadyExists("category")
+			return apperr.AlreadyExists("category")
 		}
-		return nil, err
+		return err
 	}
 
 	InvalidateCache(ctx, s.cache)
 
-	result := toCategoryResponse(category)
-
-	return &result, nil
+	return nil
 }
 
 func (s *service) GetCategory(ctx context.Context, id int64) (*CategoryResponse, error) {

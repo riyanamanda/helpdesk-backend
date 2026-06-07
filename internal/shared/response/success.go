@@ -16,12 +16,6 @@ func OK(c *echo.Context, data any) error {
 	})
 }
 
-func Created(c *echo.Context, data any) error {
-	return c.JSON(http.StatusCreated, SuccessResponse{
-		Data: data,
-	})
-}
-
 func NoContent(c *echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }

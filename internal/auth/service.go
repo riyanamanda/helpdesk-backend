@@ -16,8 +16,6 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
-const tokenKeyPrefix = "auth:token:"
-
 type sessionStore interface {
 	Set(ctx context.Context, key, value string, expiration time.Duration) error
 	Delete(ctx context.Context, key string) error
@@ -80,7 +78,7 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse,
 		return nil, err
 	}
 
-	if err := s.redis.Set(ctx, tokenKeyPrefix+jti, currentUser.ID.String(), s.config.JWTExp); err != nil {
+	if err := s.redis.Set(ctx, jwtutil.TokenKeyPrefix+jti, currentUser.ID.String(), s.config.JWTExp); err != nil {
 		return nil, err
 	}
 
@@ -119,7 +117,7 @@ func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) 
 		return nil, err
 	}
 
-	if err := s.redis.Set(ctx, tokenKeyPrefix+jti, currentUser.ID.String(), s.config.JWTExp); err != nil {
+	if err := s.redis.Set(ctx, jwtutil.TokenKeyPrefix+jti, currentUser.ID.String(), s.config.JWTExp); err != nil {
 		return nil, err
 	}
 
@@ -137,7 +135,7 @@ func (s *service) Logout(ctx context.Context) error {
 		return apperr.Unauthorized(apperr.CodeInvalidToken, "invalid token")
 	}
 
-	return s.redis.Delete(ctx, tokenKeyPrefix+jti)
+	return s.redis.Delete(ctx, jwtutil.TokenKeyPrefix+jti)
 }
 
 func (s *service) Me(ctx context.Context) (*CurrentUserResponse, error) {

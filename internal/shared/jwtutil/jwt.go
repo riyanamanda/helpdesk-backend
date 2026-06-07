@@ -8,6 +8,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const TokenKeyPrefix = "auth:token:"
+
 type JWTCustomClaims struct {
 	Role string `json:"role"`
 	jwt.RegisteredClaims

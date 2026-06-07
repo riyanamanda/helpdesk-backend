@@ -15,8 +15,6 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
-const tokenKeyPrefix = "auth:token:"
-
 func AuthMiddleware(cfg config.Auth, redisClient *redis.Client) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
@@ -41,7 +39,7 @@ func AuthMiddleware(cfg config.Auth, redisClient *redis.Client) echo.MiddlewareF
 				return response.Error(c, apperr.Unauthorized(apperr.CodeInvalidToken, "invalid token"))
 			}
 
-			key := tokenKeyPrefix + claims.ID
+			key := jwtutil.TokenKeyPrefix + claims.ID
 			exists, err := redisClient.Exists(c.Request().Context(), key).Result()
 			if err != nil {
 				return response.Error(c, apperr.Internal())

@@ -49,12 +49,11 @@ func (h *Handler) CreateCategory(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	category, err := h.svc.CreateCategory(c.Request().Context(), req)
-	if err != nil {
+	if err := h.svc.CreateCategory(c.Request().Context(), req); err != nil {
 		return response.Error(c, err)
 	}
 
-	return response.Created(c, category)
+	return response.NoContent(c)
 }
 
 func (h *Handler) GetCategory(c *echo.Context) error {
