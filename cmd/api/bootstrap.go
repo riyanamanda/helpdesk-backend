@@ -8,13 +8,13 @@ import (
 	"net/http"
 
 	goredis "github.com/redis/go-redis/v9"
-	"github.com/hibiken/asynq"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/minio"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/rabbitmq"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/redis"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
@@ -78,14 +78,22 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 	cacheStore := cache.NewRedisCache(redisClient)
 	userRepo := user.NewUserRepository(db)
 
-	asynqOpt := asynq.RedisClientOpt{
-		Addr:     net.JoinHostPort(cfg.Redis.Host, cfg.Redis.Port),
-		Password: cfg.Redis.Password,
+	slog.Info("connecting to rabbitmq")
+	rmqConn, err := rabbitmq.NewConnection(cfg.RabbitMQ)
+	if err != nil {
+		cleanup()
+		return nil, nil, fmt.Errorf("rabbitmq: %w", err)
 	}
-	asynqClient := asynq.NewClient(asynqOpt)
-	closers = append(closers, func() { asynqClient.Close() })
+	closers = append(closers, func() { rmqConn.Close() })
 
-	notifier := mailer.NewNotifier(asynqClient)
+	publishCh, err := rabbitmq.NewChannel(rmqConn, mailer.QueueNewTicketEmail)
+	if err != nil {
+		cleanup()
+		return nil, nil, fmt.Errorf("rabbitmq publish channel: %w", err)
+	}
+	closers = append(closers, func() { publishCh.Close() })
+
+	notifier := mailer.NewNotifier(publishCh)
 
 	d := &deps{
 		db:             db,

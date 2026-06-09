@@ -55,6 +55,13 @@ func Load() *Config {
 			From:     getEnv("MAIL_FROM", ""),
 			UseSSL:   getBoolEnv("MAIL_SSL", false),
 		},
+		RabbitMQ: RabbitMQ{
+			Host:     getEnv("RABBITMQ_HOST", "localhost"),
+			Port:     getEnv("RABBITMQ_PORT", "5672"),
+			Username: getEnv("RABBITMQ_USER", "guest"),
+			Password: getEnv("RABBITMQ_PASSWORD", "guest"),
+			VHost:    getEnv("RABBITMQ_VHOST", "/"),
+		},
 	}
 }
 

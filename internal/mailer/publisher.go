@@ -6,7 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	"github.com/hibiken/asynq"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type Notifier interface {
@@ -14,11 +14,12 @@ type Notifier interface {
 }
 
 type notifier struct {
-	client *asynq.Client
+	ch        *amqp.Channel
+	queueName string
 }
 
-func NewNotifier(client *asynq.Client) Notifier {
-	return &notifier{client: client}
+func NewNotifier(ch *amqp.Channel) Notifier {
+	return &notifier{ch: ch, queueName: QueueNewTicketEmail}
 }
 
 func (n *notifier) NewTicketEmail(ctx context.Context, ticketID int64, title, description string, submitterID uuid.UUID) {
@@ -33,8 +34,22 @@ func (n *notifier) NewTicketEmail(ctx context.Context, ticketID int64, title, de
 		return
 	}
 
-	task := asynq.NewTask(TaskNewTicketEmail, payload)
-	if _, err := n.client.EnqueueContext(ctx, task); err != nil {
-		slog.ErrorContext(ctx, "mailer: enqueue task", "error", err)
+	// Publish to the default exchange ("").
+	// With the default exchange, the routing key IS the queue name —
+	// RabbitMQ delivers the message directly to the matching queue.
+	// DeliveryMode: amqp.Persistent writes the message to disk so it
+	// survives a broker restart (equivalent to asynq's default persistence).
+	if err := n.ch.PublishWithContext(ctx,
+		"",
+		n.queueName,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType:  "application/json",
+			DeliveryMode: amqp.Persistent,
+			Body:         payload,
+		},
+	); err != nil {
+		slog.ErrorContext(ctx, "mailer: publish message", "error", err)
 	}
 }
