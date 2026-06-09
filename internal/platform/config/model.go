@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -12,6 +13,7 @@ type Config struct {
 	Storage  Storage
 	Redis    Redis
 	Email    Email
+	RabbitMQ RabbitMQ
 }
 
 type App struct {
@@ -57,6 +59,19 @@ type Email struct {
 	Password string
 	From     string
 	UseSSL   bool
+}
+
+type RabbitMQ struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+	VHost    string
+}
+
+func (r RabbitMQ) DSN() string {
+	vhost := strings.TrimPrefix(r.VHost, "/")
+	return fmt.Sprintf("amqp://%s:%s@%s:%s/%s", r.Username, r.Password, r.Host, r.Port, vhost)
 }
 
 func (d Database) ConnString() string {

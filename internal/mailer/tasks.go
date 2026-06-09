@@ -1,6 +1,6 @@
 package mailer
 
-const TaskNewTicketEmail = "email:new_ticket"
+const QueueNewTicketEmail = "email.new_ticket"
 
 type newTicketPayload struct {
 	TicketID    int64  `json:"ticket_id"`

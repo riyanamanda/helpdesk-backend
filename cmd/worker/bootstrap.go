@@ -1,15 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
-	"net"
-
-	"github.com/hibiken/asynq"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/rabbitmq"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -28,27 +27,34 @@ func bootstrap(cfg *config.Config) (func(), error) {
 	userRepo := user.NewUserRepository(db)
 	mailerSvc := mailer.NewMailerService(cfg.Email)
 
-	redisOpt := asynq.RedisClientOpt{
-		Addr:     net.JoinHostPort(cfg.Redis.Host, cfg.Redis.Port),
-		Password: cfg.Redis.Password,
+	slog.Info("connecting to rabbitmq")
+	rmqConn, err := rabbitmq.NewConnection(cfg.RabbitMQ)
+	if err != nil {
+		cleanup()
+		return nil, fmt.Errorf("rabbitmq: %w", err)
 	}
+	closers = append(closers, func() { rmqConn.Close() })
 
-	srv := asynq.NewServer(redisOpt, asynq.Config{
-		Concurrency: 5,
-		Queues:      map[string]int{"default": 1},
-	})
-
-	mux := asynq.NewServeMux()
+	consumeCh, err := rabbitmq.NewChannel(rmqConn, mailer.QueueNewTicketEmail)
+	if err != nil {
+		cleanup()
+		return nil, fmt.Errorf("rabbitmq consume channel: %w", err)
+	}
+	if err := consumeCh.Qos(1, 0, false); err != nil {
+		cleanup()
+		return nil, fmt.Errorf("rabbitmq qos: %w", err)
+	}
 
 	mailerWorker := mailer.NewWorker(mailerSvc, userRepo)
-	mux.HandleFunc(mailer.TaskNewTicketEmail, mailerWorker.HandleNewTicketEmail)
+	consumer := mailer.NewConsumer(consumeCh, mailerWorker)
 
 	slog.Info("starting worker")
-	if err := srv.Start(mux); err != nil {
-		cleanup()
-		return nil, fmt.Errorf("worker: %w", err)
-	}
-	closers = append(closers, srv.Shutdown)
+	go func() {
+		if err := consumer.Start(context.Background()); err != nil {
+			slog.Error("consumer exited with error", "error", err)
+		}
+	}()
+	closers = append(closers, consumer.Shutdown)
 
 	return cleanup, nil
 }
