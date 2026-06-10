@@ -1,4 +1,7 @@
-.PHONY: run run-worker tidy test clean seed migrate-up migrate-down migrate-create format
+.PHONY: build run run-worker tidy test clean seed migrate-up migrate-down migrate-create format
+
+build:
+	go build ./...
 
 run:
 	@trap 'kill 0' EXIT; \
