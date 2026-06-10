@@ -11,23 +11,27 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
+	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/minio"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/rabbitmq"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/redis"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/firebase"
 	"github.com/riyanamanda/helpdesk-backend/internal/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
+	"github.com/riyanamanda/helpdesk-backend/internal/user_device"
 )
 
 type deps struct {
-	db             *sqlx.DB
-	storageService storage.Storage
-	redisClient    *goredis.Client
-	cacheStore     cache.Cache
-	userRepo       user.UserRepository
-	notifier       mailer.Notifier
+	db                   *sqlx.DB
+	storageService       storage.Storage
+	redisClient          *goredis.Client
+	cacheStore           cache.Cache
+	userRepo             user.UserRepository
+	notifier             mailer.Notifier
+	notificationNotifier notification.Notifier
 }
 
 func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), error) {
@@ -95,13 +99,28 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 
 	notifier := mailer.NewNotifier(publishCh)
 
+	slog.Info("initializing fcm sender")
+	fcmSender, err := firebase.NewFCMSender(ctx, cfg.Auth.FirebaseProjectID, cfg.Auth.FirebaseCredentialsJSON)
+	if err != nil {
+		slog.Warn("fcm sender unavailable, push notifications disabled", "error", err)
+		fcmSender = firebase.NewNoopFCMSender()
+	}
+
+	notificationNotifier := notification.NewNotifier(
+		notification.NewNotificationRepository(db),
+		userRepo,
+		user_device.NewUserDeviceRepository(db),
+		fcmSender,
+	)
+
 	d := &deps{
-		db:             db,
-		storageService: storageService,
-		redisClient:    redisClient,
-		cacheStore:     cacheStore,
-		userRepo:       userRepo,
-		notifier:       notifier,
+		db:                   db,
+		storageService:       storageService,
+		redisClient:          redisClient,
+		cacheStore:           cacheStore,
+		userRepo:             userRepo,
+		notifier:             notifier,
+		notificationNotifier: notificationNotifier,
 	}
 
 	server := &http.Server{

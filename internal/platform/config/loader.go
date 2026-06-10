@@ -31,9 +31,10 @@ func Load() *Config {
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
 		Auth: Auth{
-			JWTSecret:         getEnv("JWT_SECRET", "this-is-the-secret"),
-			JWTExp:            getDurationEnv("JWT_EXP", 24*time.Hour),
-			FirebaseProjectID: getEnv("FIREBASE_PROJECT_ID", ""),
+			JWTSecret:               getEnv("JWT_SECRET", "this-is-the-secret"),
+			JWTExp:                  getDurationEnv("JWT_EXP", 24*time.Hour),
+			FirebaseProjectID:       getEnv("FIREBASE_PROJECT_ID", ""),
+			FirebaseCredentialsJSON: getEnv("FIREBASE_CREDENTIALS_JSON", ""),
 		},
 		Storage: Storage{
 			Endpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),

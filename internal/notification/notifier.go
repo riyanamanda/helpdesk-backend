@@ -4,10 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/firebase"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
+
+type DeviceRepository interface {
+	GetTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error)
+	GetTokensByUserIDs(ctx context.Context, userIDs []uuid.UUID) ([]string, error)
+}
 
 type Notifier interface {
 	NewTicket(ctx context.Context, ticketID int64, submitterID uuid.UUID)
@@ -17,12 +24,19 @@ type Notifier interface {
 }
 
 type notifier struct {
-	repo     NotificationRepository
-	userRepo user.UserRepository
+	repo       NotificationRepository
+	userRepo   user.UserRepository
+	deviceRepo DeviceRepository
+	fcm        firebase.FCMSender
 }
 
-func NewNotifier(repo NotificationRepository, userRepo user.UserRepository) Notifier {
-	return &notifier{repo: repo, userRepo: userRepo}
+func NewNotifier(repo NotificationRepository, userRepo user.UserRepository, deviceRepo DeviceRepository, fcm firebase.FCMSender) Notifier {
+	return &notifier{
+		repo:       repo,
+		userRepo:   userRepo,
+		deviceRepo: deviceRepo,
+		fcm:        fcm,
+	}
 }
 
 func (n *notifier) NewTicket(ctx context.Context, ticketID int64, submitterID uuid.UUID) {
@@ -58,6 +72,17 @@ func (n *notifier) NewTicket(ctx context.Context, ticketID int64, submitterID uu
 
 		if err := n.repo.CreateBatch(ctx, notifications); err != nil {
 			slog.ErrorContext(ctx, "notification: create batch failed", "ticket_id", ticketID, "error", err)
+			return
+		}
+
+		tokens, err := n.deviceRepo.GetTokensByUserIDs(ctx, adminIDs)
+		if err != nil {
+			slog.WarnContext(ctx, "fcm: failed to get tokens", "error", err)
+			return
+		}
+
+		if err := n.fcm.SendMulticast(ctx, tokens, buildPayload(NewTicket, TicketReferenceType, ticketID, submitterName, "")); err != nil {
+			slog.WarnContext(ctx, "fcm: send failed", "error", err)
 		}
 	}()
 }
@@ -124,5 +149,29 @@ func (n *notifier) notifySingle(ctx context.Context, recipientID uuid.UUID, nTyp
 		Metadata:      string(metadata),
 	}}); err != nil {
 		slog.ErrorContext(ctx, "notification: create failed", "type", nType, "ref_id", refID, "error", err)
+		return
 	}
+
+	tokens, err := n.deviceRepo.GetTokensByUserID(ctx, recipientID)
+	if err != nil {
+		slog.WarnContext(ctx, "fcm: failed to get tokens", "error", err)
+		return
+	}
+
+	if err := n.fcm.SendMulticast(ctx, tokens, buildPayload(nType, refType, refID, meta.ActorName, meta.Status)); err != nil {
+		slog.WarnContext(ctx, "fcm: send failed", "error", err)
+	}
+}
+
+func buildPayload(nType NotificationType, refType NotificationReferenceType, refID int64, actorName, status string) map[string]string {
+	data := map[string]string{
+		"type":           string(nType),
+		"actor_name":     actorName,
+		"reference_type": string(refType),
+		"reference_id":   strconv.FormatInt(refID, 10),
+	}
+	if status != "" {
+		data["status"] = status
+	}
+	return data
 }

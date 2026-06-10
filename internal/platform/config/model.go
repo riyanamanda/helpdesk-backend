@@ -33,9 +33,10 @@ type Database struct {
 }
 
 type Auth struct {
-	JWTSecret         string
-	JWTExp            time.Duration
-	FirebaseProjectID string
+	JWTSecret              string
+	JWTExp                 time.Duration
+	FirebaseProjectID      string
+	FirebaseCredentialsJSON string
 }
 
 type Storage struct {

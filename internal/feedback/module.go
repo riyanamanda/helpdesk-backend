@@ -5,13 +5,10 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
-	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, userRepo user.UserRepository) {
+func Register(e *echo.Group, db *sqlx.DB, notificationNotifier notification.Notifier) {
 	repo := NewFeedbackRepository(db)
-	notificationRepo := notification.NewNotificationRepository(db)
-	notificationNotifier := notification.NewNotifier(notificationRepo, userRepo)
 	svc := NewFeedbackService(repo, notificationNotifier)
 	handler := NewFeedbackHandler(svc)
 

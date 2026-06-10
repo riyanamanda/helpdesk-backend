@@ -17,6 +17,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 	"github.com/riyanamanda/helpdesk-backend/internal/ticket"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
+	"github.com/riyanamanda/helpdesk-backend/internal/user_device"
 )
 
 func registerRoutes(cfg *config.Config, d *deps) http.Handler {
@@ -40,11 +41,12 @@ func registerRoutes(cfg *config.Config, d *deps) http.Handler {
 	category.Register(protected, d.db, d.cacheStore)
 	division.Register(protected, d.db, d.cacheStore)
 	user.Register(protected, d.userRepo, cfg.Storage, d.cacheStore)
-	ticket.Register(protected, d.db, d.storageService, cfg.Storage, d.cacheStore, d.notifier, d.userRepo)
+	ticket.Register(protected, d.db, d.storageService, cfg.Storage, d.cacheStore, d.notifier, d.userRepo, d.notificationNotifier)
 	dashboard.Register(protected, d.db, d.cacheStore)
 	profile.Register(protected, d.db, d.storageService, cfg.Storage, cfg.Auth)
-	feedback.Register(protected, d.db, d.userRepo)
+	feedback.Register(protected, d.db, d.notificationNotifier)
 	notification.Register(protected, d.db)
+	user_device.Register(protected, d.db)
 
 	return e
 }

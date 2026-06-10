@@ -12,10 +12,8 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier, userRepo user.UserRepository) {
+func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier, userRepo user.UserRepository, notificationNotifier notification.Notifier) {
 	repo := NewTicketRepository(db)
-	notificationRepo := notification.NewNotificationRepository(db)
-	notificationNotifier := notification.NewNotifier(notificationRepo, userRepo)
 	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier, notificationNotifier)
 	handler := NewTicketHandler(svc)
 
