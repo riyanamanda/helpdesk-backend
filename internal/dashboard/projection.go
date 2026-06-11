@@ -38,3 +38,10 @@ type MonthlyTrendProjection struct {
 	Resolved  int64 `db:"resolved"`
 	Closed    int64 `db:"closed"`
 }
+
+type AgentWorkloadProjection struct {
+	AgentID    string `db:"agent_id"`
+	AgentName  string `db:"agent_name"`
+	InProgress int64  `db:"in_progress"`
+	Resolved   int64  `db:"resolved"`
+}

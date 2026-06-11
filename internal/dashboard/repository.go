@@ -10,6 +10,7 @@ type DashboardRepository interface {
 	GetSummary(ctx context.Context) (SummaryProjection, error)
 	GetRecentTickets(ctx context.Context) ([]RecentTicketProjection, error)
 	GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendProjection, error)
+	GetAgentWorkload(ctx context.Context) ([]AgentWorkloadProjection, error)
 }
 
 type repository struct {
@@ -103,6 +104,47 @@ func (r *repository) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTr
 	`
 
 	if err := r.db.SelectContext(ctx, &rows, query, year); err != nil {
+		return nil, err
+	}
+
+	return rows, nil
+}
+
+func (r *repository) GetAgentWorkload(ctx context.Context) ([]AgentWorkloadProjection, error) {
+	var rows []AgentWorkloadProjection
+
+	const query = `
+		WITH agent_in_progress AS (
+			SELECT assigned_to AS user_id, COUNT(*) AS in_progress
+			FROM tickets
+			WHERE status = 'IN_PROGRESS'
+			GROUP BY assigned_to
+		),
+		agent_resolved AS (
+			SELECT resolved_by AS user_id, COUNT(*) AS resolved
+			FROM tickets
+			WHERE status IN ('RESOLVED', 'CLOSED')
+			  AND DATE_TRUNC('month', resolved_at) = DATE_TRUNC('month', NOW())
+			GROUP BY resolved_by
+		)
+		SELECT
+			u.id::text                          AS agent_id,
+			u.name                              AS agent_name,
+			COALESCE(ip.in_progress, 0)         AS in_progress,
+			COALESCE(r.resolved, 0)             AS resolved
+		FROM users u
+		JOIN (
+			SELECT user_id FROM agent_in_progress
+			UNION
+			SELECT user_id FROM agent_resolved
+		) combined ON combined.user_id = u.id
+		LEFT JOIN agent_in_progress ip ON ip.user_id = u.id
+		LEFT JOIN agent_resolved r ON r.user_id = u.id
+		ORDER BY (COALESCE(ip.in_progress, 0) + COALESCE(r.resolved, 0)) DESC, u.name
+		LIMIT 10
+	`
+
+	if err := r.db.SelectContext(ctx, &rows, query); err != nil {
 		return nil, err
 	}
 

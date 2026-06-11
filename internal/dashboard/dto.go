@@ -36,3 +36,10 @@ type MonthlyTrendResponse struct {
 	Resolved  int64 `json:"resolved"`
 	Closed    int64 `json:"closed"`
 }
+
+type AgentWorkloadResponse struct {
+	AgentID    string `json:"agent_id"`
+	AgentName  string `json:"agent_name"`
+	InProgress int64  `json:"in_progress"`
+	Resolved   int64  `json:"resolved"`
+}

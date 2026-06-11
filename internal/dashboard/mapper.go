@@ -36,3 +36,18 @@ func toMonthlyTrend(rows []MonthlyTrendProjection) []MonthlyTrendResponse {
 
 	return result
 }
+
+func toAgentWorkload(rows []AgentWorkloadProjection) []AgentWorkloadResponse {
+	result := make([]AgentWorkloadResponse, len(rows))
+
+	for i, row := range rows {
+		result[i] = AgentWorkloadResponse{
+			AgentID:    row.AgentID,
+			AgentName:  row.AgentName,
+			InProgress: row.InProgress,
+			Resolved:   row.Resolved,
+		}
+	}
+
+	return result
+}

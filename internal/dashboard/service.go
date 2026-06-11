@@ -13,6 +13,7 @@ type DashboardService interface {
 	GetSummary(ctx context.Context) (*SummaryResponse, error)
 	GetRecentTickets(ctx context.Context) ([]RecentTicketResponse, error)
 	GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendResponse, error)
+	GetAgentWorkload(ctx context.Context) ([]AgentWorkloadResponse, error)
 }
 
 type service struct {
@@ -100,4 +101,27 @@ func (s *service) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrend
 	}
 
 	return trend, nil
+}
+
+func (s *service) GetAgentWorkload(ctx context.Context) ([]AgentWorkloadResponse, error) {
+	cached, err := s.cache.Get(ctx, AgentWorkloadCacheKey)
+	if err == nil {
+		var workload []AgentWorkloadResponse
+		if err := json.Unmarshal([]byte(cached), &workload); err == nil {
+			return workload, nil
+		}
+	}
+
+	rows, err := s.repo.GetAgentWorkload(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	workload := toAgentWorkload(rows)
+
+	if data, err := json.Marshal(workload); err == nil {
+		_ = s.cache.Set(ctx, AgentWorkloadCacheKey, string(data), 30*time.Second)
+	}
+
+	return workload, nil
 }
