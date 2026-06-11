@@ -10,6 +10,7 @@ type DashboardRepository interface {
 	GetSummary(ctx context.Context) (SummaryProjection, error)
 	GetRecentTickets(ctx context.Context) ([]RecentTicketProjection, error)
 	GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendProjection, error)
+	GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsProjection, error)
 	GetAgentWorkload(ctx context.Context) ([]AgentWorkloadProjection, error)
 }
 
@@ -29,11 +30,12 @@ func (r *repository) GetSummary(ctx context.Context) (SummaryProjection, error) 
 
 	const statusQuery = `
 		SELECT
-			COUNT(*) FILTER (WHERE status = 'OPEN')			AS open,
-			COUNT(*) FILTER (WHERE status = 'IN_PROGRESS')	AS in_progress,
-			COUNT(*) FILTER (WHERE status = 'RESOLVED')		AS resolved,
-			COUNT(*) FILTER (WHERE status = 'CLOSED')		AS closed,
-			COUNT(*)                                        AS total
+			COUNT(*) FILTER (WHERE status = 'IN_PROGRESS')                                            AS in_progress,
+			COUNT(*) FILTER (WHERE status = 'RESOLVED')                                               AS resolved,
+			COUNT(*) FILTER (WHERE status = 'CLOSED')                                                 AS closed,
+			COUNT(*)                                                                                   AS total,
+			COUNT(*) FILTER (WHERE status = 'OPEN' AND assigned_to IS NULL)                           AS unassigned,
+			COUNT(*) FILTER (WHERE status = 'IN_PROGRESS' AND updated_at < NOW() - INTERVAL '3 days') AS stale
 		FROM tickets
 	`
 
@@ -104,6 +106,29 @@ func (r *repository) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTr
 	`
 
 	if err := r.db.SelectContext(ctx, &rows, query, year); err != nil {
+		return nil, err
+	}
+
+	return rows, nil
+}
+
+func (r *repository) GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsProjection, error) {
+	var rows []CategoryTicketsProjection
+
+	const query = `
+		SELECT
+			c.id   AS category_id,
+			c.name AS category_name,
+			COUNT(*) AS total
+		FROM tickets t
+		JOIN categories c ON c.id = t.category_id
+		WHERE t.status IN ('OPEN', 'IN_PROGRESS')
+		GROUP BY c.id, c.name
+		ORDER BY total DESC, c.name
+		LIMIT 10
+	`
+
+	if err := r.db.SelectContext(ctx, &rows, query); err != nil {
 		return nil, err
 	}
 

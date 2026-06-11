@@ -13,6 +13,7 @@ type DashboardService interface {
 	GetSummary(ctx context.Context) (*SummaryResponse, error)
 	GetRecentTickets(ctx context.Context) ([]RecentTicketResponse, error)
 	GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendResponse, error)
+	GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsResponse, error)
 	GetAgentWorkload(ctx context.Context) ([]AgentWorkloadResponse, error)
 }
 
@@ -32,7 +33,6 @@ func (s *service) GetSummary(ctx context.Context) (*SummaryResponse, error) {
 	cached, err := s.cache.Get(ctx, SummaryCacheKey)
 	if err == nil {
 		var summary SummaryResponse
-
 		if err := json.Unmarshal([]byte(cached), &summary); err == nil {
 			return &summary, nil
 		}
@@ -45,8 +45,7 @@ func (s *service) GetSummary(ctx context.Context) (*SummaryResponse, error) {
 
 	summary := toSummary(projection)
 
-	data, err := json.Marshal(summary)
-	if err == nil {
+	if data, err := json.Marshal(summary); err == nil {
 		_ = s.cache.Set(ctx, SummaryCacheKey, string(data), 30*time.Second)
 	}
 
@@ -57,7 +56,6 @@ func (s *service) GetRecentTickets(ctx context.Context) ([]RecentTicketResponse,
 	cached, err := s.cache.Get(ctx, RecentTicketsCacheKey)
 	if err == nil {
 		var tickets []RecentTicketResponse
-
 		if err := json.Unmarshal([]byte(cached), &tickets); err == nil {
 			return tickets, nil
 		}
@@ -70,8 +68,7 @@ func (s *service) GetRecentTickets(ctx context.Context) ([]RecentTicketResponse,
 
 	tickets := toRecentTickets(recentTickets)
 
-	data, err := json.Marshal(tickets)
-	if err == nil {
+	if data, err := json.Marshal(tickets); err == nil {
 		_ = s.cache.Set(ctx, RecentTicketsCacheKey, string(data), 30*time.Second)
 	}
 
@@ -101,6 +98,29 @@ func (s *service) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrend
 	}
 
 	return trend, nil
+}
+
+func (s *service) GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsResponse, error) {
+	cached, err := s.cache.Get(ctx, CategoryTicketsCacheKey)
+	if err == nil {
+		var categories []CategoryTicketsResponse
+		if err := json.Unmarshal([]byte(cached), &categories); err == nil {
+			return categories, nil
+		}
+	}
+
+	rows, err := s.repo.GetTicketsByCategory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	categories := toCategoryTickets(rows)
+
+	if data, err := json.Marshal(categories); err == nil {
+		_ = s.cache.Set(ctx, CategoryTicketsCacheKey, string(data), 30*time.Second)
+	}
+
+	return categories, nil
 }
 
 func (s *service) GetAgentWorkload(ctx context.Context) ([]AgentWorkloadResponse, error) {

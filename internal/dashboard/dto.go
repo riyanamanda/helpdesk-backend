@@ -1,11 +1,12 @@
 package dashboard
 
 type TicketStatusStats struct {
-	Open       int64 `json:"open"`
 	InProgress int64 `json:"in_progress"`
 	Resolved   int64 `json:"resolved"`
 	Closed     int64 `json:"closed"`
 	Total      int64 `json:"total"`
+	Unassigned int64 `json:"unassigned"`
+	Stale      int64 `json:"stale"`
 }
 
 type TicketPriorityStats struct {
@@ -42,4 +43,10 @@ type AgentWorkloadResponse struct {
 	AgentName  string `json:"agent_name"`
 	InProgress int64  `json:"in_progress"`
 	Resolved   int64  `json:"resolved"`
+}
+
+type CategoryTicketsResponse struct {
+	CategoryID   int64  `json:"category_id"`
+	CategoryName string `json:"category_name"`
+	Total        int64  `json:"total"`
 }

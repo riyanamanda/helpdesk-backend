@@ -8,11 +8,12 @@ type SummaryProjection struct {
 }
 
 type StatusStatsProjection struct {
-	Open       int64 `db:"open"`
 	InProgress int64 `db:"in_progress"`
 	Resolved   int64 `db:"resolved"`
 	Closed     int64 `db:"closed"`
 	Total      int64 `db:"total"`
+	Unassigned int64 `db:"unassigned"`
+	Stale      int64 `db:"stale"`
 }
 
 type PriorityStatsProjection struct {
@@ -44,4 +45,10 @@ type AgentWorkloadProjection struct {
 	AgentName  string `db:"agent_name"`
 	InProgress int64  `db:"in_progress"`
 	Resolved   int64  `db:"resolved"`
+}
+
+type CategoryTicketsProjection struct {
+	CategoryID   int64  `db:"category_id"`
+	CategoryName string `db:"category_name"`
+	Total        int64  `db:"total"`
 }

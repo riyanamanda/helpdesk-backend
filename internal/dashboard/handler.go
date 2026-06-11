@@ -53,6 +53,15 @@ func (h *Handler) GetMonthlyTrend(c *echo.Context) error {
 	return response.OK(c, trend)
 }
 
+func (h *Handler) GetTicketsByCategory(c *echo.Context) error {
+	categories, err := h.svc.GetTicketsByCategory(c.Request().Context())
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.OK(c, categories)
+}
+
 func (h *Handler) GetAgentWorkload(c *echo.Context) error {
 	workload, err := h.svc.GetAgentWorkload(c.Request().Context())
 	if err != nil {
