@@ -16,9 +16,11 @@ type Ticket struct {
 	Priority    *string    `db:"priority"`
 	CreatedBy   uuid.UUID  `db:"created_by"`
 	AssignedTo  *uuid.UUID `db:"assigned_to"`
+	AssignedBy  *uuid.UUID `db:"assigned_by"`
 	ResolvedBy  *uuid.UUID `db:"resolved_by"`
 	ClosedBy    *uuid.UUID `db:"closed_by"`
 	Resolution  *string    `db:"resolution"`
+	AssignNote  *string    `db:"assign_note"`
 	AssignedAt  *time.Time `db:"assigned_at"`
 	ResolvedAt  *time.Time `db:"resolved_at"`
 	ClosedAt    *time.Time `db:"closed_at"`

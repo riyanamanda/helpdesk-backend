@@ -22,11 +22,14 @@ const ticketSelectBase = `
 		u.name AS created_by_name,
 		uat.id   AS assigned_to_id,
 		uat.name AS assigned_to_name,
+		uab.id   AS assigned_by_id,
+		uab.name AS assigned_by_name,
 		urb.id   AS resolved_by_id,
 		urb.name AS resolved_by_name,
 		ucb.id   AS closed_by_id,
 		ucb.name AS closed_by_name,
 		t.resolution,
+		t.assign_note,
 		t.assigned_at,
 		t.resolved_at,
 		t.closed_at,
@@ -37,6 +40,7 @@ const ticketSelectBase = `
 	JOIN divisions d ON d.id = t.division_id
 	JOIN users u ON u.id = t.created_by
 	LEFT JOIN users uat ON uat.id = t.assigned_to
+	LEFT JOIN users uab ON uab.id = t.assigned_by
 	LEFT JOIN users urb ON urb.id = t.resolved_by
 	LEFT JOIN users ucb ON ucb.id = t.closed_by
 `

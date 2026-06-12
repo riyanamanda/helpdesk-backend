@@ -28,9 +28,11 @@ type TicketResponse struct {
 	Priority    *TicketPriority `json:"priority"`
 	CreatedBy   user.UserBrief  `json:"created_by"`
 	AssignedTo  *user.UserBrief `json:"assigned_to"`
+	AssignedBy  *user.UserBrief `json:"assigned_by"`
 	ResolvedBy  *user.UserBrief `json:"resolved_by"`
 	ClosedBy    *user.UserBrief `json:"closed_by"`
 	Resolution  *string         `json:"resolution"`
+	AssignNote  *string         `json:"assign_note"`
 	AssignedAt  *time.Time      `json:"assigned_at"`
 	ResolvedAt  *time.Time      `json:"resolved_at"`
 	ClosedAt    *time.Time      `json:"closed_at"`
@@ -82,6 +84,7 @@ type TicketUpdateRequest struct {
 
 type TicketAssignRequest struct {
 	AssignedTo uuid.UUID `json:"assigned_to" validate:"required"`
+	Note       *string   `json:"note" validate:"omitempty,max=500"`
 }
 
 type TicketPriorityRequest struct {

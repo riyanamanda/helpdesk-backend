@@ -21,6 +21,14 @@ func toTicketResponse(t TicketProjection) TicketResponse {
 		}
 	}
 
+	var assignedBy *user.UserBrief
+	if t.AssignedByID != nil && t.AssignedByName != nil {
+		assignedBy = &user.UserBrief{
+			ID:   *t.AssignedByID,
+			Name: *t.AssignedByName,
+		}
+	}
+
 	if t.ResolvedByID != nil && t.ResolvedByName != nil {
 		resolvedBy = &user.UserBrief{
 			ID:   *t.ResolvedByID,
@@ -54,8 +62,10 @@ func toTicketResponse(t TicketProjection) TicketResponse {
 			Name: t.CreatedByName,
 		},
 		AssignedTo: assignedTo,
+		AssignedBy: assignedBy,
 		ResolvedBy: resolvedBy,
 		Resolution: t.Resolution,
+		AssignNote: t.AssignNote,
 		AssignedAt: t.AssignedAt,
 		ResolvedAt: t.ResolvedAt,
 		ClosedAt:   t.ClosedAt,

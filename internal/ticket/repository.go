@@ -16,7 +16,7 @@ type TicketRepository interface {
 	GetAll(ctx context.Context, params GetTicketParams) ([]TicketProjection, int64, error)
 	GetByID(ctx context.Context, id int64) (*TicketProjection, error)
 	GetAttachmentsByTicketID(ctx context.Context, ticketID int64) (*[]TicketAttachmentProjection, error)
-	Assign(ctx context.Context, ticketID int64, userID uuid.UUID) error
+	Assign(ctx context.Context, ticketID int64, assigneeID uuid.UUID, assignedBy uuid.UUID, note *string) error
 	UpdatePriority(ctx context.Context, ticketID int64, priority TicketPriority) error
 	Update(ctx context.Context, ticketID int64, ticket Ticket) error
 	CloseTicket(ctx context.Context, ticketID int64, userID uuid.UUID) error
@@ -180,17 +180,19 @@ func (r *repository) GetAttachmentsByTicketID(ctx context.Context, ticketID int6
 	return &attachment, nil
 }
 
-func (r *repository) Assign(ctx context.Context, ticketID int64, userID uuid.UUID) error {
+func (r *repository) Assign(ctx context.Context, ticketID int64, assigneeID uuid.UUID, assignedBy uuid.UUID, note *string) error {
 	const query = `
 		UPDATE tickets
 		SET assigned_to = $2,
+			assigned_by = $3,
+			assign_note = $4,
 			assigned_at = NOW(),
 			status = 'IN_PROGRESS',
 			updated_at = NOW()
 		WHERE id = $1
 	`
 
-	result, err := r.db.ExecContext(ctx, query, ticketID, userID)
+	result, err := r.db.ExecContext(ctx, query, ticketID, assigneeID, assignedBy, note)
 	if err != nil {
 		if database.IsForeignKeyViolation(err) {
 			return user.ErrUserNotFound

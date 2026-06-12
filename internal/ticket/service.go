@@ -265,7 +265,7 @@ func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAs
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
-	if err := s.repo.Assign(ctx, ticketID, req.AssignedTo); err != nil {
+	if err := s.repo.Assign(ctx, ticketID, req.AssignedTo, actorID, req.Note); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperr.NotFound("ticket")
 		}
@@ -278,6 +278,7 @@ func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAs
 
 	dashboard.InvalidateCache(ctx, s.cache)
 	s.notificationSvc.TicketAssigned(ctx, ticketID, req.AssignedTo, actorID)
+	s.notificationSvc.TicketInProgress(ctx, ticketID, existing.CreatedByID, actorID)
 
 	return nil
 }

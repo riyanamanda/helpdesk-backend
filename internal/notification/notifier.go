@@ -19,6 +19,7 @@ type DeviceRepository interface {
 type Notifier interface {
 	NewTicket(ctx context.Context, ticketID int64, submitterID uuid.UUID)
 	TicketAssigned(ctx context.Context, ticketID int64, assigneeID uuid.UUID, actorID uuid.UUID)
+	TicketInProgress(ctx context.Context, ticketID int64, submitterID uuid.UUID, actorID uuid.UUID)
 	TicketClosed(ctx context.Context, ticketID int64, createdByID uuid.UUID, actorID uuid.UUID)
 	FeedbackStatusUpdated(ctx context.Context, feedbackID int64, createdByID uuid.UUID, actorID uuid.UUID, status string)
 }
@@ -97,6 +98,23 @@ func (n *notifier) TicketAssigned(ctx context.Context, ticketID int64, assigneeI
 		}
 
 		n.notifySingle(ctx, assigneeID, TicketAssigned, TicketReferenceType, ticketID, NotificationMetadata{ActorName: actorName})
+	}()
+}
+
+func (n *notifier) TicketInProgress(ctx context.Context, ticketID int64, submitterID uuid.UUID, actorID uuid.UUID) {
+	if submitterID == actorID {
+		return
+	}
+
+	go func() {
+		ctx := context.WithoutCancel(ctx)
+
+		actorName := "Unknown"
+		if u, err := n.userRepo.GetByID(ctx, actorID); err == nil {
+			actorName = u.Name
+		}
+
+		n.notifySingle(ctx, submitterID, TicketInProgress, TicketReferenceType, ticketID, NotificationMetadata{ActorName: actorName})
 	}()
 }
 
