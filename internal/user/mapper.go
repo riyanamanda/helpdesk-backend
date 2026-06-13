@@ -3,7 +3,6 @@ package user
 import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/sliceutil"
 )
 
 func toUserResponse(u UserProjection, storageConfig config.Storage) UserResponse {
@@ -43,13 +42,17 @@ func toUserResponse(u UserProjection, storageConfig config.Storage) UserResponse
 }
 
 func toUserResponses(users []UserProjection, storageConfig config.Storage) []UserResponse {
-	return sliceutil.Map(users, func(u UserProjection) UserResponse {
-		return toUserResponse(u, storageConfig)
-	})
+	result := make([]UserResponse, len(users))
+	for i, u := range users {
+		result[i] = toUserResponse(u, storageConfig)
+	}
+	return result
 }
 
 func toUserBriefs(users []AssignableUserProjection) []UserBrief {
-	return sliceutil.Map(users, func(u AssignableUserProjection) UserBrief {
-		return UserBrief(u)
-	})
+	result := make([]UserBrief, len(users))
+	for i, u := range users {
+		result[i] = UserBrief(u)
+	}
+	return result
 }

@@ -11,23 +11,22 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
-	"github.com/riyanamanda/helpdesk-backend/internal/storage"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
 type TicketService interface {
 	ListTickets(ctx context.Context, params *GetTicketParams) ([]TicketResponse, int64, error)
-	CreateTicket(ctx context.Context, req *TicketCreateRequest, file *upload.File) error
+	CreateTicket(ctx context.Context, req *TicketCreateRequest, file *storage.File) error
 	GetTicket(ctx context.Context, id int64) (*TicketDetailResponse, error)
 	UpdateTicket(ctx context.Context, ticketID int64, req TicketUpdateRequest) error
 	DeleteTicket(ctx context.Context, ticketID int64) error
 	AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error
 	SetPriority(ctx context.Context, ticketID int64, req TicketPriorityRequest) error
-	CreateResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file *upload.File) error
+	CreateResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file *storage.File) error
 	CloseTicket(ctx context.Context, ticketID int64) error
 }
 
@@ -65,7 +64,7 @@ func (s *service) ListTickets(ctx context.Context, params *GetTicketParams) ([]T
 	return toTicketResponses(tickets), total, nil
 }
 
-func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, file *upload.File) error {
+func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, file *storage.File) error {
 	createdBy, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
@@ -100,7 +99,7 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 	if file != nil {
 		objectKey := httputil.GenerateObjectKey(fmt.Sprintf("tickets/%d/report", ticketID), file.Filename)
 
-		if uploadErr := s.storage.Upload(ctx, objectKey, file.Content, file.Size, file.ContentType); uploadErr == nil {
+		if uploadErr := s.storage.Upload(ctx, objectKey, file); uploadErr == nil {
 			attachment := TicketAttachment{
 				TicketID:       ticketID,
 				FileKey:        objectKey,
@@ -297,7 +296,7 @@ func (s *service) SetPriority(ctx context.Context, ticketID int64, req TicketPri
 	return nil
 }
 
-func (s *service) CreateResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file *upload.File) error {
+func (s *service) CreateResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file *storage.File) error {
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
@@ -339,7 +338,7 @@ func (s *service) CreateResolution(ctx context.Context, ticketID int64, req Tick
 	if file != nil {
 		objectKey := httputil.GenerateObjectKey(fmt.Sprintf("tickets/%d/resolution", ticketID), file.Filename)
 
-		if uploadErr := s.storage.Upload(ctx, objectKey, file.Content, file.Size, file.ContentType); uploadErr == nil {
+		if uploadErr := s.storage.Upload(ctx, objectKey, file); uploadErr == nil {
 			attachment := TicketAttachment{
 				TicketID:       ticketID,
 				FileKey:        objectKey,

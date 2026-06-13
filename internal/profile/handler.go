@@ -3,10 +3,10 @@ package profile
 import (
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 )
 
 type Handler struct {
@@ -29,7 +29,7 @@ func (h *Handler) GetProfile(c *echo.Context) error {
 }
 
 func (h *Handler) UpdateProfile(c *echo.Context) error {
-	req, err := request.BindAndValidate[UpdateProfileRequest](c)
+	req, err := httputil.BindAndValidate[UpdateProfileRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -57,7 +57,7 @@ func (h *Handler) UpdateAvatar(c *echo.Context) error {
 	}
 	defer f.Close()
 
-	file := &upload.File{
+	file := &storage.File{
 		Content:     f,
 		Filename:    fileHeader.Filename,
 		ContentType: fileHeader.Header.Get("Content-Type"),
@@ -72,7 +72,7 @@ func (h *Handler) UpdateAvatar(c *echo.Context) error {
 }
 
 func (h *Handler) SyncGoogle(c *echo.Context) error {
-	req, err := request.BindAndValidate[SyncGoogleRequest](c)
+	req, err := httputil.BindAndValidate[SyncGoogleRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -93,7 +93,7 @@ func (h *Handler) RevokeGoogle(c *echo.Context) error {
 }
 
 func (h *Handler) UpdatePassword(c *echo.Context) error {
-	req, err := request.BindAndValidate[UpdatePasswordRequest](c)
+	req, err := httputil.BindAndValidate[UpdatePasswordRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}

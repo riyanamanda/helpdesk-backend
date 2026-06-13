@@ -5,7 +5,7 @@ import (
 	"github.com/labstack/echo/v5"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
@@ -44,7 +44,7 @@ func (h *Handler) ListAssignableUser(c *echo.Context) error {
 }
 
 func (h *Handler) CreateUser(c *echo.Context) error {
-	req, err := request.BindAndValidate[UserCreateRequest](c)
+	req, err := httputil.BindAndValidate[UserCreateRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -76,7 +76,7 @@ func (h *Handler) UpdateUser(c *echo.Context) error {
 		return response.Error(c, apperr.BadRequest("invalid user id"))
 	}
 
-	req, err := request.BindAndValidate[UserUpdateRequest](c)
+	req, err := httputil.BindAndValidate[UserUpdateRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -95,7 +95,7 @@ func (h *Handler) UpdatePassword(c *echo.Context) error {
 		return response.Error(c, apperr.BadRequest("invalid user id"))
 	}
 
-	req, err := request.BindAndValidate[UserUpdatePasswordRequest](c)
+	req, err := httputil.BindAndValidate[UserUpdatePasswordRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}

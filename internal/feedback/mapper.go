@@ -1,7 +1,5 @@
 package feedback
 
-import "github.com/riyanamanda/helpdesk-backend/internal/shared/sliceutil"
-
 func toFeedbackResponse(f FeedbackProjection) FeedbackResponse {
 	return FeedbackResponse{
 		ID:          f.ID,
@@ -26,7 +24,9 @@ func toFeedbackResponse(f FeedbackProjection) FeedbackResponse {
 }
 
 func toFeedbackResponses(feedbacks []FeedbackProjection) []FeedbackResponse {
-	return sliceutil.Map(feedbacks, func(f FeedbackProjection) FeedbackResponse {
-		return toFeedbackResponse(f)
-	})
+	result := make([]FeedbackResponse, len(feedbacks))
+	for i, f := range feedbacks {
+		result[i] = toFeedbackResponse(f)
+	}
+	return result
 }

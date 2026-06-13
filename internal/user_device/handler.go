@@ -2,7 +2,7 @@ package user_device
 
 import (
 	"github.com/labstack/echo/v5"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
@@ -15,7 +15,7 @@ func NewUserDeviceHandler(svc UserDeviceService) *Handler {
 }
 
 func (h *Handler) RegisterDevice(c *echo.Context) error {
-	req, err := request.BindAndValidate[RegisterDeviceRequest](c)
+	req, err := httputil.BindAndValidate[RegisterDeviceRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -28,7 +28,7 @@ func (h *Handler) RegisterDevice(c *echo.Context) error {
 }
 
 func (h *Handler) UnregisterDevice(c *echo.Context) error {
-	req, err := request.BindAndValidate[UnregisterDeviceRequest](c)
+	req, err := httputil.BindAndValidate[UnregisterDeviceRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}

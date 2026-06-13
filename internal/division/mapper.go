@@ -1,7 +1,5 @@
 package division
 
-import "github.com/riyanamanda/helpdesk-backend/internal/shared/sliceutil"
-
 func toDivisionResponse(d Division) DivisionResponse {
 	return DivisionResponse(d)
 }
@@ -11,9 +9,17 @@ func toDivisionOptionResponse(d DivisionOptionProjection) DivisionOptionResponse
 }
 
 func toDivisionResponses(divisions []Division) []DivisionResponse {
-	return sliceutil.Map(divisions, toDivisionResponse)
+	result := make([]DivisionResponse, len(divisions))
+	for i, d := range divisions {
+		result[i] = toDivisionResponse(d)
+	}
+	return result
 }
 
 func toDivisionOptionResponses(divisions []DivisionOptionProjection) []DivisionOptionResponse {
-	return sliceutil.Map(divisions, toDivisionOptionResponse)
+	result := make([]DivisionOptionResponse, len(divisions))
+	for i, d := range divisions {
+		result[i] = toDivisionOptionResponse(d)
+	}
+	return result
 }

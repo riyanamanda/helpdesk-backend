@@ -17,9 +17,9 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/minio"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/rabbitmq"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/redis"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/firebase"
-	"github.com/riyanamanda/helpdesk-backend/internal/storage"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 	"github.com/riyanamanda/helpdesk-backend/internal/user_device"
 )

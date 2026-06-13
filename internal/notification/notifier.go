@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/firebase"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 

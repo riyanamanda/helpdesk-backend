@@ -5,7 +5,6 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
@@ -52,7 +51,7 @@ func (h *Handler) ListAllFeedbacks(c *echo.Context) error {
 }
 
 func (h *Handler) CreateFeedback(c *echo.Context) error {
-	req, err := request.BindAndValidate[CreateFeedbackRequest](c)
+	req, err := httputil.BindAndValidate[CreateFeedbackRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -84,7 +83,7 @@ func (h *Handler) UpdateFeedbackStatus(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	req, err := request.BindAndValidate[UpdateFeedbackStatusRequest](c)
+	req, err := httputil.BindAndValidate[UpdateFeedbackStatusRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}

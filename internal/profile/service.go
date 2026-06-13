@@ -9,16 +9,15 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/firebase"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
-	"github.com/riyanamanda/helpdesk-backend/internal/storage"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type ProfileService interface {
 	GetProfile(ctx context.Context) (*ProfileResponse, error)
 	UpdateProfile(ctx context.Context, req *UpdateProfileRequest) error
-	UpdateAvatar(ctx context.Context, file *upload.File) error
+	UpdateAvatar(ctx context.Context, file *storage.File) error
 	SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error
 	RevokeGoogle(ctx context.Context) error
 	UpdatePassword(ctx context.Context, req UpdatePasswordRequest) error
@@ -86,14 +85,14 @@ func (s *service) UpdateProfile(ctx context.Context, req *UpdateProfileRequest) 
 	return nil
 }
 
-func (s *service) UpdateAvatar(ctx context.Context, file *upload.File) error {
+func (s *service) UpdateAvatar(ctx context.Context, file *storage.File) error {
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
 	objectKey := fmt.Sprintf("avatars/%s/avatar", userID.String())
-	if err := s.storage.Upload(ctx, objectKey, file.Content, file.Size, file.ContentType); err != nil {
+	if err := s.storage.Upload(ctx, objectKey, file); err != nil {
 		return err
 	}
 

@@ -5,7 +5,6 @@ import (
 
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
@@ -44,7 +43,7 @@ func (h *Handler) ListCategoryOptions(c *echo.Context) error {
 }
 
 func (h *Handler) CreateCategory(c *echo.Context) error {
-	req, err := request.BindAndValidate[CategoryCreateRequest](c)
+	req, err := httputil.BindAndValidate[CategoryCreateRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -76,7 +75,7 @@ func (h *Handler) UpdateCategory(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	req, err := request.BindAndValidate[CategoryUpdateRequest](c)
+	req, err := httputil.BindAndValidate[CategoryUpdateRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}

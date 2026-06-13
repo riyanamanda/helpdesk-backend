@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 )
 
 func ParsePositiveInt64PathParam(c *echo.Context, paramName, resourceName string) (int64, error) {
@@ -48,4 +49,18 @@ func BuildPublicURL(bucket, key string) string {
 	}
 
 	return fmt.Sprintf("/storage/%s/%s", bucket, key)
+}
+
+func BindAndValidate[T any](c *echo.Context) (*T, error) {
+	var req T
+
+	if err := c.Bind(&req); err != nil {
+		return nil, apperr.BadRequest("invalid request body")
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return nil, validation.Parse(err)
+	}
+
+	return &req, nil
 }

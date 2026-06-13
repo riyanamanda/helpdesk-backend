@@ -1,10 +1,6 @@
 package notification
 
-import (
-	"encoding/json"
-
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/sliceutil"
-)
+import "encoding/json"
 
 func toNotificationResponse(n Notification) NotificationResponse {
 	return NotificationResponse{
@@ -21,7 +17,9 @@ func toNotificationResponse(n Notification) NotificationResponse {
 }
 
 func toNotificationResponses(notifications []Notification) []NotificationResponse {
-	return sliceutil.Map(notifications, func(n Notification) NotificationResponse {
-		return toNotificationResponse(n)
-	})
+	result := make([]NotificationResponse, len(notifications))
+	for i, n := range notifications {
+		result[i] = toNotificationResponse(n)
+	}
+	return result
 }

@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"io"
 
 	"github.com/minio/minio-go/v7"
 )
@@ -19,9 +18,9 @@ func NewMinioStorage(client *minio.Client, bucketName string) Storage {
 	}
 }
 
-func (m *minioStorage) Upload(ctx context.Context, key string, reader io.Reader, size int64, contentType string) error {
-	_, err := m.client.PutObject(ctx, m.bucketName, key, reader, size, minio.PutObjectOptions{
-		ContentType: contentType,
+func (m *minioStorage) Upload(ctx context.Context, key string, file *File) error {
+	_, err := m.client.PutObject(ctx, m.bucketName, key, file.Content, file.Size, minio.PutObjectOptions{
+		ContentType: file.ContentType,
 	})
 
 	return err

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/cache"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 )
 
 type DashboardService interface {

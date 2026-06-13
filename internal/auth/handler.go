@@ -3,7 +3,7 @@ package auth
 import (
 	"github.com/labstack/echo/v5"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
@@ -18,7 +18,7 @@ func NewAuthHandler(svc AuthService) *Handler {
 }
 
 func (h *Handler) Login(c *echo.Context) error {
-	req, err := request.BindAndValidate[LoginRequest](c)
+	req, err := httputil.BindAndValidate[LoginRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -32,7 +32,7 @@ func (h *Handler) Login(c *echo.Context) error {
 }
 
 func (h *Handler) LoginWithGoogle(c *echo.Context) error {
-	req, err := request.BindAndValidate[GoogleLoginRequest](c)
+	req, err := httputil.BindAndValidate[GoogleLoginRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}

@@ -11,7 +11,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/firebase"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/jwtutil"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )

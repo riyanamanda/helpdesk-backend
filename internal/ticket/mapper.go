@@ -3,7 +3,6 @@ package ticket
 import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/sliceutil"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -90,13 +89,19 @@ func toTicketAttachmentResponse(ta TicketAttachmentProjection, storageConfig con
 }
 
 func toTicketAttachmentResponses(attachments []TicketAttachmentProjection, storageConfig config.Storage) []TicketAttachmentResponse {
-	return sliceutil.Map(attachments, func(a TicketAttachmentProjection) TicketAttachmentResponse {
-		return toTicketAttachmentResponse(a, storageConfig)
-	})
+	result := make([]TicketAttachmentResponse, len(attachments))
+	for i, a := range attachments {
+		result[i] = toTicketAttachmentResponse(a, storageConfig)
+	}
+	return result
 }
 
 func toTicketResponses(tickets []TicketProjection) []TicketResponse {
-	return sliceutil.Map(tickets, toTicketResponse)
+	result := make([]TicketResponse, len(tickets))
+	for i, t := range tickets {
+		result[i] = toTicketResponse(t)
+	}
+	return result
 }
 
 func toTicketDetailResponse(ticket TicketProjection, attachments *[]TicketAttachmentProjection, storageConfig config.Storage) TicketDetailResponse {

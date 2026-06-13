@@ -7,10 +7,9 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/request"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/upload"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 )
 
 type Handler struct {
@@ -37,12 +36,12 @@ func (h *Handler) ListTickets(c *echo.Context) error {
 }
 
 func (h *Handler) CreateTicket(c *echo.Context) error {
-	req, err := request.BindAndValidate[TicketCreateRequest](c)
+	req, err := httputil.BindAndValidate[TicketCreateRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	var file *upload.File
+	var file *storage.File
 
 	fileHeader, err := c.FormFile("attachment")
 	if err != nil && !errors.Is(err, http.ErrMissingFile) && !errors.Is(err, http.ErrNotMultipart) {
@@ -60,7 +59,7 @@ func (h *Handler) CreateTicket(c *echo.Context) error {
 		}
 		defer f.Close()
 
-		file = &upload.File{
+		file = &storage.File{
 			Content:     f,
 			Filename:    fileHeader.Filename,
 			ContentType: fileHeader.Header.Get("Content-Type"),
@@ -95,7 +94,7 @@ func (h *Handler) UpdateTicket(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	req, err := request.BindAndValidate[TicketUpdateRequest](c)
+	req, err := httputil.BindAndValidate[TicketUpdateRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -126,7 +125,7 @@ func (h *Handler) AssignTicket(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	req, err := request.BindAndValidate[TicketAssignRequest](c)
+	req, err := httputil.BindAndValidate[TicketAssignRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -144,7 +143,7 @@ func (h *Handler) SetPriority(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	req, err := request.BindAndValidate[TicketPriorityRequest](c)
+	req, err := httputil.BindAndValidate[TicketPriorityRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -162,12 +161,12 @@ func (h *Handler) CreateResolution(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	req, err := request.BindAndValidate[TicketResolutionRequest](c)
+	req, err := httputil.BindAndValidate[TicketResolutionRequest](c)
 	if err != nil {
 		return response.Error(c, err)
 	}
 
-	var file *upload.File
+	var file *storage.File
 	fileHeader, err := c.FormFile("attachment")
 	if err != nil && !errors.Is(err, http.ErrMissingFile) && !errors.Is(err, http.ErrNotMultipart) {
 		return response.Error(c, err)
@@ -184,7 +183,7 @@ func (h *Handler) CreateResolution(c *echo.Context) error {
 		}
 		defer f.Close()
 
-		file = &upload.File{
+		file = &storage.File{
 			Content:     f,
 			Filename:    fileHeader.Filename,
 			ContentType: fileHeader.Header.Get("Content-Type"),

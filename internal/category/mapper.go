@@ -1,7 +1,5 @@
 package category
 
-import "github.com/riyanamanda/helpdesk-backend/internal/shared/sliceutil"
-
 func toCategoryResponse(c Category) CategoryResponse {
 	return CategoryResponse(c)
 }
@@ -11,9 +9,17 @@ func toCategoryOptionResponse(c CategoryOptionProjection) CategoryOptionResponse
 }
 
 func toCategoryResponses(categories []Category) []CategoryResponse {
-	return sliceutil.Map(categories, toCategoryResponse)
+	result := make([]CategoryResponse, len(categories))
+	for i, c := range categories {
+		result[i] = toCategoryResponse(c)
+	}
+	return result
 }
 
 func toCategoryOptionResponses(categories []CategoryOptionProjection) []CategoryOptionResponse {
-	return sliceutil.Map(categories, toCategoryOptionResponse)
+	result := make([]CategoryOptionResponse, len(categories))
+	for i, c := range categories {
+		result[i] = toCategoryOptionResponse(c)
+	}
+	return result
 }

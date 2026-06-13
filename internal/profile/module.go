@@ -4,7 +4,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
-	"github.com/riyanamanda/helpdesk-backend/internal/storage"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 )
 
 func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, authConfig config.Auth) {
