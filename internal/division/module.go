@@ -3,8 +3,8 @@ package division
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 )
 
 func Register(e *echo.Group, db *sqlx.DB, cache cache.Cache) {

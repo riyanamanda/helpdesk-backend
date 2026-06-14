@@ -3,35 +3,17 @@ package auth
 import (
 	"context"
 	"errors"
-	"time"
 
-	goredis "github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/jwtutil"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
-
-type sessionStore interface {
-	Set(ctx context.Context, key, value string, expiration time.Duration) error
-	Delete(ctx context.Context, key string) error
-}
-
-type redisAdapter struct {
-	client *goredis.Client
-}
-
-func (r *redisAdapter) Set(ctx context.Context, key, value string, expiration time.Duration) error {
-	return r.client.Set(ctx, key, value, expiration).Err()
-}
-
-func (r *redisAdapter) Delete(ctx context.Context, key string) error {
-	return r.client.Del(ctx, key).Err()
-}
 
 type AuthService interface {
 	Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error)
@@ -44,10 +26,10 @@ type service struct {
 	userRepo      user.UserRepository
 	config        config.Auth
 	storageConfig config.Storage
-	redis         sessionStore
+	redis         cache.Cache
 }
 
-func NewAuthService(repo user.UserRepository, cfg config.Auth, storageConfig config.Storage, redis sessionStore) AuthService {
+func NewAuthService(repo user.UserRepository, cfg config.Auth, storageConfig config.Storage, redis cache.Cache) AuthService {
 	return &service{
 		userRepo:      repo,
 		config:        cfg,

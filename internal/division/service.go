@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 )
 
 type DivisionService interface {

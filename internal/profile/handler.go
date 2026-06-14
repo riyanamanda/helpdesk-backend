@@ -2,11 +2,11 @@ package profile
 
 import (
 	"github.com/labstack/echo/v5"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 )
 
 type Handler struct {

@@ -8,4 +8,3 @@ const (
 
 	AssignableCacheKey = "user:assignable"
 )
-

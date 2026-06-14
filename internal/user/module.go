@@ -2,9 +2,9 @@ package user
 
 import (
 	"github.com/labstack/echo/v5"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 )
 
 func Register(e *echo.Group, repo UserRepository, storageConfig config.Storage, cache cache.Cache) {
