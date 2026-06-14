@@ -38,6 +38,23 @@ func NewAuthService(repo user.UserRepository, cfg config.Auth, storageConfig con
 	}
 }
 
+func (s *service) issueSession(ctx context.Context, user user.UserProjection) (string, error) {
+	if !user.IsActive {
+		return "", apperr.Forbidden("user is inactive")
+	}
+
+	token, jti, err := jwtutil.GenerateToken(user.ID, string(user.Role), s.config.JWTSecret, s.config.JWTExp)
+	if err != nil {
+		return "", err
+	}
+
+	if err := s.redis.Set(ctx, jwtutil.TokenKeyPrefix+jti, user.ID.String(), s.config.JWTExp); err != nil {
+		return "", err
+	}
+
+	return token, nil
+}
+
 func (s *service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
 	currentUser, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
@@ -47,29 +64,16 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse,
 		return nil, err
 	}
 
-	if !currentUser.IsActive {
-		return nil, apperr.Forbidden("user is inactive")
-	}
-
 	if err := bcrypt.CompareHashAndPassword([]byte(currentUser.Password), []byte(req.Password)); err != nil {
 		return nil, apperr.BadRequest("invalid email or password")
 	}
 
-	token, jti, err := jwtutil.GenerateToken(currentUser.ID, string(currentUser.Role), s.config.JWTSecret, s.config.JWTExp)
+	token, err := s.issueSession(ctx, *currentUser)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := s.redis.Set(ctx, jwtutil.TokenKeyPrefix+jti, currentUser.ID.String(), s.config.JWTExp); err != nil {
-		return nil, err
-	}
-
-	result := LoginResponse{
-		User:        toCurrentUserResponse(*currentUser, s.storageConfig),
-		AccessToken: token,
-	}
-
-	return &result, nil
+	return toLoginResponse(token, *currentUser, s.storageConfig), nil
 }
 
 func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (*LoginResponse, error) {
@@ -90,25 +94,12 @@ func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) 
 		return nil, apperr.Forbidden("google account is not linked to this account")
 	}
 
-	if !currentUser.IsActive {
-		return nil, apperr.Forbidden("user is inactive")
-	}
-
-	token, jti, err := jwtutil.GenerateToken(currentUser.ID, string(currentUser.Role), s.config.JWTSecret, s.config.JWTExp)
+	token, err := s.issueSession(ctx, *currentUser)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := s.redis.Set(ctx, jwtutil.TokenKeyPrefix+jti, currentUser.ID.String(), s.config.JWTExp); err != nil {
-		return nil, err
-	}
-
-	result := LoginResponse{
-		User:        toCurrentUserResponse(*currentUser, s.storageConfig),
-		AccessToken: token,
-	}
-
-	return &result, nil
+	return toLoginResponse(token, *currentUser, s.storageConfig), nil
 }
 
 func (s *service) Logout(ctx context.Context) error {

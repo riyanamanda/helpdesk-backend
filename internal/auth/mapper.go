@@ -26,3 +26,10 @@ func toCurrentUserResponse(u user.UserProjection, storageConfig config.Storage) 
 		AvatarURL: avatarURL,
 	}
 }
+
+func toLoginResponse(token string, user user.UserProjection, storageConfig config.Storage) *LoginResponse {
+	return &LoginResponse{
+		AccessToken: token,
+		User:        toCurrentUserResponse(user, storageConfig),
+	}
+}
