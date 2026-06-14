@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
+	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
 type UserRepository interface {
@@ -19,8 +20,8 @@ type UserRepository interface {
 	UpdateByID(ctx context.Context, id uuid.UUID, user User) error
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	AssignableUser(ctx context.Context) ([]AssignableUserProjection, error)
-	GetEmailsByRole(ctx context.Context, role UserRole) ([]string, error)
-	GetIDsByRoleAndDivision(ctx context.Context, role UserRole, divisionName string) ([]uuid.UUID, error)
+	GetEmailsByRole(ctx context.Context, role rbac.RoleType) ([]string, error)
+	GetIDsByRoleAndDivision(ctx context.Context, role rbac.RoleType, divisionName string) ([]uuid.UUID, error)
 }
 
 type repository struct {
@@ -41,7 +42,7 @@ func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]UserPr
 
 	where, args := buildUserWhere(params)
 
-	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM users u %s`, where)
+	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id %s`, where)
 	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
 		return nil, 0, err
 	}
@@ -65,11 +66,11 @@ func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]UserPr
 
 func (r *repository) Create(ctx context.Context, user *User) error {
 	const query = `
-		INSERT INTO users (name, email, password, role, gender, division_id, created_by)
+		INSERT INTO users (name, email, password, role_id, gender, division_id, created_by)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 
-	_, err := r.db.ExecContext(ctx, query, user.Name, user.Email, user.Password, user.Role, user.Gender, user.DivisionID, user.CreatedBy)
+	_, err := r.db.ExecContext(ctx, query, user.Name, user.Email, user.Password, user.RoleID, user.Gender, user.DivisionID, user.CreatedBy)
 	if err != nil {
 		if database.IsUniqueViolation(err) {
 			return ErrUserAlreadyExists
@@ -118,7 +119,7 @@ func (r *repository) UpdateByID(ctx context.Context, id uuid.UUID, user User) er
 		UPDATE users
 		SET name 		= $2,
 			email 		= $3,
-			role 		= $4,
+			role_id		= $4,
 			division_id	= $5,
 			gender 		= $6,
 			is_active	= $7,
@@ -126,7 +127,7 @@ func (r *repository) UpdateByID(ctx context.Context, id uuid.UUID, user User) er
 		WHERE id = $1
 	`
 
-	result, err := r.db.ExecContext(ctx, query, id, user.Name, user.Email, user.Role, user.DivisionID, user.Gender, user.IsActive)
+	result, err := r.db.ExecContext(ctx, query, id, user.Name, user.Email, user.RoleID, user.DivisionID, user.Gender, user.IsActive)
 	if err != nil {
 		if database.IsUniqueViolation(err) {
 			return ErrUserAlreadyExists
@@ -153,14 +154,15 @@ func (r *repository) UpdatePassword(ctx context.Context, id uuid.UUID, password 
 	return database.CheckRowsAffected(result, ErrUserNotFound)
 }
 
-func (r *repository) GetEmailsByRole(ctx context.Context, role UserRole) ([]string, error) {
+func (r *repository) GetEmailsByRole(ctx context.Context, role rbac.RoleType) ([]string, error) {
 	var emails []string
 
 	const query = `
-		SELECT email
-		FROM users
-		WHERE role = $1
-		AND is_active = true
+		SELECT u.email
+		FROM users u
+		JOIN roles r ON r.id = u.role_id
+		WHERE r.code = $1
+		AND u.is_active = true
 	`
 
 	if err := r.db.SelectContext(ctx, &emails, query, role); err != nil {
@@ -169,14 +171,15 @@ func (r *repository) GetEmailsByRole(ctx context.Context, role UserRole) ([]stri
 	return emails, nil
 }
 
-func (r *repository) GetIDsByRoleAndDivision(ctx context.Context, role UserRole, divisionName string) ([]uuid.UUID, error) {
+func (r *repository) GetIDsByRoleAndDivision(ctx context.Context, role rbac.RoleType, divisionName string) ([]uuid.UUID, error) {
 	var ids []uuid.UUID
 
 	const query = `
 		SELECT u.id
 		FROM users u
+		JOIN roles r ON r.id = u.role_id
 		JOIN divisions d ON d.id = u.division_id
-		WHERE u.role = $1
+		WHERE r.code = $1
 		AND u.is_active = true
 		AND LOWER(d.name) = LOWER($2)
 	`

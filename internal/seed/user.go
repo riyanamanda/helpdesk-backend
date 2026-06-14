@@ -35,11 +35,11 @@ func SeedUserAdmin(db *sqlx.DB) (bool, error) {
 	}
 
 	const queryInsert = `
-		INSERT INTO users (name, email, password, role, division_id, gender)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO users (name, email, password, role_id, division_id, gender)
+		VALUES ($1, $2, $3, (SELECT id FROM roles WHERE code = 'ADMIN'), $4, $5)
 	`
 
-	_, err = db.Exec(queryInsert, "Riyan Amanda", email, hashedPassword, "ADMIN", 1, "MALE")
+	_, err = db.Exec(queryInsert, "Riyan Amanda", email, hashedPassword, 1, "MALE")
 	if err != nil {
 		return false, err
 	}

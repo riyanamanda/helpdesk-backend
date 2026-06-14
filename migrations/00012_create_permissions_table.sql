@@ -1,0 +1,8 @@
+-- +goose Up
+CREATE TABLE IF NOT EXISTS permissions (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code VARCHAR(100) NOT NULL UNIQUE
+);
+
+-- +goose Down
+DROP TABLE IF EXISTS permissions;

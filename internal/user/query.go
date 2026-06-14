@@ -3,7 +3,7 @@ package user
 import "fmt"
 
 var userSortableColumns = map[string]string{
-	"name": "u.name", "role": "u.role", "division": "u.division_id",
+	"name": "u.name", "role": "r.code", "division": "u.division_id",
 	"is_active": "u.is_active", "created_at": "u.created_at",
 }
 
@@ -15,7 +15,8 @@ const userSelectBase = `
 		u.google_id,
 		u.avatar_key,
 		u.phone,
-		u.role,
+		u.role_id as role_id,
+		r.code as role_name,
 		u.gender,
 		d.id as division_id,
 		d.name as division_name,
@@ -25,6 +26,8 @@ const userSelectBase = `
 		u.created_at,
 		u.updated_at
 	FROM users u
+	JOIN roles r
+		ON r.id = u.role_id
 	LEFT JOIN divisions d
 		ON d.id = u.division_id
 	LEFT JOIN users cb
@@ -40,7 +43,8 @@ const userSelectWithPassword = `
 		u.google_id,
 		u.avatar_key,
 		u.phone,
-		u.role,
+		u.role_id as role_id,
+		r.code as role_name,
 		u.gender,
 		d.id as division_id,
 		d.name as division_name,
@@ -50,6 +54,8 @@ const userSelectWithPassword = `
 		u.created_at,
 		u.updated_at
 	FROM users u
+	JOIN roles r
+		ON r.id = u.role_id
 	LEFT JOIN divisions d
 		ON d.id = u.division_id
 	LEFT JOIN users cb
@@ -72,9 +78,9 @@ func buildUserWhere(params GetUserParams) (string, []any) {
 		where += fmt.Sprintf(" AND u.is_active = $%d", len(args))
 	}
 
-	if params.Role != "" {
-		args = append(args, params.Role)
-		where += fmt.Sprintf(" AND u.role = $%d", len(args))
+	if params.Role.Name != "" {
+		args = append(args, params.Role.Name)
+		where += fmt.Sprintf(" AND r.code = $%d", len(args))
 	}
 
 	if params.Division != nil {

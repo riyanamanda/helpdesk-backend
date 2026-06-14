@@ -15,6 +15,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
+	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -195,7 +196,7 @@ func (s *service) DeleteTicket(ctx context.Context, ticketID int64) error {
 	}
 
 	role, _ := ctxkey.GetRoleFromContext(ctx)
-	if role != string(user.ADMIN) && existing.CreatedByID != userID {
+	if role != string(rbac.ADMIN) && existing.CreatedByID != userID {
 		return apperr.Forbidden("you can only delete your own tickets")
 	}
 
@@ -382,7 +383,7 @@ func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
 	}
 
 	role, _ := ctxkey.GetRoleFromContext(ctx)
-	if role != string(user.ADMIN) && existing.CreatedByID != userID {
+	if role != string(rbac.ADMIN) && existing.CreatedByID != userID {
 		return apperr.Forbidden("you can only close your own tickets")
 	}
 

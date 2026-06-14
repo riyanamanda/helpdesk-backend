@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
+	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -49,7 +50,7 @@ func (n *notifier) NewTicket(ctx context.Context, ticketID int64, submitterID uu
 			submitterName = u.Name
 		}
 
-		adminIDs, err := n.userRepo.GetIDsByRoleAndDivision(ctx, user.ADMIN, "IT")
+		adminIDs, err := n.userRepo.GetIDsByRoleAndDivision(ctx, rbac.ADMIN, "IT")
 		if err != nil || len(adminIDs) == 0 {
 			return
 		}

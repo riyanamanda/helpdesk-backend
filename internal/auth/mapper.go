@@ -6,7 +6,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
-func toCurrentUserResponse(u user.UserProjection, storageConfig config.Storage) CurrentUserResponse {
+func toCurrentUserResponse(u user.UserProjection, storageConfig config.Storage) *CurrentUserResponse {
 	var avatarURL *string
 
 	if u.AvatarKey != nil {
@@ -14,11 +14,11 @@ func toCurrentUserResponse(u user.UserProjection, storageConfig config.Storage) 
 		avatarURL = &url
 	}
 
-	return CurrentUserResponse{
+	return &CurrentUserResponse{
 		ID:    u.ID,
 		Name:  u.Name,
 		Email: u.Email,
-		Role:  u.Role,
+		Role:  user.UserRole{ID: u.RoleID, Name: u.RoleName},
 		Division: DivisionBrief{
 			ID:   u.DivisionID,
 			Name: u.DivisionName,
@@ -30,6 +30,6 @@ func toCurrentUserResponse(u user.UserProjection, storageConfig config.Storage) 
 func toLoginResponse(token string, user user.UserProjection, storageConfig config.Storage) *LoginResponse {
 	return &LoginResponse{
 		AccessToken: token,
-		User:        toCurrentUserResponse(user, storageConfig),
+		User:        *toCurrentUserResponse(user, storageConfig),
 	}
 }

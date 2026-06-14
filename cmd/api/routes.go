@@ -14,6 +14,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/profile"
+	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 	"github.com/riyanamanda/helpdesk-backend/internal/ticket"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
@@ -47,6 +48,7 @@ func registerRoutes(cfg *config.Config, d *deps) http.Handler {
 	feedback.Register(protected, d.db, d.notificationNotifier)
 	notification.Register(protected, d.db)
 	user_device.Register(protected, d.db)
+	rbac.Register(protected, d.db)
 
 	return e
 }

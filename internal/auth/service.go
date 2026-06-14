@@ -43,7 +43,7 @@ func (s *service) issueSession(ctx context.Context, user user.UserProjection) (s
 		return "", apperr.Forbidden("user is inactive")
 	}
 
-	token, jti, err := jwtutil.GenerateToken(user.ID, string(user.Role), s.config.JWTSecret, s.config.JWTExp)
+	token, jti, err := jwtutil.GenerateToken(user.ID, user.RoleName, s.config.JWTSecret, s.config.JWTExp)
 	if err != nil {
 		return "", err
 	}
@@ -117,12 +117,10 @@ func (s *service) Me(ctx context.Context) (*CurrentUserResponse, error) {
 		return nil, apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
-	u, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	result := toCurrentUserResponse(*u, s.storageConfig)
-
-	return &result, nil
+	return toCurrentUserResponse(*user, s.storageConfig), nil
 }

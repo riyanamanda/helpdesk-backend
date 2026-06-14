@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
 
+	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -39,7 +40,7 @@ func (w *Worker) HandleNewTicketEmail(ctx context.Context, d amqp.Delivery) erro
 		submitterName = u.Name
 	}
 
-	adminEmails, err := w.userRepo.GetEmailsByRole(ctx, user.ADMIN)
+	adminEmails, err := w.userRepo.GetEmailsByRole(ctx, rbac.ADMIN)
 	if err != nil {
 		_ = d.Nack(false, true)
 		return fmt.Errorf("mailer: get admin emails: %w", err)
