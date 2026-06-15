@@ -9,34 +9,62 @@ import (
 type contextKey string
 
 const (
-	ContextUserIDKey contextKey = "user_id"
-	ContextJTIKey    contextKey = "jti"
-	ContextRoleKey   contextKey = "role"
+	contextUserIDKey   contextKey = "user_id"
+	contextJTIKey      contextKey = "jti"
+	contextAuthUserKey contextKey = "auth_user"
 )
 
+type PermissionSet map[string]struct{}
+
+func (p PermissionSet) Has(permissions ...string) bool {
+	for _, permission := range permissions {
+		if _, ok := p[permission]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (p PermissionSet) ToSlice() []string {
+	codes := make([]string, 0, len(p))
+	for code := range p {
+		codes = append(codes, code)
+	}
+	return codes
+}
+
+type PermissionService interface {
+	GetUserPermissions(ctx context.Context, userID uuid.UUID) (PermissionSet, error)
+}
+
+type AuthUser struct {
+	ID          uuid.UUID
+	Permissions PermissionSet
+}
+
 func SetUserIDToContext(ctx context.Context, userID uuid.UUID) context.Context {
-	return context.WithValue(ctx, ContextUserIDKey, userID)
+	return context.WithValue(ctx, contextUserIDKey, userID)
 }
 
 func GetUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
-	userID, ok := ctx.Value(ContextUserIDKey).(uuid.UUID)
+	userID, ok := ctx.Value(contextUserIDKey).(uuid.UUID)
 	return userID, ok
 }
 
 func SetJTIToContext(ctx context.Context, jti string) context.Context {
-	return context.WithValue(ctx, ContextJTIKey, jti)
+	return context.WithValue(ctx, contextJTIKey, jti)
 }
 
 func GetJTIFromContext(ctx context.Context) (string, bool) {
-	jti, ok := ctx.Value(ContextJTIKey).(string)
+	jti, ok := ctx.Value(contextJTIKey).(string)
 	return jti, ok
 }
 
-func SetRoleToContext(ctx context.Context, role string) context.Context {
-	return context.WithValue(ctx, ContextRoleKey, role)
+func SetAuthUserToContext(ctx context.Context, authUser *AuthUser) context.Context {
+	return context.WithValue(ctx, contextAuthUserKey, authUser)
 }
 
-func GetRoleFromContext(ctx context.Context) (string, bool) {
-	role, ok := ctx.Value(ContextRoleKey).(string)
-	return role, ok
+func GetAuthUserFromContext(ctx context.Context) (*AuthUser, bool) {
+	authUser, ok := ctx.Value(contextAuthUserKey).(*AuthUser)
+	return authUser, ok
 }

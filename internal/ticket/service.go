@@ -194,8 +194,7 @@ func (s *service) DeleteTicket(ctx context.Context, ticketID int64) error {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
-	role, _ := ctxkey.GetRoleFromContext(ctx)
-	if role != string(user.ADMIN) && existing.CreatedByID != userID {
+	if existing.CreatedByID != userID {
 		return apperr.Forbidden("you can only delete your own tickets")
 	}
 
@@ -381,8 +380,7 @@ func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
-	role, _ := ctxkey.GetRoleFromContext(ctx)
-	if role != string(user.ADMIN) && existing.CreatedByID != userID {
+	if existing.CreatedByID != userID {
 		return apperr.Forbidden("you can only close your own tickets")
 	}
 

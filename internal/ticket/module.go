@@ -9,6 +9,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
+	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -17,15 +18,13 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storag
 	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier, notificationNotifier)
 	handler := NewTicketHandler(svc)
 
-	adminOnly := middleware.RequireRole("ADMIN")
-
-	e.GET("/tickets", handler.ListTickets)
-	e.POST("/tickets", handler.CreateTicket)
-	e.GET("/tickets/:id", handler.GetTicket)
-	e.PUT("/tickets/:id", handler.UpdateTicket)
-	e.DELETE("/tickets/:id", handler.DeleteTicket)
-	e.PATCH("/tickets/:id/assign", handler.AssignTicket, adminOnly)
-	e.PATCH("/tickets/:id/priority", handler.SetPriority, adminOnly)
-	e.PATCH("/tickets/:id/resolution", handler.CreateResolution, adminOnly)
-	e.PATCH("/tickets/:id/close", handler.CloseTicket)
+	e.GET("/tickets", handler.ListTickets, middleware.RequirePermission(rbac.PermissionTicketView))
+	e.POST("/tickets", handler.CreateTicket, middleware.RequirePermission(rbac.PermissionTicketCreate))
+	e.GET("/tickets/:id", handler.GetTicket, middleware.RequirePermission(rbac.PermissionTicketView))
+	e.PUT("/tickets/:id", handler.UpdateTicket, middleware.RequirePermission(rbac.PermissionTicketUpdate))
+	e.DELETE("/tickets/:id", handler.DeleteTicket, middleware.RequirePermission(rbac.PermissionTicketDelete))
+	e.PATCH("/tickets/:id/assign", handler.AssignTicket, middleware.RequirePermission(rbac.PermissionTicketAssign))
+	e.PATCH("/tickets/:id/priority", handler.SetPriority, middleware.RequirePermission(rbac.PermissionTicketPriority))
+	e.PATCH("/tickets/:id/resolution", handler.CreateResolution, middleware.RequirePermission(rbac.PermissionTicketResolution))
+	e.PATCH("/tickets/:id/close", handler.CloseTicket, middleware.RequirePermission(rbac.PermissionTicketClose))
 }

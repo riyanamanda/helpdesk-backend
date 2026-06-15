@@ -15,7 +15,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
-func AuthMiddleware(cfg config.Auth, redisClient *redis.Client) echo.MiddlewareFunc {
+func AuthMiddleware(cfg config.Auth, redisClient *redis.Client, permissionService ctxkey.PermissionService) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
@@ -54,9 +54,20 @@ func AuthMiddleware(cfg config.Auth, redisClient *redis.Client) echo.MiddlewareF
 				return response.Error(c, apperr.Unauthorized(apperr.CodeInvalidToken, "invalid token"))
 			}
 
+			permissions, err := permissionService.GetUserPermissions(c.Request().Context(), userID)
+			if err != nil {
+				return response.Error(c, apperr.Internal())
+			}
+
+			authUser := &ctxkey.AuthUser{
+				ID:          userID,
+				Permissions: permissions,
+			}
+
 			ctx := ctxkey.SetUserIDToContext(c.Request().Context(), userID)
 			ctx = ctxkey.SetJTIToContext(ctx, claims.ID)
-			ctx = ctxkey.SetRoleToContext(ctx, claims.Role)
+			ctx = ctxkey.SetAuthUserToContext(ctx, authUser)
+
 			c.SetRequest(c.Request().WithContext(ctx))
 
 			return next(c)

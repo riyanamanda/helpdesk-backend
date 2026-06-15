@@ -23,18 +23,20 @@ type AuthService interface {
 }
 
 type service struct {
-	userRepo      user.UserRepository
-	config        config.Auth
-	storageConfig config.Storage
-	redis         cache.Cache
+	userRepo          user.UserRepository
+	config            config.Auth
+	storageConfig     config.Storage
+	redis             cache.Cache
+	permissionService ctxkey.PermissionService
 }
 
-func NewAuthService(repo user.UserRepository, cfg config.Auth, storageConfig config.Storage, redis cache.Cache) AuthService {
+func NewAuthService(repo user.UserRepository, cfg config.Auth, storageConfig config.Storage, redis cache.Cache, permissionService ctxkey.PermissionService) AuthService {
 	return &service{
-		userRepo:      repo,
-		config:        cfg,
-		storageConfig: storageConfig,
-		redis:         redis,
+		userRepo:          repo,
+		config:            cfg,
+		storageConfig:     storageConfig,
+		redis:             redis,
+		permissionService: permissionService,
 	}
 }
 
@@ -43,7 +45,7 @@ func (s *service) issueSession(ctx context.Context, user user.UserProjection) (s
 		return "", apperr.Forbidden("user is inactive")
 	}
 
-	token, jti, err := jwtutil.GenerateToken(user.ID, string(user.Role), s.config.JWTSecret, s.config.JWTExp)
+	token, jti, err := jwtutil.GenerateToken(user.ID, s.config.JWTSecret, s.config.JWTExp)
 	if err != nil {
 		return "", err
 	}
@@ -73,7 +75,12 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse,
 		return nil, err
 	}
 
-	return toLoginResponse(token, *currentUser, s.storageConfig), nil
+	permissions, err := s.permissionService.GetUserPermissions(ctx, currentUser.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return toLoginResponse(token, *currentUser, s.storageConfig, permissions.ToSlice()), nil
 }
 
 func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (*LoginResponse, error) {
@@ -99,7 +106,12 @@ func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) 
 		return nil, err
 	}
 
-	return toLoginResponse(token, *currentUser, s.storageConfig), nil
+	permissions, err := s.permissionService.GetUserPermissions(ctx, currentUser.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return toLoginResponse(token, *currentUser, s.storageConfig, permissions.ToSlice()), nil
 }
 
 func (s *service) Logout(ctx context.Context) error {
@@ -112,17 +124,15 @@ func (s *service) Logout(ctx context.Context) error {
 }
 
 func (s *service) Me(ctx context.Context) (*CurrentUserResponse, error) {
-	userID, ok := ctxkey.GetUserIDFromContext(ctx)
-	if !ok {
+	authUser, ok := ctxkey.GetAuthUserFromContext(ctx)
+	if !ok || authUser == nil {
 		return nil, apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
-	u, err := s.userRepo.GetByID(ctx, userID)
+	u, err := s.userRepo.GetByID(ctx, authUser.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	result := toCurrentUserResponse(*u, s.storageConfig)
-
-	return &result, nil
+	return toCurrentUserResponse(*u, s.storageConfig, authUser.Permissions.ToSlice()), nil
 }

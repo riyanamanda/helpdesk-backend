@@ -68,7 +68,7 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 		Name:       req.Name,
 		Email:      normalizedEmail,
 		Password:   string(hashedPassword),
-		Role:       req.Role,
+		RoleID:     req.Role,
 		DivisionID: req.Division,
 		Gender:     strings.ToUpper(req.Gender),
 		CreatedBy:  createdBy,
@@ -106,7 +106,7 @@ func (s *service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpd
 	user := User{
 		Name:       req.Name,
 		Email:      req.Email,
-		Role:       req.Role,
+		RoleID:     req.Role,
 		DivisionID: req.Division,
 		Gender:     req.Gender,
 		IsActive:   *req.IsActive,

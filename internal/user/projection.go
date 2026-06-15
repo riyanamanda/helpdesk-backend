@@ -14,15 +14,16 @@ type UserProjection struct {
 	GoogleID      *string    `db:"google_id"`
 	AvatarKey     *string    `db:"avatar_key"`
 	Phone         *string    `db:"phone"`
-	Role          UserRole   `db:"role"`
+	RoleID        int64      `db:"role_id"`
+	RoleName      string     `db:"role_name"`
 	Gender        string     `db:"gender"`
 	DivisionID    int64      `db:"division_id"`
 	DivisionName  string     `db:"division_name"`
 	IsActive      bool       `db:"is_active"`
 	CreatedByID   *uuid.UUID `db:"created_by_id"`
-	CreatedByName *string    `db:"created_by_name"`
-	CreatedAt     time.Time  `db:"created_at"`
-	UpdatedAt     time.Time  `db:"updated_at"`
+	CreatedByName *string        `db:"created_by_name"`
+	CreatedAt     time.Time      `db:"created_at"`
+	UpdatedAt     time.Time      `db:"updated_at"`
 }
 
 type AssignableUserProjection struct {

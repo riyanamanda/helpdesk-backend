@@ -14,7 +14,7 @@ type User struct {
 	GoogleID   *string    `db:"google_id"`
 	AvatarKey  *string    `db:"avatar_key"`
 	Phone      *string    `db:"phone"`
-	Role       UserRole   `db:"role"`
+	RoleID     int64      `db:"role_id"`
 	Gender     string     `db:"gender"`
 	DivisionID int64      `db:"division_id"`
 	IsActive   bool       `db:"is_active"`

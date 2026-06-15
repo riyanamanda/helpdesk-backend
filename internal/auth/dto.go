@@ -17,12 +17,13 @@ type DivisionBrief struct {
 }
 
 type CurrentUserResponse struct {
-	ID        uuid.UUID     `json:"id"`
-	Name      string        `json:"name"`
-	Email     string        `json:"email"`
-	Role      user.UserRole `json:"role"`
-	AvatarURL *string       `json:"avatar_url"`
-	Division  DivisionBrief `json:"division"`
+	ID          uuid.UUID     `json:"id"`
+	Name        string        `json:"name"`
+	Email       string        `json:"email"`
+	Role        user.UserRole `json:"role"`
+	AvatarURL   *string       `json:"avatar_url"`
+	Division    DivisionBrief `json:"division"`
+	Permissions []string      `json:"permissions"`
 }
 
 type LoginRequest struct {

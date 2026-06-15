@@ -29,5 +29,17 @@ func Run(db *sqlx.DB) error {
 		slog.Info("seed admin user finished", "inserted", false)
 	}
 
+	permissionsInserted, err := SeedPermission(db)
+	if err != nil {
+		return err
+	}
+	slog.Info("seed permissions finished", "inserted", permissionsInserted)
+
+	rolePermissionInserted, err := SeedRolePermission(db)
+	if err != nil {
+		return err
+	}
+	slog.Info("seed role permissions finished", "inserted", rolePermissionInserted)
+
 	return nil
 }

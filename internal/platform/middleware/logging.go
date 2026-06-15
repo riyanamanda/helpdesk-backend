@@ -27,13 +27,27 @@ func requestID() echo.MiddlewareFunc {
 				status = resp.Status
 			}
 
-			slog.Info("request",
+			logFn := slog.Info
+			if status >= 500 {
+				logFn = slog.Error
+			}
+
+			attrs := []any{
 				"request_id", id,
 				"method", c.Request().Method,
 				"path", c.Request().URL.Path,
 				"status", status,
 				"latency_ms", latency.Milliseconds(),
-			)
+			}
+			if status >= 500 {
+				if internalErr, ok := c.Get("internal_error").(error); ok && internalErr != nil {
+					attrs = append(attrs, "error", internalErr.Error())
+				} else if err != nil {
+					attrs = append(attrs, "error", err.Error())
+				}
+			}
+
+			logFn("request", attrs...)
 
 			return err
 		}

@@ -7,18 +7,19 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
-func Register(e *echo.Group, userRepo user.UserRepository, cfg config.Auth, storageConfig config.Storage, redisClient *goredis.Client) {
-	svc := NewAuthService(userRepo, cfg, storageConfig, cache.NewRedisCache(redisClient))
+func Register(e *echo.Group, userRepo user.UserRepository, cfg config.Auth, storageConfig config.Storage, redisClient *goredis.Client, permissionService ctxkey.PermissionService) {
+	svc := NewAuthService(userRepo, cfg, storageConfig, cache.NewRedisCache(redisClient), permissionService)
 	handler := NewAuthHandler(svc)
 
 	authGroup := e.Group("/auth")
 	protected := authGroup.Group("")
 
 	protected.Use(
-		middleware.AuthMiddleware(cfg, redisClient),
+		middleware.AuthMiddleware(cfg, redisClient, permissionService),
 	)
 
 	authGroup.POST("/login", handler.Login)

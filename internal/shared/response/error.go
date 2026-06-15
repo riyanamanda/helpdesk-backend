@@ -18,6 +18,10 @@ type ErrorBody struct {
 func Error(c *echo.Context, err error) error {
 	appErr := apperr.As(err)
 
+	if appErr.Status >= 500 {
+		c.Set("internal_error", err)
+	}
+
 	return c.JSON(appErr.Status, ErrorResponse{
 		Error: ErrorBody{
 			Code:    appErr.Code,

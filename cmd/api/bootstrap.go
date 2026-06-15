@@ -20,6 +20,8 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/rabbitmq"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/redis"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
+	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 	"github.com/riyanamanda/helpdesk-backend/internal/user_device"
 )
@@ -32,6 +34,7 @@ type deps struct {
 	userRepo             user.UserRepository
 	notifier             mailer.Notifier
 	notificationNotifier notification.Notifier
+	permissionService    ctxkey.PermissionService
 }
 
 func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), error) {
@@ -113,6 +116,9 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 		fcmSender,
 	)
 
+	rbacRepo := rbac.NewRBACRepository(db)
+	permissionService := rbac.NewPermissionService(rbacRepo, cacheStore)
+
 	d := &deps{
 		db:                   db,
 		storageService:       storageService,
@@ -121,6 +127,7 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 		userRepo:             userRepo,
 		notifier:             notifier,
 		notificationNotifier: notificationNotifier,
+		permissionService:    permissionService,
 	}
 
 	server := &http.Server{

@@ -42,7 +42,8 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*user.UserProje
 			u.google_id,
 			u.avatar_key,
 			u.phone,
-			u.role,
+			u.role_id   AS role_id,
+			r.code      AS role_name,
 			u.gender,
 			d.id   AS division_id,
 			d.name AS division_name,
@@ -52,6 +53,7 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*user.UserProje
 			u.created_at,
 			u.updated_at
 		FROM users u
+		JOIN roles r           ON r.id  = u.role_id
 		LEFT JOIN divisions d  ON d.id  = u.division_id
 		LEFT JOIN users    cb ON cb.id = u.created_by
 		WHERE u.id = $1

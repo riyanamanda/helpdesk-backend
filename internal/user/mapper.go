@@ -28,8 +28,11 @@ func toUserResponse(u UserProjection, storageConfig config.Storage) UserResponse
 		GoogleID:  u.GoogleID,
 		AvatarURL: avatarURL,
 		Phone:     u.Phone,
-		Role:      UserRole(u.Role),
-		Gender:    u.Gender,
+		Role: UserRole{
+			ID:   u.RoleID,
+			Name: u.RoleName,
+		},
+		Gender: u.Gender,
 		Division: DivisionBrief{
 			ID:   u.DivisionID,
 			Name: u.DivisionName,

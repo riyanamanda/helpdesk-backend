@@ -7,17 +7,18 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
-func RequireRole(roles ...string) echo.MiddlewareFunc {
-	allowed := make(map[string]bool, len(roles))
-	for _, r := range roles {
-		allowed[r] = true
-	}
+func RequirePermission(permissions ...string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
-			role, ok := ctxkey.GetRoleFromContext(c.Request().Context())
-			if !ok || !allowed[role] {
-				return response.Error(c, apperr.Forbidden("access denied"))
+			authUser, ok := ctxkey.GetAuthUserFromContext(c.Request().Context())
+			if !ok || authUser == nil {
+				return response.Error(c, apperr.Forbidden("forbidden"))
 			}
+
+			if !authUser.Permissions.Has(permissions...) {
+				return response.Error(c, apperr.Forbidden("forbidden"))
+			}
+
 			return next(c)
 		}
 	}
