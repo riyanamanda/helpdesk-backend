@@ -12,12 +12,10 @@ func Register(e *echo.Group, db *sqlx.DB, cache cache.Cache) {
 	svc := NewCategoryService(repo, cache)
 	handler := NewCategoryHandler(svc)
 
-	adminOnly := middleware.RequireRole("ADMIN")
-
 	e.GET("/categories", handler.ListCategories)
 	e.GET("/categories/options", handler.ListCategoryOptions)
 	e.GET("/categories/:id", handler.GetCategory)
-	e.POST("/categories", handler.CreateCategory, adminOnly)
-	e.PATCH("/categories/:id", handler.UpdateCategory, adminOnly)
-	e.DELETE("/categories/:id", handler.DeleteCategory, adminOnly)
+	e.POST("/categories", handler.CreateCategory, middleware.RequiredPermission("category:create"))
+	e.PATCH("/categories/:id", handler.UpdateCategory, middleware.RequiredPermission("category:update"))
+	e.DELETE("/categories/:id", handler.DeleteCategory, middleware.RequiredPermission("category:delete"))
 }

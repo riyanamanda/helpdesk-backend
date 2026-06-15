@@ -64,7 +64,7 @@ func (r *repository) GetAllPermissionsByRoleID(ctx context.Context, roleID int64
 		JOIN roles r
 			ON r.id = rp.role_id
 		JOIN permissions p
-			ON p.id = rp.premission_id
+			ON p.id = rp.permission_id
 		WHERE role_id = $1
 	`
 

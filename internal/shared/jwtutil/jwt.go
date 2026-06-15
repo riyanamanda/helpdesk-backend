@@ -11,15 +11,15 @@ import (
 const TokenKeyPrefix = "auth:token:"
 
 type JWTCustomClaims struct {
-	Role string `json:"role"`
+	Permissions []string `json:"permissions"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID uuid.UUID, role, secret string, expiresIn time.Duration) (string, string, error) {
+func GenerateToken(userID uuid.UUID, permissions []string, secret string, expiresIn time.Duration) (string, string, error) {
 	jti := uuid.NewString()
 
 	claims := JWTCustomClaims{
-		Role: role,
+		Permissions: permissions,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:      jti,
 			Subject: userID.String(),
@@ -45,7 +45,7 @@ func ParseToken(tokenString, secret string) (*JWTCustomClaims, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&JWTCustomClaims{},
-		func(token *jwt.Token) (interface{}, error) {
+		func(token *jwt.Token) (any, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("invalid token signing method")
 			}

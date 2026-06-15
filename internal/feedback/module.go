@@ -12,13 +12,11 @@ func Register(e *echo.Group, db *sqlx.DB, notificationNotifier notification.Noti
 	svc := NewFeedbackService(repo, notificationNotifier)
 	handler := NewFeedbackHandler(svc)
 
-	adminOnly := middleware.RequireRole("ADMIN")
-
 	admin := e.Group("/admin")
-	admin.GET("/feedbacks", handler.ListAllFeedbacks, adminOnly)
+	admin.GET("/feedbacks", handler.ListAllFeedbacks, middleware.RequiredPermission("feedback:view"))
 
 	e.GET("/feedbacks", handler.ListFeedbacks)
 	e.POST("/feedbacks", handler.CreateFeedback)
 	e.GET("/feedbacks/:id", handler.GetFeedback)
-	e.PATCH("/feedbacks/:id/status", handler.UpdateFeedbackStatus, adminOnly)
+	e.PATCH("/feedbacks/:id/status", handler.UpdateFeedbackStatus, middleware.RequiredPermission("feedback:update"))
 }

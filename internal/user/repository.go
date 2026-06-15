@@ -101,7 +101,10 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*UserProjection
 func (r *repository) GetByEmail(ctx context.Context, email string) (*UserProjection, error) {
 	var user UserProjection
 
-	const query = userSelectWithPassword + `WHERE LOWER(u.email) = LOWER($1)`
+	const query = userSelectWithPassword + `
+		WHERE LOWER(u.email) = LOWER($1)
+		GROUP BY u.id, r.id, r.code, d.id, d.name, cb.id, cb.name
+	`
 
 	if err := r.db.GetContext(ctx, &user, query, email); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

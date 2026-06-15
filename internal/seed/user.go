@@ -8,7 +8,7 @@ import (
 )
 
 func SeedUserAdmin(db *sqlx.DB) (bool, error) {
-	const email = "admin@email.com"
+	const email = "ryant.n92@gmail.com"
 	var exists bool
 
 	const query = `

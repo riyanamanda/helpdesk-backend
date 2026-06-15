@@ -17,15 +17,13 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storag
 	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier, notificationNotifier)
 	handler := NewTicketHandler(svc)
 
-	adminOnly := middleware.RequireRole("ADMIN")
-
 	e.GET("/tickets", handler.ListTickets)
 	e.POST("/tickets", handler.CreateTicket)
 	e.GET("/tickets/:id", handler.GetTicket)
 	e.PUT("/tickets/:id", handler.UpdateTicket)
 	e.DELETE("/tickets/:id", handler.DeleteTicket)
-	e.PATCH("/tickets/:id/assign", handler.AssignTicket, adminOnly)
-	e.PATCH("/tickets/:id/priority", handler.SetPriority, adminOnly)
-	e.PATCH("/tickets/:id/resolution", handler.CreateResolution, adminOnly)
+	e.PATCH("/tickets/:id/assign", handler.AssignTicket, middleware.RequiredPermission("ticket:assign"))
+	e.PATCH("/tickets/:id/priority", handler.SetPriority, middleware.RequiredPermission("ticket:priority"))
+	e.PATCH("/tickets/:id/resolution", handler.CreateResolution, middleware.RequiredPermission("ticket:resolution"))
 	e.PATCH("/tickets/:id/close", handler.CloseTicket)
 }

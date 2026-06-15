@@ -9,9 +9,9 @@ import (
 type contextKey string
 
 const (
-	ContextUserIDKey contextKey = "user_id"
-	ContextJTIKey    contextKey = "jti"
-	ContextRoleKey   contextKey = "role"
+	ContextUserIDKey     contextKey = "user_id"
+	ContextJTIKey        contextKey = "jti"
+	ContextPermissionKey contextKey = "permissions"
 )
 
 func SetUserIDToContext(ctx context.Context, userID uuid.UUID) context.Context {
@@ -32,11 +32,11 @@ func GetJTIFromContext(ctx context.Context) (string, bool) {
 	return jti, ok
 }
 
-func SetRoleToContext(ctx context.Context, role string) context.Context {
-	return context.WithValue(ctx, ContextRoleKey, role)
+func SetPermissionToContext(ctx context.Context, permissions []string) context.Context {
+	return context.WithValue(ctx, ContextPermissionKey, permissions)
 }
 
-func GetRoleFromContext(ctx context.Context) (string, bool) {
-	role, ok := ctx.Value(ContextRoleKey).(string)
-	return role, ok
+func GetPermissionFromContext(ctx context.Context) ([]string, bool) {
+	permissions, ok := ctx.Value(ContextPermissionKey).([]string)
+	return permissions, ok
 }

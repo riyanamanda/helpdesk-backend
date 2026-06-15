@@ -49,6 +49,7 @@ const userSelectWithPassword = `
 		d.id as division_id,
 		d.name as division_name,
 		u.is_active,
+		COALESCE(ARRAY_AGG(p.code) FILTER (WHERE p.code IS NOT NULL), ARRAY[]::TEXT[]) as permissions,
 		cb.id as created_by_id,
 		cb.name as created_by_name,
 		u.created_at,
@@ -56,6 +57,10 @@ const userSelectWithPassword = `
 	FROM users u
 	JOIN roles r
 		ON r.id = u.role_id
+	LEFT JOIN role_permissions rp
+		ON rp.role_id = r.id
+	LEFT JOIN permissions p
+		ON p.id = rp.permission_id
 	LEFT JOIN divisions d
 		ON d.id = u.division_id
 	LEFT JOIN users cb

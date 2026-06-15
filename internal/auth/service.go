@@ -43,7 +43,7 @@ func (s *service) issueSession(ctx context.Context, user user.UserProjection) (s
 		return "", apperr.Forbidden("user is inactive")
 	}
 
-	token, jti, err := jwtutil.GenerateToken(user.ID, user.RoleName, s.config.JWTSecret, s.config.JWTExp)
+	token, jti, err := jwtutil.GenerateToken(user.ID, user.Permissions, s.config.JWTSecret, s.config.JWTExp)
 	if err != nil {
 		return "", err
 	}

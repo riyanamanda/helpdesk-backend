@@ -15,7 +15,6 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
-	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -195,8 +194,9 @@ func (s *service) DeleteTicket(ctx context.Context, ticketID int64) error {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
-	role, _ := ctxkey.GetRoleFromContext(ctx)
-	if role != string(rbac.ADMIN) && existing.CreatedByID != userID {
+	permissions, _ := ctxkey.GetPermissionFromContext(ctx)
+	isAdmin := hasPermission(permissions, "ticket:assign")
+	if !isAdmin && existing.CreatedByID != userID {
 		return apperr.Forbidden("you can only delete your own tickets")
 	}
 
@@ -382,8 +382,9 @@ func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
-	role, _ := ctxkey.GetRoleFromContext(ctx)
-	if role != string(rbac.ADMIN) && existing.CreatedByID != userID {
+	permissions, _ := ctxkey.GetPermissionFromContext(ctx)
+	isAdmin := hasPermission(permissions, "ticket:assign")
+	if !isAdmin && existing.CreatedByID != userID {
 		return apperr.Forbidden("you can only close your own tickets")
 	}
 
@@ -399,4 +400,13 @@ func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
 	s.notificationSvc.TicketClosed(ctx, ticketID, existing.CreatedByID, userID)
 
 	return nil
+}
+
+func hasPermission(permissions []string, perm string) bool {
+	for _, p := range permissions {
+		if p == perm {
+			return true
+		}
+	}
+	return false
 }
