@@ -1,12 +1,14 @@
 package rbac
 
 const UserPermissionsCacheKey = "user_permissions:%s"
+const UserRoleCacheKey = "auth:role:%s"
 
 type RoleType string
 
 const (
-	ADMIN    RoleType = "ADMIN"
-	EMPLOYEE RoleType = "EMPLOYEE"
+	ADMIN      RoleType = "ADMIN"
+	EMPLOYEE   RoleType = "EMPLOYEE"
+	SUPERADMIN RoleType = "SUPERADMIN"
 )
 
 const (

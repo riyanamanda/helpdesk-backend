@@ -30,13 +30,11 @@ func (s *permissionService) GetUserPermissions(ctx context.Context, userID uuid.
 	cached, err := s.cache.Get(ctx, cacheKey)
 	if err == nil {
 		var codes []string
-
 		if err := json.Unmarshal([]byte(cached), &codes); err == nil {
 			permissions := make(ctxkey.PermissionSet)
 			for _, code := range codes {
 				permissions[code] = struct{}{}
 			}
-
 			return permissions, nil
 		}
 	}
@@ -45,17 +43,26 @@ func (s *permissionService) GetUserPermissions(ctx context.Context, userID uuid.
 		return nil, err
 	}
 
-	permissions, err := s.repo.GetPermissionsByUserID(ctx, userID)
+	roleCode, err := s.getUserRoleCode(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var rawPerms []Permission
+	if roleCode == string(SUPERADMIN) {
+		rawPerms, err = s.repo.GetPermissions(ctx)
+	} else {
+		rawPerms, err = s.repo.GetPermissionsByUserID(ctx, userID)
+	}
 	if err != nil {
 		return nil, err
 	}
 
 	result := make(ctxkey.PermissionSet)
-	codes := make([]string, 0, len(permissions))
-
-	for _, permission := range permissions {
-		result[permission.Code] = struct{}{}
-		codes = append(codes, permission.Code)
+	codes := make([]string, 0, len(rawPerms))
+	for _, p := range rawPerms {
+		result[p.Code] = struct{}{}
+		codes = append(codes, p.Code)
 	}
 
 	if payload, err := json.Marshal(codes); err == nil {
@@ -63,4 +70,20 @@ func (s *permissionService) GetUserPermissions(ctx context.Context, userID uuid.
 	}
 
 	return result, nil
+}
+
+func (s *permissionService) getUserRoleCode(ctx context.Context, userID uuid.UUID) (string, error) {
+	cacheKey := BuildUserRoleCacheKey(userID)
+
+	if cached, err := s.cache.Get(ctx, cacheKey); err == nil {
+		return cached, nil
+	}
+
+	code, err := s.repo.GetUserRoleCode(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+
+	_ = s.cache.Set(ctx, cacheKey, code, time.Hour)
+	return code, nil
 }

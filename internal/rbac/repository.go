@@ -16,6 +16,7 @@ type RBACRepository interface {
 	GetPermissionsByRoleID(ctx context.Context, roleID int64) ([]Permission, error)
 	GetPermissionsByUserID(ctx context.Context, userID uuid.UUID) ([]Permission, error)
 
+	GetUserRoleCode(ctx context.Context, userID uuid.UUID) (string, error)
 	SetRolePermissions(ctx context.Context, roleID int64, permissionIDs []int64) error
 	GetUserIDsByRoleID(ctx context.Context, roleID int64) ([]uuid.UUID, error)
 }
@@ -97,6 +98,23 @@ func (r *repository) GetPermissionsByUserID(ctx context.Context, userID uuid.UUI
 	}
 
 	return permissions, nil
+}
+
+func (r *repository) GetUserRoleCode(ctx context.Context, userID uuid.UUID) (string, error) {
+	var code string
+
+	const query = `
+		SELECT r.code
+		FROM users u
+		JOIN roles r ON r.id = u.role_id
+		WHERE u.id = $1
+	`
+
+	if err := r.db.GetContext(ctx, &code, query, userID); err != nil {
+		return "", err
+	}
+
+	return code, nil
 }
 
 func (r *repository) SetRolePermissions(ctx context.Context, roleID int64, permissionIDs []int64) error {

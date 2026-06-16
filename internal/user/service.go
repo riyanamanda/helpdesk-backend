@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"golang.org/x/crypto/bcrypt"
@@ -123,6 +124,8 @@ func (s *service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpd
 	}
 
 	InvalidateCache(ctx, s.cache)
+	rbac.InvalidateUserPermissionsCache(ctx, s.cache, userID)
+	rbac.InvalidateUserRoleCache(ctx, s.cache, userID)
 
 	return nil
 }
