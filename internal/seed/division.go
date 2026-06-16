@@ -9,7 +9,7 @@ func SeedDivision(db *sqlx.DB) (int64, error) {
 		ON CONFLICT DO NOTHING
 	`
 
-	result, err := db.Exec(query, "IT", "Rekam Medis", "Pharmachy", "IGD", "Physiology", "Laboratory", "Radiology")
+	result, err := db.Exec(query, "IT")
 	if err != nil {
 		return 0, err
 	}

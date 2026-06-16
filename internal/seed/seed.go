@@ -7,12 +7,6 @@ import (
 )
 
 func Run(db *sqlx.DB) error {
-	categoryInserted, err := SeedCategory(db)
-	if err != nil {
-		return err
-	}
-	slog.Info("seed categories finished", "inserted", categoryInserted)
-
 	divisionInserted, err := SeedDivision(db)
 	if err != nil {
 		return err

@@ -43,9 +43,6 @@ func SeedPermission(db *sqlx.DB) (int64, error) {
 		{"ticket:priority"},
 		{"ticket:resolution"},
 		{"ticket:close"},
-
-		// dashboard module
-		{"dashboard:view"},
 	}
 
 	const query = `
