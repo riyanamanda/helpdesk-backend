@@ -3,33 +3,26 @@ package seed
 import "github.com/jmoiron/sqlx"
 
 func SeedRolePermission(db *sqlx.DB) (int64, error) {
+	var superadminRoleID int64
+	if err := db.Get(&superadminRoleID, `SELECT id FROM roles WHERE code = 'SUPERADMIN'`); err != nil {
+		return 0, err
+	}
+
+	var permissionIds []int64
+	if err := db.Select(&permissionIds, `SELECT id FROM permissions`); err != nil {
+		return 0, err
+	}
+
 	var rolePermission []struct {
 		RoleID       int64
 		PermissionID int64
 	}
-
-	const queryPermission = `
-    SELECT id
-    FROM permissions
-`
-
-	var permissionIds []int64
-	err := db.Select(&permissionIds, queryPermission)
-	if err != nil {
-		return 0, err
-	}
-
-	type RolePermissionStruct struct {
-		RoleID       int64
-		PermissionID int64
-	}
-
 	for _, p := range permissionIds {
 		rolePermission = append(rolePermission, struct {
 			RoleID       int64
 			PermissionID int64
 		}{
-			RoleID:       1,
+			RoleID:       superadminRoleID,
 			PermissionID: p,
 		})
 	}
