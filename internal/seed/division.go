@@ -5,7 +5,7 @@ import "github.com/jmoiron/sqlx"
 func SeedDivision(db *sqlx.DB) (int64, error) {
 	const query = `
 		INSERT INTO divisions (name)
-		VALUES ($1), ($2), ($3), ($4), ($5), ($6), ($7)
+		VALUES ($1)
 		ON CONFLICT DO NOTHING
 	`
 
