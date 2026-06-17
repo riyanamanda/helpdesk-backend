@@ -30,6 +30,13 @@ func Load() *Config {
 			Password: getEnv("DB_PASSWORD", "postgres"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
+		IhsDatabase: Database{
+			Host:     getEnv("IHS_DB_HOST", "localhost"),
+			Port:     getEnv("IHS_DB_PORT", "3306"),
+			Name:     getEnv("IHS_DB_NAME", "kemkes-ihs"),
+			Username: getEnv("IHS_DB_USERNAME", "root"),
+			Password: getEnv("IHS_DB_PASSWORD", ""),
+		},
 		Auth: Auth{
 			JWTSecret:               getEnv("JWT_SECRET", "this-is-the-secret"),
 			JWTExp:                  getDurationEnv("JWT_EXP", 24*time.Hour),

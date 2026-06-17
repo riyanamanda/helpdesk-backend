@@ -28,6 +28,7 @@ import (
 
 type deps struct {
 	db                   *sqlx.DB
+	ihsDB                *sqlx.DB
 	storageService       storage.Storage
 	redisClient          *goredis.Client
 	cacheStore           cache.Cache
@@ -54,6 +55,10 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 		cleanup()
 		return nil, nil, fmt.Errorf("migrations: %w", err)
 	}
+
+	slog.Info("connecting to ihs database")
+	ihsDB := database.NewMySql(cfg.IhsDatabase.MySqlConnString())
+	closers = append(closers, func() { ihsDB.Close() })
 
 	slog.Info("connecting to minio")
 	minioClient, err := minio.NewMinioClient(
@@ -121,6 +126,7 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 
 	d := &deps{
 		db:                   db,
+		ihsDB:                ihsDB,
 		storageService:       storageService,
 		redisClient:          redisClient,
 		cacheStore:           cacheStore,

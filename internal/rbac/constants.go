@@ -47,4 +47,7 @@ const (
 	PermissionRBACCreate = "rbac:create"
 	PermissionRBACUpdate = "rbac:update"
 	PermissionRBACDelete = "rbac:delete"
+
+	PermissionIHSView   = "ihs:view"
+	PermissionIHSUpdate = "ihs:update"
 )

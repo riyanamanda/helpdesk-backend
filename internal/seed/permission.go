@@ -30,11 +30,13 @@ func SeedPermission(db *sqlx.DB) (int64, error) {
 		{"division:update"},
 		{"division:delete"},
 
+		// feedback module
 		{"feedback:view"},
 		{"feedback:create"},
 		{"feedback:update"},
 		{"feedback:delete"},
 
+		// ticket module
 		{"ticket:view"},
 		{"ticket:create"},
 		{"ticket:update"},
@@ -43,6 +45,10 @@ func SeedPermission(db *sqlx.DB) (int64, error) {
 		{"ticket:priority"},
 		{"ticket:resolution"},
 		{"ticket:close"},
+
+		// ihs module
+		{"ihs:view"},
+		{"ihs:update"},
 	}
 
 	const query = `

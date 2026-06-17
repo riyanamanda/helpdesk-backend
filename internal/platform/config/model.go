@@ -7,13 +7,14 @@ import (
 )
 
 type Config struct {
-	App      App
-	Database Database
-	Auth     Auth
-	Storage  Storage
-	Redis    Redis
-	Email    Email
-	RabbitMQ RabbitMQ
+	App         App
+	Database    Database
+	IhsDatabase Database
+	Auth        Auth
+	Storage     Storage
+	Redis       Redis
+	Email       Email
+	RabbitMQ    RabbitMQ
 }
 
 type App struct {
@@ -84,5 +85,16 @@ func (d Database) ConnString() string {
 		d.Password,
 		d.Name,
 		d.SSLMode,
+	)
+}
+
+func (d Database) MySqlConnString() string {
+	return fmt.Sprintf(
+		"%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4&loc=Local",
+		d.Username,
+		d.Password,
+		d.Host,
+		d.Port,
+		d.Name,
 	)
 }
