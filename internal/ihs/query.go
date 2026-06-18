@@ -9,7 +9,7 @@ const patientSelectBase = `
 	SELECT
 		ip.refId as norm,
 		p.NAMA as name,
-		ip.nik,
+		ip.nik as identity_number,
 		ip.httpRequest as http_request,
 		ip.getDate as get_date
 	FROM ` + "`kemkes-ihs`" + `.patient ip

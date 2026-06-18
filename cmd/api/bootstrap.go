@@ -56,9 +56,19 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 		return nil, nil, fmt.Errorf("migrations: %w", err)
 	}
 
-	slog.Info("connecting to ihs database")
-	ihsDB := database.NewMySql(cfg.IhsDatabase.MySqlConnString())
-	closers = append(closers, func() { ihsDB.Close() })
+	var ihsDB *sqlx.DB
+	if cfg.IhsDatabase.Host != "" {
+		slog.Info("connecting to ihs database")
+		var ihsErr error
+		ihsDB, ihsErr = database.NewMySql(cfg.IhsDatabase.MySqlConnString())
+		if ihsErr != nil {
+			slog.Warn("ihs database unavailable, ihs routes disabled", "error", ihsErr)
+		} else {
+			closers = append(closers, func() { ihsDB.Close() })
+		}
+	} else {
+		slog.Warn("ihs database not configured, ihs routes disabled")
+	}
 
 	slog.Info("connecting to minio")
 	minioClient, err := minio.NewMinioClient(

@@ -1,7 +1,6 @@
 package database
 
 import (
-	"log/slog"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -9,18 +8,17 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-func NewMySql(conn string) *sqlx.DB {
+func NewMySql(conn string) (*sqlx.DB, error) {
 	db, err := sqlx.Connect("mysql", conn)
 	if err != nil {
-		slog.Error("error connect to mysql", "error", err)
-		panic(err)
+		return nil, err
 	}
 
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(30 * time.Minute)
 
-	return db
+	return db, nil
 }
 
 func RunMySqlMigrations(db *sqlx.DB) error {
