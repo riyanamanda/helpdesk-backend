@@ -50,7 +50,9 @@ func registerRoutes(cfg *config.Config, d *deps) http.Handler {
 	notification.Register(protected, d.db)
 	user_device.Register(protected, d.db)
 	rbac.Register(protected, d.db, d.cacheStore)
-	ihs.Register(protected, d.ihsDB)
+	if d.ihsDB != nil {
+		ihs.Register(protected, d.ihsDB)
+	}
 
 	return e
 }

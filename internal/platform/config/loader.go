@@ -31,7 +31,7 @@ func Load() *Config {
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
 		IhsDatabase: Database{
-			Host:     getEnv("IHS_DB_HOST", "localhost"),
+			Host:     getEnv("IHS_DB_HOST", ""),
 			Port:     getEnv("IHS_DB_PORT", "3306"),
 			Name:     getEnv("IHS_DB_NAME", "kemkes-ihs"),
 			Username: getEnv("IHS_DB_USERNAME", "root"),

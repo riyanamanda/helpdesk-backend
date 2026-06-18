@@ -1,9 +1,16 @@
 package ihs
 
-import "context"
+import (
+	"context"
+	"errors"
+
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
+)
 
 type PatientService interface {
 	ListPatients(ctx context.Context, params *GetPatientParams) ([]PatientResponse, int64, error)
+	GetPatientByNORM(ctx context.Context, NORM string) (*PatientDetailResponse, error)
+	UpdatePatientMethodByNORM(ctx context.Context, NORM string) error
 }
 
 type service struct {
@@ -28,4 +35,28 @@ func (s *service) ListPatients(ctx context.Context, params *GetPatientParams) ([
 	}
 
 	return toPatientResponses(patients), total, nil
+}
+
+func (s *service) GetPatientByNORM(ctx context.Context, NORM string) (*PatientDetailResponse, error) {
+	patient, err := s.repo.GetPatientDetail(ctx, NORM)
+	if err != nil {
+		if errors.Is(err, ErrPatientNotFound) {
+			return nil, apperr.NotFound("patient")
+		}
+		return nil, err
+	}
+
+	result := toPatientDetailResponse(*patient)
+	return &result, nil
+}
+
+func (s *service) UpdatePatientMethodByNORM(ctx context.Context, NORM string) error {
+	if err := s.repo.UpdatePatientMethod(ctx, NORM); err != nil {
+		if errors.Is(err, ErrPatientNotFound) {
+			return apperr.NotFound("patient")
+		}
+		return err
+	}
+
+	return nil
 }
