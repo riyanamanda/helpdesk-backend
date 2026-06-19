@@ -49,6 +49,10 @@ func SeedPermission(db *sqlx.DB) (int64, error) {
 		// ihs module
 		{"ihs:view"},
 		{"ihs:update"},
+
+		// antrian module
+		{"antrian:view"},
+		{"antrian:checkin"},
 	}
 
 	const query = `

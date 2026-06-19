@@ -50,4 +50,7 @@ const (
 
 	PermissionIHSView   = "ihs:view"
 	PermissionIHSUpdate = "ihs:update"
+
+	PermissionAntrianView    = "antrian:view"
+	PermissionAntrianCheckIn = "antrian:checkin"
 )

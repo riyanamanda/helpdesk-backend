@@ -15,6 +15,13 @@ type Config struct {
 	Redis       Redis
 	Email       Email
 	RabbitMQ    RabbitMQ
+	Antrol      Antrol
+}
+
+type Antrol struct {
+	Domain   string
+	Username string
+	Password string
 }
 
 type App struct {

@@ -10,6 +10,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
 	"github.com/riyanamanda/helpdesk-backend/internal/feedback"
+	"github.com/riyanamanda/helpdesk-backend/internal/antrian"
 	"github.com/riyanamanda/helpdesk-backend/internal/ihs"
 	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
@@ -50,8 +51,9 @@ func registerRoutes(cfg *config.Config, d *deps) http.Handler {
 	notification.Register(protected, d.db)
 	user_device.Register(protected, d.db)
 	rbac.Register(protected, d.db, d.cacheStore)
-	if d.ihsDB != nil {
-		ihs.Register(protected, d.ihsDB)
+	if d.simgosDB != nil {
+		ihs.Register(protected, d.simgosDB)
+		antrian.Register(protected, d.simgosDB, cfg.Antrol)
 	}
 
 	return e

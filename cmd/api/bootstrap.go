@@ -28,7 +28,7 @@ import (
 
 type deps struct {
 	db                   *sqlx.DB
-	ihsDB                *sqlx.DB
+	simgosDB             *sqlx.DB
 	storageService       storage.Storage
 	redisClient          *goredis.Client
 	cacheStore           cache.Cache
@@ -56,18 +56,18 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 		return nil, nil, fmt.Errorf("migrations: %w", err)
 	}
 
-	var ihsDB *sqlx.DB
+	var simgosDB *sqlx.DB
 	if cfg.IhsDatabase.Host != "" {
-		slog.Info("connecting to ihs database")
-		var ihsErr error
-		ihsDB, ihsErr = database.NewMySql(cfg.IhsDatabase.MySqlConnString())
-		if ihsErr != nil {
-			slog.Warn("ihs database unavailable, ihs routes disabled", "error", ihsErr)
+		slog.Info("connecting to simgos database")
+		var simgosErr error
+		simgosDB, simgosErr = database.NewMySql(cfg.IhsDatabase.MySqlConnString())
+		if simgosErr != nil {
+			slog.Warn("simgos database unavailable, simgos routes disabled", "error", simgosErr)
 		} else {
-			closers = append(closers, func() { ihsDB.Close() })
+			closers = append(closers, func() { simgosDB.Close() })
 		}
 	} else {
-		slog.Warn("ihs database not configured, ihs routes disabled")
+		slog.Warn("simgos database not configured, simgos routes disabled")
 	}
 
 	slog.Info("connecting to minio")
@@ -136,7 +136,7 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 
 	d := &deps{
 		db:                   db,
-		ihsDB:                ihsDB,
+		simgosDB:             simgosDB,
 		storageService:       storageService,
 		redisClient:          redisClient,
 		cacheStore:           cacheStore,
