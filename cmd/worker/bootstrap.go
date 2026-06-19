@@ -35,26 +35,43 @@ func bootstrap(cfg *config.Config) (func(), error) {
 	}
 	closers = append(closers, func() { rmqConn.Close() })
 
-	consumeCh, err := rabbitmq.NewChannel(rmqConn, mailer.QueueNewTicketEmail)
+	ticketConsumeCh, err := rabbitmq.NewChannel(rmqConn, mailer.QueueNewTicketEmail)
 	if err != nil {
 		cleanup()
-		return nil, fmt.Errorf("rabbitmq consume channel: %w", err)
+		return nil, fmt.Errorf("rabbitmq ticket consume channel: %w", err)
 	}
-	if err := consumeCh.Qos(1, 0, false); err != nil {
+	if err := ticketConsumeCh.Qos(1, 0, false); err != nil {
 		cleanup()
-		return nil, fmt.Errorf("rabbitmq qos: %w", err)
+		return nil, fmt.Errorf("rabbitmq ticket qos: %w", err)
+	}
+
+	welcomeConsumeCh, err := rabbitmq.NewChannel(rmqConn, mailer.QueueWelcomeUserEmail)
+	if err != nil {
+		cleanup()
+		return nil, fmt.Errorf("rabbitmq welcome consume channel: %w", err)
+	}
+	if err := welcomeConsumeCh.Qos(1, 0, false); err != nil {
+		cleanup()
+		return nil, fmt.Errorf("rabbitmq welcome qos: %w", err)
 	}
 
 	mailerWorker := mailer.NewWorker(mailerSvc, userRepo)
-	consumer := mailer.NewConsumer(consumeCh, mailerWorker)
+	ticketConsumer := mailer.NewConsumer(ticketConsumeCh, mailer.QueueNewTicketEmail, mailerWorker)
+	welcomeConsumer := mailer.NewConsumer(welcomeConsumeCh, mailer.QueueWelcomeUserEmail, mailerWorker)
 
 	slog.Info("starting worker")
 	go func() {
-		if err := consumer.Start(context.Background()); err != nil {
-			slog.Error("consumer exited with error", "error", err)
+		if err := ticketConsumer.Start(context.Background()); err != nil {
+			slog.Error("ticket consumer exited with error", "error", err)
 		}
 	}()
-	closers = append(closers, consumer.Shutdown)
+	go func() {
+		if err := welcomeConsumer.Start(context.Background()); err != nil {
+			slog.Error("welcome consumer exited with error", "error", err)
+		}
+	}()
+	closers = append(closers, ticketConsumer.Shutdown)
+	closers = append(closers, welcomeConsumer.Shutdown)
 
 	return cleanup, nil
 }

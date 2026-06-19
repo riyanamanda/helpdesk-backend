@@ -25,17 +25,25 @@ type UserService interface {
 	ListAssignableUser(ctx context.Context) ([]UserBrief, error)
 }
 
+// WelcomeMailer avoids an import cycle: mailer/worker already imports user,
+// so user cannot import mailer. mailer.Notifier satisfies this via structural typing.
+type WelcomeMailer interface {
+	WelcomeUserEmail(ctx context.Context, name, email, password string)
+}
+
 type service struct {
 	repo          UserRepository
 	storageConfig config.Storage
 	cache         cache.Cache
+	mailer        WelcomeMailer
 }
 
-func NewUserService(repo UserRepository, storageConfig config.Storage, cache cache.Cache) UserService {
+func NewUserService(repo UserRepository, storageConfig config.Storage, cache cache.Cache, mailer WelcomeMailer) UserService {
 	return &service{
 		repo:          repo,
 		storageConfig: storageConfig,
 		cache:         cache,
+		mailer:        mailer,
 	}
 }
 
@@ -84,6 +92,8 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 	}
 
 	InvalidateCache(ctx, s.cache)
+
+	s.mailer.WelcomeUserEmail(ctx, req.Name, user.Email, req.Password)
 
 	return nil
 }

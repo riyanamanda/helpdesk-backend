@@ -115,7 +115,14 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 	}
 	closers = append(closers, func() { publishCh.Close() })
 
-	notifier := mailer.NewNotifier(publishCh)
+	welcomePublishCh, err := rabbitmq.NewChannel(rmqConn, mailer.QueueWelcomeUserEmail)
+	if err != nil {
+		cleanup()
+		return nil, nil, fmt.Errorf("rabbitmq welcome publish channel: %w", err)
+	}
+	closers = append(closers, func() { welcomePublishCh.Close() })
+
+	notifier := mailer.NewNotifier(publishCh, welcomePublishCh)
 
 	slog.Info("initializing fcm sender")
 	fcmSender, err := firebase.NewFCMSender(ctx, cfg.Auth.FirebaseProjectID, cfg.Auth.FirebaseCredentialsJSON)

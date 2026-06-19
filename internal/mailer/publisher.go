@@ -11,15 +11,16 @@ import (
 
 type Notifier interface {
 	NewTicketEmail(ctx context.Context, ticketID int64, title, description string, submitterID uuid.UUID)
+	WelcomeUserEmail(ctx context.Context, name, email, password string)
 }
 
 type notifier struct {
-	ch        *amqp.Channel
-	queueName string
+	ticketCh  *amqp.Channel
+	welcomeCh *amqp.Channel
 }
 
-func NewNotifier(ch *amqp.Channel) Notifier {
-	return &notifier{ch: ch, queueName: QueueNewTicketEmail}
+func NewNotifier(ticketCh *amqp.Channel, welcomeCh *amqp.Channel) Notifier {
+	return &notifier{ticketCh: ticketCh, welcomeCh: welcomeCh}
 }
 
 func (n *notifier) NewTicketEmail(ctx context.Context, ticketID int64, title, description string, submitterID uuid.UUID) {
@@ -34,14 +35,9 @@ func (n *notifier) NewTicketEmail(ctx context.Context, ticketID int64, title, de
 		return
 	}
 
-	// Publish to the default exchange ("").
-	// With the default exchange, the routing key IS the queue name —
-	// RabbitMQ delivers the message directly to the matching queue.
-	// DeliveryMode: amqp.Persistent writes the message to disk so it
-	// survives a broker restart (equivalent to asynq's default persistence).
-	if err := n.ch.PublishWithContext(ctx,
+	if err := n.ticketCh.PublishWithContext(ctx,
 		"",
-		n.queueName,
+		QueueNewTicketEmail,
 		false,
 		false,
 		amqp.Publishing{
@@ -51,5 +47,31 @@ func (n *notifier) NewTicketEmail(ctx context.Context, ticketID int64, title, de
 		},
 	); err != nil {
 		slog.ErrorContext(ctx, "mailer: publish message", "error", err)
+	}
+}
+
+func (n *notifier) WelcomeUserEmail(ctx context.Context, name, email, password string) {
+	payload, err := json.Marshal(welcomeUserPayload{
+		Name:     name,
+		Email:    email,
+		Password: password,
+	})
+	if err != nil {
+		slog.ErrorContext(ctx, "mailer: marshal welcome payload", "error", err)
+		return
+	}
+
+	if err := n.welcomeCh.PublishWithContext(ctx,
+		"",
+		QueueWelcomeUserEmail,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType:  "application/json",
+			DeliveryMode: amqp.Persistent,
+			Body:         payload,
+		},
+	); err != nil {
+		slog.ErrorContext(ctx, "mailer: publish welcome message", "error", err)
 	}
 }

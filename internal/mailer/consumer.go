@@ -8,29 +8,37 @@ import (
 )
 
 type Consumer struct {
-	ch     *amqp.Channel
-	worker *Worker
+	ch        *amqp.Channel
+	queueName string
+	worker    *Worker
 }
 
-func NewConsumer(ch *amqp.Channel, worker *Worker) *Consumer {
-	return &Consumer{ch: ch, worker: worker}
+func NewConsumer(ch *amqp.Channel, queueName string, worker *Worker) *Consumer {
+	return &Consumer{ch: ch, queueName: queueName, worker: worker}
 }
 
 func (c *Consumer) Start(ctx context.Context) error {
-	deliveries, err := c.ch.Consume(QueueNewTicketEmail, "", false, false, false, false, nil)
+	deliveries, err := c.ch.Consume(c.queueName, "", false, false, false, false, nil)
 	if err != nil {
 		return err
 	}
 
-	slog.Info("mailer consumer started", "queue", QueueNewTicketEmail)
+	slog.Info("mailer consumer started", "queue", c.queueName)
 
 	for d := range deliveries {
-		if err := c.worker.HandleNewTicketEmail(ctx, d); err != nil {
-			slog.ErrorContext(ctx, "mailer: handle delivery", "error", err)
+		var handleErr error
+		switch c.queueName {
+		case QueueNewTicketEmail:
+			handleErr = c.worker.HandleNewTicketEmail(ctx, d)
+		case QueueWelcomeUserEmail:
+			handleErr = c.worker.HandleWelcomeUserEmail(ctx, d)
+		}
+		if handleErr != nil {
+			slog.ErrorContext(ctx, "mailer: handle delivery", "queue", c.queueName, "error", handleErr)
 		}
 	}
 
-	slog.Info("mailer consumer stopped", "queue", QueueNewTicketEmail)
+	slog.Info("mailer consumer stopped", "queue", c.queueName)
 	return nil
 }
 

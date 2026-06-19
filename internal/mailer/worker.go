@@ -60,3 +60,21 @@ func (w *Worker) HandleNewTicketEmail(ctx context.Context, d amqp.Delivery) erro
 	_ = d.Ack(false)
 	return nil
 }
+
+func (w *Worker) HandleWelcomeUserEmail(ctx context.Context, d amqp.Delivery) error {
+	var p welcomeUserPayload
+	if err := json.Unmarshal(d.Body, &p); err != nil {
+		_ = d.Nack(false, false)
+		return fmt.Errorf("mailer: unmarshal welcome payload: %w", err)
+	}
+
+	msg := NewWelcomeUserMessage(p.Name, p.Email, p.Password)
+	if err := w.mailerSvc.Send(ctx, msg); err != nil {
+		slog.ErrorContext(ctx, "mailer: failed to send welcome email", "error", err)
+		_ = d.Nack(false, true)
+		return fmt.Errorf("mailer: send welcome: %w", err)
+	}
+
+	_ = d.Ack(false)
+	return nil
+}

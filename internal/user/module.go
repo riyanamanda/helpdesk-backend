@@ -8,8 +8,8 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-func Register(e *echo.Group, repo UserRepository, storageConfig config.Storage, cache cache.Cache) {
-	svc := NewUserService(repo, storageConfig, cache)
+func Register(e *echo.Group, repo UserRepository, storageConfig config.Storage, cache cache.Cache, mailer WelcomeMailer) {
+	svc := NewUserService(repo, storageConfig, cache, mailer)
 	handler := NewUserHandler(svc)
 
 	e.GET("/users", handler.ListUsers, middleware.RequirePermission(rbac.PermissionUserView))
