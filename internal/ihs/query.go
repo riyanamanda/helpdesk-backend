@@ -43,9 +43,9 @@ func buildPatientSort(params GetPatientParams) (string, string) {
 		col = "ip.getDate"
 	}
 
-	dir := "DESC"
-	if params.SortType == "ASC" {
-		dir = "ASC"
+	dir := "ASC"
+	if params.SortType == "DESC" {
+		dir = "DESC"
 	}
 
 	return col, dir
