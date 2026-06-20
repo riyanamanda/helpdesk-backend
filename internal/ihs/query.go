@@ -26,7 +26,7 @@ func buildPatientWhere(params GetPatientParams) (string, []any) {
 	if params.Search != "" {
 		like := "%" + params.Search + "%"
 		args = append(args, like, like)
-		where += " AND (p.NAMA LIKE ? OR ip.nik LIKE ?)"
+		where += " AND (ip.refId LIKE ? OR ip.nik LIKE ?)"
 	}
 
 	if params.HttpMethod != "" {
