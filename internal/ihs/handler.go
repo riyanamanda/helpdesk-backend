@@ -55,5 +55,8 @@ func (h *Handler) SendIhs(c *echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	return response.OK(c, result["0"])
+	for _, v := range result {
+		return response.OK(c, v)
+	}
+	return response.OK(c, nil)
 }
