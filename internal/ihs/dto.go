@@ -17,7 +17,7 @@ type PatientResponse struct {
 type PatientDetailResponse struct {
 	Norm          string               `json:"norm"`
 	Name          string               `json:"name"`
-	BirthPlace    string               `json:"birth_place"`
+	BirthPlace    *string              `json:"birth_place"`
 	BirthDate     string               `json:"birth_date"`
 	MaritalStatus string               `json:"marital_status"`
 	Citizenship   string               `json:"citizenship"`

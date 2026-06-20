@@ -62,7 +62,7 @@ func (r *repository) GetPatientDetail(ctx context.Context, NORM string) (*Patien
 		SELECT
 			p.NORM as norm,
 			p.NAMA as name,
-			p.TEMPAT_LAHIR as birth_place,
+			wil.DESKRIPSI as birth_place,
 			p.TANGGAL_LAHIR as birth_date,
 			p.JENIS_KELAMIN as gender,
 			k_ref.DESKRIPSI as marital_status,
@@ -79,6 +79,8 @@ func (r *repository) GetPatientDetail(ctx context.Context, NORM string) (*Patien
 		FROM master.pasien p
 		LEFT JOIN master.kartu_identitas_pasien ktp
 			ON ktp.NORM = p.NORM and ktp.JENIS = 1
+		LEFT JOIN master.wilayah wil
+			ON wil.id = p.TEMPAT_LAHIR
 		JOIN master.referensi w_ref
 			ON w_ref.id = p.KEWARGANEGARAAN and w_ref.JENIS = 177
 		JOIN master.referensi k_ref
