@@ -52,7 +52,7 @@ func registerRoutes(cfg *config.Config, d *deps) http.Handler {
 	user_device.Register(protected, d.db)
 	rbac.Register(protected, d.db, d.cacheStore)
 	if d.simgosDB != nil {
-		ihs.Register(protected, d.simgosDB)
+		ihs.Register(protected, d.simgosDB, cfg.IhsDatabase)
 		antrian.Register(protected, d.simgosDB, cfg.Antrol)
 	}
 

@@ -48,3 +48,12 @@ func (h *Handler) UpdatePatientMethod(c *echo.Context) error {
 
 	return response.NoContent(c)
 }
+
+func (h *Handler) SendIhs(c *echo.Context) error {
+	result, err := h.svc.SendIhs(c.Request().Context())
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.OK(c, result["0"])
+}

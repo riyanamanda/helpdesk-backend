@@ -11,15 +11,18 @@ type PatientService interface {
 	ListPatients(ctx context.Context, params *GetPatientParams) ([]PatientResponse, int64, error)
 	GetPatientByNORM(ctx context.Context, NORM string) (*PatientDetailResponse, error)
 	UpdatePatientMethodByNORM(ctx context.Context, NORM string) error
+	SendIhs(ctx context.Context) (map[string]any, error)
 }
 
 type service struct {
-	repo PatientRepository
+	repo   PatientRepository
+	simgos *simgosClient
 }
 
-func NewPatientService(repo PatientRepository) PatientService {
+func NewPatientService(repo PatientRepository, simgos *simgosClient) PatientService {
 	return &service{
-		repo: repo,
+		repo:   repo,
+		simgos: simgos,
 	}
 }
 
@@ -59,4 +62,8 @@ func (s *service) UpdatePatientMethodByNORM(ctx context.Context, NORM string) er
 	}
 
 	return nil
+}
+
+func (s *service) SendIhs(ctx context.Context) (map[string]any, error) {
+	return s.simgos.sendIhs(ctx)
 }
