@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
+	"github.com/riyanamanda/helpdesk-backend/internal/division"
 	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
 	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
@@ -30,23 +32,35 @@ type TicketService interface {
 	CloseTicket(ctx context.Context, ticketID int64) error
 }
 
-type service struct {
-	repo            TicketRepository
-	storage         storage.Storage
-	storageConfig   config.Storage
-	cache           cache.Cache
-	notifier        mailer.Notifier
-	notificationSvc notification.Notifier
+type categoryRepository interface {
+	GetByID(ctx context.Context, id int64) (*category.Category, error)
 }
 
-func NewTicketService(repo TicketRepository, store storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier, notificationSvc notification.Notifier) TicketService {
+type divisionRepository interface {
+	GetByID(ctx context.Context, id int64) (*division.Division, error)
+}
+
+type service struct {
+	repo               TicketRepository
+	storage            storage.Storage
+	storageConfig      config.Storage
+	cache              cache.Cache
+	notifier           mailer.Notifier
+	notificationSvc    notification.Notifier
+	categoryRepository categoryRepository
+	divisionRepository divisionRepository
+}
+
+func NewTicketService(repo TicketRepository, store storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier, notificationSvc notification.Notifier, cacategoryRepository categoryRepository, didivisionRepository divisionRepository) TicketService {
 	return &service{
-		repo:            repo,
-		storage:         store,
-		storageConfig:   storageConfig,
-		cache:           cache,
-		notifier:        notifier,
-		notificationSvc: notificationSvc,
+		repo:               repo,
+		storage:            store,
+		storageConfig:      storageConfig,
+		cache:              cache,
+		notifier:           notifier,
+		notificationSvc:    notificationSvc,
+		categoryRepository: cacategoryRepository,
+		divisionRepository: didivisionRepository,
 	}
 }
 
@@ -65,6 +79,14 @@ func (s *service) ListTickets(ctx context.Context, params *GetTicketParams) ([]T
 }
 
 func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, file *storage.File) error {
+	if _, err := s.categoryRepository.GetByID(ctx, req.CategoryID); err != nil {
+		return apperr.NotFound("category")
+	}
+
+	if _, err := s.divisionRepository.GetByID(ctx, req.DivisionID); err != nil {
+		return apperr.NotFound("division")
+	}
+
 	createdBy, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
@@ -154,6 +176,14 @@ func (s *service) UpdateTicket(ctx context.Context, ticketID int64, req TicketUp
 		return err
 	}
 
+	if _, err := s.categoryRepository.GetByID(ctx, req.CategoryID); err != nil {
+		return apperr.NotFound("category")
+	}
+
+	if _, err := s.divisionRepository.GetByID(ctx, req.DivisionID); err != nil {
+		return apperr.NotFound("division")
+	}
+
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
@@ -167,13 +197,19 @@ func (s *service) UpdateTicket(ctx context.Context, ticketID int64, req TicketUp
 		return apperr.BadRequest("only open tickets can be edited")
 	}
 
-	return s.repo.Update(ctx, ticketID, Ticket{
+	if err := s.repo.Update(ctx, ticketID, Ticket{
 		Title:       req.Title,
 		Description: req.Description,
 		CategoryID:  req.CategoryID,
 		DivisionID:  req.DivisionID,
 		CreatedBy:   userID,
-	})
+	}); err != nil {
+		return err
+	}
+
+	dashboard.InvalidateCache(ctx, s.cache)
+
+	return nil
 }
 
 func (s *service) DeleteTicket(ctx context.Context, ticketID int64) error {

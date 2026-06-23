@@ -3,6 +3,8 @@ package ticket
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
+	"github.com/riyanamanda/helpdesk-backend/internal/category"
+	"github.com/riyanamanda/helpdesk-backend/internal/division"
 	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
 	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
@@ -15,7 +17,10 @@ import (
 
 func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier, userRepo user.UserRepository, notificationNotifier notification.Notifier) {
 	repo := NewTicketRepository(db)
-	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier, notificationNotifier)
+	catRepo := category.NewCategoryRepository(db)
+	divRepo := division.NewDivisionRepository(db)
+
+	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier, notificationNotifier, catRepo, divRepo)
 	handler := NewTicketHandler(svc)
 
 	e.GET("/tickets", handler.ListTickets, middleware.RequirePermission(rbac.PermissionTicketView))
