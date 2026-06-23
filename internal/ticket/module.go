@@ -16,11 +16,14 @@ import (
 )
 
 func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier, userRepo user.UserRepository, notificationNotifier notification.Notifier) {
-	repo := NewTicketRepository(db)
 	catRepo := category.NewCategoryRepository(db)
-	divRepo := division.NewDivisionRepository(db)
+	catSvc := category.NewCategoryService(catRepo, cache)
 
-	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier, notificationNotifier, catRepo, divRepo)
+	divRepo := division.NewDivisionRepository(db)
+	divSvc := division.NewDivisionService(divRepo, cache)
+
+	repo := NewTicketRepository(db)
+	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier, notificationNotifier, catSvc, divSvc)
 	handler := NewTicketHandler(svc)
 
 	e.GET("/tickets", handler.ListTickets, middleware.RequirePermission(rbac.PermissionTicketView))

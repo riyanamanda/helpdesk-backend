@@ -32,35 +32,44 @@ type TicketService interface {
 	CloseTicket(ctx context.Context, ticketID int64) error
 }
 
-type categoryRepository interface {
-	GetByID(ctx context.Context, id int64) (*category.Category, error)
+type categorySvc interface {
+	GetCategory(ctx context.Context, id int64) (*category.CategoryResponse, error)
 }
 
-type divisionRepository interface {
-	GetByID(ctx context.Context, id int64) (*division.Division, error)
+type divisionSvc interface {
+	GetDivision(ctx context.Context, id int64) (*division.DivisionResponse, error)
 }
 
 type service struct {
-	repo               TicketRepository
-	storage            storage.Storage
-	storageConfig      config.Storage
-	cache              cache.Cache
-	notifier           mailer.Notifier
-	notificationSvc    notification.Notifier
-	categoryRepository categoryRepository
-	divisionRepository divisionRepository
+	repo            TicketRepository
+	storage         storage.Storage
+	storageConfig   config.Storage
+	cache           cache.Cache
+	notifier        mailer.Notifier
+	notificationSvc notification.Notifier
+	categorySvc     categorySvc
+	divisionSvc     divisionSvc
 }
 
-func NewTicketService(repo TicketRepository, store storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier, notificationSvc notification.Notifier, cacategoryRepository categoryRepository, didivisionRepository divisionRepository) TicketService {
+func NewTicketService(
+	repo TicketRepository,
+	store storage.Storage,
+	storageConfig config.Storage,
+	cache cache.Cache,
+	notifier mailer.Notifier,
+	notificationSvc notification.Notifier,
+	categorySvc categorySvc,
+	divisionSvc divisionSvc,
+) TicketService {
 	return &service{
-		repo:               repo,
-		storage:            store,
-		storageConfig:      storageConfig,
-		cache:              cache,
-		notifier:           notifier,
-		notificationSvc:    notificationSvc,
-		categoryRepository: cacategoryRepository,
-		divisionRepository: didivisionRepository,
+		repo:            repo,
+		storage:         store,
+		storageConfig:   storageConfig,
+		cache:           cache,
+		notifier:        notifier,
+		notificationSvc: notificationSvc,
+		categorySvc:     categorySvc,
+		divisionSvc:     divisionSvc,
 	}
 }
 
@@ -79,12 +88,12 @@ func (s *service) ListTickets(ctx context.Context, params *GetTicketParams) ([]T
 }
 
 func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, file *storage.File) error {
-	if _, err := s.categoryRepository.GetByID(ctx, req.CategoryID); err != nil {
-		return apperr.NotFound("category")
+	if _, err := s.categorySvc.GetCategory(ctx, req.CategoryID); err != nil {
+		return err
 	}
 
-	if _, err := s.divisionRepository.GetByID(ctx, req.DivisionID); err != nil {
-		return apperr.NotFound("division")
+	if _, err := s.divisionSvc.GetDivision(ctx, req.DivisionID); err != nil {
+		return err
 	}
 
 	createdBy, ok := ctxkey.GetUserIDFromContext(ctx)
@@ -176,12 +185,12 @@ func (s *service) UpdateTicket(ctx context.Context, ticketID int64, req TicketUp
 		return err
 	}
 
-	if _, err := s.categoryRepository.GetByID(ctx, req.CategoryID); err != nil {
-		return apperr.NotFound("category")
+	if _, err := s.categorySvc.GetCategory(ctx, req.CategoryID); err != nil {
+		return err
 	}
 
-	if _, err := s.divisionRepository.GetByID(ctx, req.DivisionID); err != nil {
-		return apperr.NotFound("division")
+	if _, err := s.divisionSvc.GetDivision(ctx, req.DivisionID); err != nil {
+		return err
 	}
 
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)

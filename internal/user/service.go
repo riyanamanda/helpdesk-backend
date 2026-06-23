@@ -25,8 +25,6 @@ type UserService interface {
 	ListAssignableUser(ctx context.Context) ([]UserBrief, error)
 }
 
-// WelcomeMailer avoids an import cycle: mailer/worker already imports user,
-// so user cannot import mailer. mailer.Notifier satisfies this via structural typing.
 type WelcomeMailer interface {
 	WelcomeUserEmail(ctx context.Context, name, email, password string)
 }
