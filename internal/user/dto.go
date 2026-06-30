@@ -24,7 +24,7 @@ type UserResponse struct {
 }
 
 type UserRole struct {
-	ID int64 `json:"id"`
+	ID   int64  `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -41,13 +41,13 @@ type UserBrief struct {
 type GetUserParams struct {
 	pagination.Params
 
-	IsActive *bool   `query:"is_active"`
-	Role     string  `query:"role"`
-	Division *int64  `query:"division"`
+	IsActive *bool  `query:"is_active"`
+	Role     string `query:"role"`
+	Division *int64 `query:"division"`
 }
 
 type UserCreateRequest struct {
-	Name     string `json:"name" validate:"required,min=3,max=20"`
+	Name     string `json:"name" validate:"required,min=3,max=50"`
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8"`
 	Role     int64  `json:"role" validate:"required,gt=0"`
@@ -56,7 +56,7 @@ type UserCreateRequest struct {
 }
 
 type UserUpdateRequest struct {
-	Name     string `json:"name" validate:"required,min=3,max=20"`
+	Name     string `json:"name" validate:"required,min=3,max=50"`
 	Email    string `json:"email" validate:"required,email"`
 	Role     int64  `json:"role" validate:"required,gt=0"`
 	Division int64  `json:"division" validate:"required,gt=0"`
