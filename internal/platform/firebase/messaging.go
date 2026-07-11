@@ -23,13 +23,14 @@ func (n *noopFCMSender) SendMulticast(_ context.Context, _ []string, _ map[strin
 	return nil
 }
 
-func NewFCMSender(ctx context.Context, projectID, credentialsJSON string) (FCMSender, error) {
-	var opts []option.ClientOption
-	if credentialsJSON != "" {
-		opts = append(opts, option.WithCredentialsJSON([]byte(credentialsJSON)))
-	}
-
-	app, err := firebase.NewApp(ctx, &firebase.Config{ProjectID: projectID}, opts...)
+func NewFCMSender(ctx context.Context, projectID, credentialsFile string) (FCMSender, error) {
+	app, err := firebase.NewApp(
+		ctx,
+		&firebase.Config{
+			ProjectID: projectID,
+		},
+		option.WithCredentialsFile(credentialsFile),
+	)
 	if err != nil {
 		return nil, err
 	}
