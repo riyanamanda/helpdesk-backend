@@ -31,11 +31,11 @@ func Load() *Config {
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
 		IhsDatabase: Database{
-			Host:     getEnv("SIMGOS_DB_HOST", ""),
-			Port:     getEnv("SIMGOS_DB_PORT", "3306"),
-			Name:     getEnv("SIMGOS_DB_NAME", "kemkes-ihs"),
-			Username: getEnv("SIMGOS_DB_USERNAME", "root"),
-			Password: getEnv("SIMGOS_DB_PASSWORD", ""),
+			Host:     getEnv("IHS_DB_HOST", ""),
+			Port:     getEnv("IHS_DB_PORT", "3306"),
+			Name:     getEnv("IHS_DB_NAME", "kemkes-ihs"),
+			Username: getEnv("IHS_DB_USERNAME", "root"),
+			Password: getEnv("IHS_DB_PASSWORD", ""),
 		},
 		Auth: Auth{
 			JWTSecret:               getEnv("JWT_SECRET", "this-is-the-secret"),
