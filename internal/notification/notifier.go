@@ -51,7 +51,18 @@ func (n *notifier) NewTicket(ctx context.Context, ticketID int64, submitterID uu
 		}
 
 		adminIDs, err := n.userRepo.GetIDsByRoleAndDivision(ctx, rbac.ADMIN, "IT")
-		if err != nil || len(adminIDs) == 0 {
+		if err != nil {
+			return
+		}
+		superAdminIDs, err := n.userRepo.GetIDsByRoleAndDivision(ctx, rbac.SUPERADMIN, "IT")
+		if err != nil {
+			return
+		}
+
+		recieverIDs := adminIDs
+		recieverIDs = append(recieverIDs, superAdminIDs...)
+
+		if len(recieverIDs) == 0 {
 			return
 		}
 
@@ -61,8 +72,8 @@ func (n *notifier) NewTicket(ctx context.Context, ticketID int64, submitterID uu
 			return
 		}
 
-		notifications := make([]Notification, len(adminIDs))
-		for i, id := range adminIDs {
+		notifications := make([]Notification, len(recieverIDs))
+		for i, id := range recieverIDs {
 			notifications[i] = Notification{
 				UserID:        id,
 				Type:          NewTicket,
@@ -77,7 +88,7 @@ func (n *notifier) NewTicket(ctx context.Context, ticketID int64, submitterID uu
 			return
 		}
 
-		tokens, err := n.deviceRepo.GetTokensByUserIDs(ctx, adminIDs)
+		tokens, err := n.deviceRepo.GetTokensByUserIDs(ctx, recieverIDs)
 		if err != nil {
 			slog.WarnContext(ctx, "fcm: failed to get tokens", "error", err)
 			return
