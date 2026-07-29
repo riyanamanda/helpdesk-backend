@@ -425,10 +425,6 @@ func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
-	if existing.CreatedByID != userID {
-		return apperr.Forbidden("you can only close your own tickets")
-	}
-
 	if err := s.repo.CloseTicket(ctx, ticketID, userID); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperr.NotFound("ticket")
