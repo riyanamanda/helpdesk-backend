@@ -22,10 +22,10 @@ func buildAntrianWhere(params GetAntrianParams) (string, []any) {
 	var args []any
 
 	if params.Norm != "" {
-		where += " AND r.STATUS IN (0, 1, 2, 99) AND r.NORM = ?"
+		where += " AND r.NORM = ?"
 		args = append(args, params.Norm)
 	} else {
-		where += " AND r.STATUS = 1"
+		where += " AND r.STATUS IN (0, 1, 99)"
 	}
 
 	return where, args

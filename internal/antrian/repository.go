@@ -36,10 +36,10 @@ func (r *repository) GetAntrian(ctx context.Context, params GetAntrianParams) ([
 	args = append(args, params.Limit, offset)
 
 	query := fmt.Sprintf(antrianSelectBase+`
-	%s
-	ORDER BY r.NO ASC
-	LIMIT ? OFFSET ?
-	`, where)
+		%s
+		ORDER BY r.STATUS DESC, r.NO ASC
+		LIMIT ? OFFSET ?
+		`, where)
 
 	if err := r.db.SelectContext(ctx, &antrian, query, args...); err != nil {
 		return nil, 0, err
