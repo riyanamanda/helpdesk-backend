@@ -7,11 +7,12 @@ import (
 )
 
 type PatientResponse struct {
-	Norm           string    `json:"norm"`
-	Name           string    `json:"name"`
-	IdentityNumber string    `json:"identity_number"`
-	HttpMethod     string    `json:"http_method"`
-	GetDate        time.Time `json:"get_date"`
+	Norm             string     `json:"norm"`
+	Name             string     `json:"name"`
+	IdentityNumber   string     `json:"identity_number"`
+	HttpMethod       string     `json:"http_method"`
+	GetDate          time.Time  `json:"get_date"`
+	LastRegistration *time.Time `json:"last_registration"`
 }
 
 type PatientDetailResponse struct {
@@ -39,6 +40,8 @@ type IdentityCardResponse struct {
 type GetPatientParams struct {
 	pagination.Params
 	HttpMethod string `query:"http_method"`
+	StartDate  string `query:"start_date"`
+	EndDate    string `query:"end_date"`
 }
 
 func (p *GetPatientParams) Normalize() {

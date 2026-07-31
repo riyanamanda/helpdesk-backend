@@ -10,7 +10,7 @@ import (
 )
 
 type PatientRepository interface {
-	GetPatients(ctx context.Context, params GetPatientParams) ([]Patient, int64, error)
+	GetPatients(ctx context.Context, params GetPatientParams) ([]PatientProjection, int64, error)
 	GetPatientDetail(ctx context.Context, NORM string) (*PatientDetailProjection, error)
 	UpdatePatientMethod(ctx context.Context, NORM string) error
 }
@@ -25,21 +25,24 @@ func NewPatientRepository(db *sqlx.DB) PatientRepository {
 	}
 }
 
-func (r *repository) GetPatients(ctx context.Context, params GetPatientParams) ([]Patient, int64, error) {
+func (r *repository) GetPatients(ctx context.Context, params GetPatientParams) ([]PatientProjection, int64, error) {
 	var (
-		patients []Patient
+		patients []PatientProjection
 		total    int64
 	)
 
-	where, args := buildPatientWhere(params)
+	where, whereArgs := buildPatientWhere(params)
 
 	queryTotal := fmt.Sprintf("SELECT COUNT(*) FROM `kemkes-ihs`.patient ip JOIN master.pasien p ON ip.refId = p.NORM %s", where)
-	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
+	if err := r.db.GetContext(ctx, &total, queryTotal, whereArgs...); err != nil {
 		return nil, 0, err
 	}
 
+	selectArgs := make([]any, len(whereArgs))
+	copy(selectArgs, whereArgs)
+
 	offset := (params.Page - 1) * params.Limit
-	args = append(args, params.Limit, offset)
+	selectArgs = append(selectArgs, params.Limit, offset)
 
 	col, dir := buildPatientSort(params)
 	query := fmt.Sprintf(patientSelectBase+`
@@ -48,7 +51,7 @@ func (r *repository) GetPatients(ctx context.Context, params GetPatientParams) (
 	LIMIT ? OFFSET ?
 	`, where, col, dir)
 
-	if err := r.db.SelectContext(ctx, &patients, query, args...); err != nil {
+	if err := r.db.SelectContext(ctx, &patients, query, selectArgs...); err != nil {
 		return nil, 0, err
 	}
 

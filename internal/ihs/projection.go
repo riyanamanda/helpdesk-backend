@@ -1,5 +1,16 @@
 package ihs
 
+import "time"
+
+type PatientProjection struct {
+	Norm             string     `db:"norm"`
+	Name             string     `db:"name"`
+	IdentityNumber   string     `db:"identity_number"`
+	HttpRequest      string     `db:"http_request"`
+	GetDate          time.Time  `db:"get_date"`
+	LastRegistration *time.Time `db:"last_registration"`
+}
+
 type PatientDetailProjection struct {
 	Norm           string  `db:"norm"`
 	Name           string  `db:"name"`
