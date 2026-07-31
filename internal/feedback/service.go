@@ -82,6 +82,10 @@ func (s *service) UpdateFeedbackStatus(ctx context.Context, id int64, req Update
 		return err
 	}
 
+	if existing.Status == Delivered || existing.Status == Rejected {
+		return apperr.BadRequest("status is delivered or rejected")
+	}
+
 	if err := s.repo.UpdateStatus(ctx, id, reviewerID, req.Status); err != nil {
 		if errors.Is(err, ErrFeedbackNotFound) {
 			return apperr.NotFound("feedback")
