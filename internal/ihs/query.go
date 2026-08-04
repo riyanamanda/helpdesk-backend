@@ -6,26 +6,37 @@ var allowedSortColumns = map[string]string{
 }
 
 const patientSelectBase = `
-    SELECT
-        ip.refId as norm,
-        p.NAMA as name,
-        ip.nik as identity_number,
-        ip.httpRequest as http_request,
-        ip.getDate as get_date,
-        (
-            SELECT pen.TANGGAL
-            FROM pendaftaran.pendaftaran pen
-            JOIN pendaftaran.kunjungan kun
-                ON kun.NOPEN = pen.NOMOR
-            WHERE pen.NORM = ip.refId
-              AND pen.STATUS = 2
-              AND kun.STATUS = 2
-            ORDER BY pen.TANGGAL DESC, pen.NOMOR DESC
-            LIMIT 1
-        ) as last_registration
-    FROM ` + "`kemkes-ihs`" + `.patient ip
-    JOIN master.pasien p
-        ON ip.refId = p.NORM
+	SELECT
+		ip.refId				AS norm,
+		p.NAMA					AS name,
+		ip.nik					AS identity_number,
+		ip.httpRequest			AS http_request,
+		pen_last.TANGGAL		AS last_registration,
+		pen_last.nama_ruangan	AS poly
+	FROM ` + "`kemkes-ihs`" + `.patient ip
+	JOIN master.pasien p
+		ON ip.refId = p.NORM
+	LEFT JOIN (
+		SELECT
+			pen.NORM,
+			pen.TANGGAL,
+			ru.DESKRIPSI AS nama_ruangan,
+			ROW_NUMBER() OVER (
+				PARTITION BY pen.NORM
+				ORDER BY pen.TANGGAL DESC, pen.NOMOR DESC
+			) AS rn
+		FROM pendaftaran.pendaftaran pen
+		JOIN pendaftaran.kunjungan kun
+			ON kun.NOPEN = pen.NOMOR
+		LEFT JOIN pendaftaran.tujuan_pasien tu
+			ON tu.NOPEN = kun.NOPEN
+		LEFT JOIN master.ruangan ru
+			ON ru.ID = tu.RUANGAN
+		WHERE pen.STATUS IN (1,2)
+		AND kun.STATUS IN (1,2)
+	) pen_last
+		ON pen_last.NORM = ip.refId
+	AND pen_last.rn = 1
 `
 
 func buildPatientWhere(params GetPatientParams) (string, []any) {
@@ -33,22 +44,6 @@ func buildPatientWhere(params GetPatientParams) (string, []any) {
 		where = "WHERE 1=1 AND ip.id IS NULL AND ip.statusRequest = 0"
 		args  []any
 	)
-
-	if params.StartDate != "" && params.EndDate != "" {
-		where += ` AND (
-			SELECT pen.TANGGAL
-			FROM pendaftaran.pendaftaran pen
-			JOIN pendaftaran.kunjungan kun
-				ON kun.NOPEN = pen.NOMOR
-			WHERE pen.NORM = ip.refId
-			  AND pen.STATUS = 2
-			  AND kun.STATUS = 2
-			ORDER BY pen.TANGGAL DESC, pen.NOMOR DESC
-			LIMIT 1
-		) BETWEEN ? AND ?`
-
-		args = append(args, params.StartDate, params.EndDate)
-	}
 
 	if params.Search != "" {
 		like := "%" + params.Search + "%"

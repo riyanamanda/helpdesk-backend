@@ -11,8 +11,8 @@ type PatientResponse struct {
 	Name             string     `json:"name"`
 	IdentityNumber   string     `json:"identity_number"`
 	HttpMethod       string     `json:"http_method"`
-	GetDate          time.Time  `json:"get_date"`
 	LastRegistration *time.Time `json:"last_registration"`
+	Poly             *string    `json:"poly"`
 }
 
 type PatientDetailResponse struct {
