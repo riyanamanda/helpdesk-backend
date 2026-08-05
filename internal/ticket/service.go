@@ -372,7 +372,7 @@ func (s *service) CreateResolution(ctx context.Context, ticketID int64, req Tick
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
-	if err = tx.UpdateResolution(ctx, ticketID, userID, req.Resolution); err != nil {
+	if err = tx.UpdateResolution(ctx, ticketID, req.ResolvedBy, req.Resolution); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperr.NotFound("ticket")
 		}

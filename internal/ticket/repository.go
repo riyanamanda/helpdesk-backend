@@ -26,7 +26,7 @@ type TicketRepository interface {
 type TicketTx interface {
 	Create(ctx context.Context, ticket Ticket) (int64, error)
 	CreateAttachment(ctx context.Context, attachment TicketAttachment) error
-	UpdateResolution(ctx context.Context, ticketID int64, userID uuid.UUID, resolution string) error
+	UpdateResolution(ctx context.Context, ticketID int64, resolveBy uuid.UUID, resolution string) error
 	DeleteAttachmentsByTicketID(ctx context.Context, ticketID int64) error
 	Delete(ctx context.Context, ticketID int64) error
 	Commit() error
@@ -87,7 +87,7 @@ func (t *txRepository) CreateAttachment(ctx context.Context, attachment TicketAt
 	return err
 }
 
-func (t *txRepository) UpdateResolution(ctx context.Context, ticketID int64, userID uuid.UUID, resolution string) error {
+func (t *txRepository) UpdateResolution(ctx context.Context, ticketID int64, resolveBy uuid.UUID, resolution string) error {
 	const query = `
 		UPDATE tickets
 		SET resolution = $3,
@@ -99,7 +99,7 @@ func (t *txRepository) UpdateResolution(ctx context.Context, ticketID int64, use
 		AND status not in ('RESOLVED','CLOSED')
 	`
 
-	result, err := t.tx.ExecContext(ctx, query, ticketID, userID, resolution)
+	result, err := t.tx.ExecContext(ctx, query, ticketID, resolveBy, resolution)
 	if err != nil {
 		return err
 	}

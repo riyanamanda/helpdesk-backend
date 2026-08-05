@@ -92,5 +92,6 @@ type TicketPriorityRequest struct {
 }
 
 type TicketResolutionRequest struct {
-	Resolution string `json:"resolution" form:"resolution" validate:"required,max=1000"`
+	ResolvedBy uuid.UUID `json:"resolved_by" validate:"required"`
+	Resolution string    `json:"resolution" form:"resolution" validate:"required,max=1000"`
 }
