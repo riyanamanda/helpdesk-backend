@@ -40,7 +40,7 @@ func (w *Worker) HandleNewTicketEmail(ctx context.Context, d amqp.Delivery) erro
 		submitterName = u.Name
 	}
 
-	adminEmails, err := w.userRepo.GetEmailsByRole(ctx, rbac.ADMIN)
+	adminEmails, err := w.userRepo.GetEmailsByRoles(ctx, rbac.ADMIN, rbac.SUPERADMIN)
 	if err != nil {
 		_ = d.Nack(false, true)
 		return fmt.Errorf("mailer: get admin emails: %w", err)

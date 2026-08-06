@@ -20,7 +20,7 @@ type UserRepository interface {
 	UpdateByID(ctx context.Context, id uuid.UUID, user User) error
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	AssignableUser(ctx context.Context) ([]AssignableUserProjection, error)
-	GetEmailsByRole(ctx context.Context, role rbac.RoleType) ([]string, error)
+	GetEmailsByRoles(ctx context.Context, roles ...rbac.RoleType) ([]string, error)
 	GetIDsByRoleAndDivision(ctx context.Context, role rbac.RoleType, divisionName string) ([]uuid.UUID, error)
 }
 
@@ -154,20 +154,21 @@ func (r *repository) UpdatePassword(ctx context.Context, id uuid.UUID, password 
 	return database.CheckRowsAffected(result, ErrUserNotFound)
 }
 
-func (r *repository) GetEmailsByRole(ctx context.Context, role rbac.RoleType) ([]string, error) {
+func (r *repository) GetEmailsByRoles(ctx context.Context, roles ...rbac.RoleType) ([]string, error) {
 	var emails []string
 
 	const query = `
 		SELECT u.email
 		FROM users u
 		JOIN roles r ON r.id = u.role_id
-		WHERE r.code = $1
+		WHERE r.code = ANY($1)
 		AND u.is_active = true
 	`
 
-	if err := r.db.SelectContext(ctx, &emails, query, role); err != nil {
+	if err := r.db.SelectContext(ctx, &emails, query, roles); err != nil {
 		return nil, err
 	}
+
 	return emails, nil
 }
 
