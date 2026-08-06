@@ -41,7 +41,7 @@ func Load() *Config {
 			JWTSecret:               getEnv("JWT_SECRET", "this-is-the-secret"),
 			JWTExp:                  getDurationEnv("JWT_EXP", 24*time.Hour),
 			FirebaseProjectID:       getEnv("FIREBASE_PROJECT_ID", ""),
-			FirebaseCredentialsJSON: getEnv("FIREBASE_CREDENTIALS_JSON", ""),
+			FirebaseCredentialsFile: getEnv("FIREBASE_CREDENTIALS_FILE", ""),
 		},
 		Storage: Storage{
 			Endpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),

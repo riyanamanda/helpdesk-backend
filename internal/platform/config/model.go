@@ -24,7 +24,6 @@ type Antrol struct {
 	Password string
 }
 
-
 type App struct {
 	Name        string
 	Host        string
@@ -45,7 +44,7 @@ type Auth struct {
 	JWTSecret               string
 	JWTExp                  time.Duration
 	FirebaseProjectID       string
-	FirebaseCredentialsJSON string
+	FirebaseCredentialsFile string
 }
 
 type Storage struct {

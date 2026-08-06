@@ -125,7 +125,7 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 	notifier := mailer.NewNotifier(publishCh, welcomePublishCh)
 
 	slog.Info("initializing fcm sender")
-	fcmSender, err := firebase.NewFCMSender(ctx, cfg.Auth.FirebaseProjectID, cfg.Auth.FirebaseCredentialsJSON)
+	fcmSender, err := firebase.NewFCMSender(ctx, cfg.Auth.FirebaseProjectID, cfg.Auth.FirebaseCredentialsFile)
 	if err != nil {
 		slog.Warn("fcm sender unavailable, push notifications disabled", "error", err)
 		fcmSender = firebase.NewNoopFCMSender()
