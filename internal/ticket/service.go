@@ -234,15 +234,6 @@ func (s *service) DeleteTicket(ctx context.Context, ticketID int64) error {
 		return apperr.BadRequest("only open tickets can be deleted")
 	}
 
-	userID, ok := ctxkey.GetUserIDFromContext(ctx)
-	if !ok {
-		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
-	}
-
-	if existing.CreatedByID != userID {
-		return apperr.Forbidden("you can only delete your own tickets")
-	}
-
 	attachments, err := s.repo.GetAttachmentsByTicketID(ctx, ticketID)
 	if err != nil {
 		return err

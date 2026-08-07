@@ -107,15 +107,6 @@ func (s *service) DeleteFeedback(ctx context.Context, id int64) error {
 		return err
 	}
 
-	userID, ok := ctxkey.GetUserIDFromContext(ctx)
-	if !ok {
-		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
-	}
-
-	if existing.CreatedByID != userID {
-		return apperr.Forbidden("you can only delete your own feedback")
-	}
-
 	if FeedbackStatus(existing.Status) != FeedbackStatusOpen {
 		return apperr.BadRequest("only open feedback can be deleted")
 	}
