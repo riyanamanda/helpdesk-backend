@@ -20,4 +20,5 @@ func Register(e *echo.Group, db *sqlx.DB, notificationNotifier notification.Noti
 	e.POST("/feedbacks", handler.CreateFeedback, middleware.RequirePermission(rbac.PermissionFeedbackCreate))
 	e.GET("/feedbacks/:id", handler.GetFeedback, middleware.RequirePermission(rbac.PermissionFeedbackView))
 	e.PATCH("/feedbacks/:id/status", handler.UpdateFeedbackStatus, middleware.RequirePermission(rbac.PermissionFeedbackUpdate))
+	e.DELETE("/feedbacks/:id", handler.DeleteFeedback, middleware.RequirePermission(rbac.PermissionFeedbackDelete))
 }

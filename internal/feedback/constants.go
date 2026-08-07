@@ -10,9 +10,9 @@ const (
 	Improvement    FeedbackType = "IMPROVEMENT"
 	BugReport      FeedbackType = "BUG_REPORT"
 
-	Open      FeedbackStatus = "OPEN"
-	InReview  FeedbackStatus = "IN_REVIEW"
-	Accepted  FeedbackStatus = "ACCEPTED"
-	Rejected  FeedbackStatus = "REJECTED"
-	Delivered FeedbackStatus = "DELIVERED"
+	FeedbackStatusOpen      FeedbackStatus = "OPEN"
+	FeedbackStatusInReview  FeedbackStatus = "IN_REVIEW"
+	FeedbackStatusAccepted  FeedbackStatus = "ACCEPTED"
+	FeedbackStatusRejected  FeedbackStatus = "REJECTED"
+	FeedbackStatusDelivered FeedbackStatus = "DELIVERED"
 )

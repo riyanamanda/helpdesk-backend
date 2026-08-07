@@ -94,3 +94,16 @@ func (h *Handler) UpdateFeedbackStatus(c *echo.Context) error {
 
 	return response.NoContent(c)
 }
+
+func (h *Handler) DeleteFeedback(c *echo.Context) error {
+	feedbackID, err := httputil.ParsePositiveInt64PathParam(c, "id", "feedback")
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	if err := h.svc.DeleteFeedback(c.Request().Context(), feedbackID); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.NoContent(c)
+}

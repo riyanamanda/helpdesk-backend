@@ -16,6 +16,7 @@ type FeedbackRepository interface {
 	GetByID(ctx context.Context, id int64) (*FeedbackProjection, error)
 	Create(ctx context.Context, feedback Feedback) error
 	UpdateStatus(ctx context.Context, id int64, reviewerID uuid.UUID, status FeedbackStatus) error
+	Delete(ctx context.Context, id int64) error
 }
 
 type repository struct {
@@ -93,6 +94,20 @@ func (r *repository) UpdateStatus(ctx context.Context, id int64, reviewerID uuid
 	`
 
 	result, err := r.db.ExecContext(ctx, query, id, reviewerID, status)
+	if err != nil {
+		return err
+	}
+
+	return database.CheckRowsAffected(result, ErrFeedbackNotFound)
+}
+
+func (r *repository) Delete(ctx context.Context, id int64) error {
+	const query = `
+		DELETE FROM feedbacks
+		WHERE id = $1
+	`
+
+	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
