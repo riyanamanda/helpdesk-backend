@@ -5,7 +5,7 @@ import "fmt"
 func NewWelcomeUserMessage(name, email, password string) Message {
 	return Message{
 		To:       email,
-		Subject:  "Welcome to IT Helpdesk — Your Account is Ready",
+		Subject:  "Selamat Datang di IT Helpdesk — Akun Anda Telah Aktif",
 		Body:     welcomeUserHTMLBody(name, email, password),
 		TextBody: welcomeUserTextBody(name, email, password),
 	}
@@ -13,92 +13,154 @@ func NewWelcomeUserMessage(name, email, password string) Message {
 
 func welcomeUserHTMLBody(name, email, password string) string {
 	return fmt.Sprintf(`<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="id" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="x-apple-disable-message-reformatting">
-  <title>Welcome to IT Helpdesk</title>
+  <title>Selamat Datang di IT Helpdesk</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f1f5f9;-webkit-text-size-adjust:100%%;-ms-text-size-adjust:100%%;">
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; -webkit-text-size-adjust: 100%%%%; -ms-text-size-adjust: 100%%%%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
 
-  <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f1f5f9">
+  <!-- Wrapper Outer -->
+  <table role="presentation" width="100%%%%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f6f8">
     <tr>
-      <td align="center" style="padding:48px 20px;">
+      <td align="center" style="padding: 40px 16px;">
 
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
-          style="max-width:600px;width:100%%;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.10);">
-
-          <!-- Header -->
+        <!-- Main Card Container -->
+        <table role="presentation" width="100%%%%" cellpadding="0" cellspacing="0" border="0" style="max-width: 580px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0;">
+          
+          <!-- Header Accent Strip -->
           <tr>
-            <td bgcolor="#0f172a" style="background-color:#0f172a;padding:40px 48px;text-align:center;">
-              <p style="margin:0;color:#475569;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">IT Helpdesk</p>
-              <h1 style="margin:12px 0 0;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:26px;font-weight:700;letter-spacing:-0.5px;line-height:1.3;">Welcome, %s!</h1>
-            </td>
+            <td height="4" bgcolor="#4f46e5" style="background-color: #4f46e5; font-size: 0; line-height: 0;">&nbsp;</td>
           </tr>
 
-          <!-- Accent bar -->
+          <!-- Header Body -->
           <tr>
-            <td bgcolor="#6366f1" style="background-color:#6366f1;height:4px;font-size:4px;line-height:4px;">&nbsp;</td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td bgcolor="#ffffff" style="background-color:#ffffff;padding:40px 48px 32px;">
-
-              <p style="margin:0 0 28px;color:#64748b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:1.7;">Your IT Helpdesk account has been created. Use the credentials below to sign in for the first time.</p>
-
-              <!-- Credentials -->
-              <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0">
+            <td style="padding: 32px 40px 24px 40px;">
+              <table role="presentation" width="100%%%%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td bgcolor="#f8fafc" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:24px 28px;">
-
-                    <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0">
+                  <td valign="middle">
+                    <!-- Brand Section dengan Logo SVG -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                       <tr>
-                        <td style="padding-bottom:16px;border-bottom:1px solid #e2e8f0;">
-                          <p style="margin:0;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;">Email</p>
-                          <p style="margin:6px 0 0;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:16px;font-weight:600;">%s</p>
+                        <td valign="middle" style="padding-right: 12px;">
+                          <img src="https://helpdesk.rs-erba.go.id/favicon-96x96.png" alt="Logo RS Ernaldi Bahar" width="40" height="40" style="display: block; border: 0; outline: none; text-decoration: none; width: 40px; height: 40px;">
                         </td>
-                      </tr>
-                      <tr>
-                        <td style="padding-top:16px;">
-                          <p style="margin:0;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;">Temporary Password</p>
-                          <p style="margin:6px 0 0;color:#6366f1;font-family:'Courier New',Courier,monospace;font-size:20px;font-weight:700;letter-spacing:2px;">%s</p>
+                        <td valign="middle">
+                          <p style="margin: 0; color: #4f46e5; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
+                            RS ERNALDI BAHAR
+                          </p>
+                          <h1 style="margin: 2px 0 0 0; color: #0f172a; font-size: 20px; font-weight: 700; line-height: 1.2;">
+                            IT Helpdesk Support
+                          </h1>
                         </td>
                       </tr>
                     </table>
-
+                  </td>
+                  <td align="right" valign="top">
+                    <!-- Status Badge -->
+                    <span style="display: inline-block; padding: 6px 12px; background-color: #dcfce7; color: #166534; font-size: 11px; font-weight: 700; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Akun Aktif
+                    </span>
                   </td>
                 </tr>
               </table>
+            </td>
+          </tr>
 
-              <!-- Spacer -->
-              <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0">
-                <tr><td style="height:28px;line-height:28px;">&nbsp;</td></tr>
-              </table>
+          <!-- Welcome Banner -->
+          <tr>
+            <td style="padding: 0 40px 24px 40px;">
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 24px;">
+                <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 700;">
+                  Selamat Datang, %s! 👋
+                </h2>
+                <p style="margin: 6px 0 0 0; color: #64748b; font-size: 14px; line-height: 1.5;">
+                  Akun IT Helpdesk Anda telah dibuat. Silakan gunakan kredensial di bawah ini untuk masuk ke dalam sistem pertama kali.
+                </p>
+              </div>
+            </td>
+          </tr>
 
-              <!-- Warning -->
-              <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0">
+          <!-- Credentials Box -->
+          <tr>
+            <td style="padding: 0 40px 24px 40px;">
+              <table role="presentation" width="100%%%%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 20px;">
+                <!-- Email -->
                 <tr>
-                  <td bgcolor="#fef9c3" style="background-color:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:16px 20px;">
-                    <p style="margin:0;color:#854d0e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">&#9888;&nbsp; Security Notice</p>
-                    <p style="margin:6px 0 0;color:#713f12;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:1.7;">Please <strong>change your password immediately</strong> after your first login. Do not share your credentials with anyone.</p>
+                  <td style="padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+                    <p style="margin: 0; color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Email Akun
+                    </p>
+                    <p style="margin: 4px 0 0 0; color: #0f172a; font-size: 15px; font-weight: 600;">
+                      %s
+                    </p>
+                  </td>
+                </tr>
+                <!-- Password -->
+                <tr>
+                  <td style="padding-top: 16px;">
+                    <p style="margin: 0; color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Kata Sandi Sementara
+                    </p>
+                    <div style="margin-top: 6px; display: inline-block; background-color: #f1f5f9; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 6px;">
+                      <span style="color: #4f46e5; font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: 700; letter-spacing: 1.5px;">
+                        %s
+                      </span>
+                    </div>
                   </td>
                 </tr>
               </table>
+            </td>
+          </tr>
 
+          <!-- Security Notice -->
+          <tr>
+            <td style="padding: 0 40px 28px 40px;">
+              <table role="presentation" width="100%%%%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fefce8; border: 1px solid #fef08a; border-radius: 8px; padding: 14px 18px;">
+                <tr>
+                  <td valign="top">
+                    <p style="margin: 0; color: #854d0e; font-size: 13px; font-weight: 700; line-height: 1.4;">
+                      ⚠️ Peringatan Keamanan
+                    </p>
+                    <p style="margin: 4px 0 0 0; color: #713f12; font-size: 13px; line-height: 1.5;">
+                      Demi keamanan akun, harap <strong>segera ubah kata sandi Anda</strong> setelah berhasil login pertama kali. Jangan berikan kredensial ini kepada siapa pun.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Call to Action Button -->
+          <tr>
+            <td style="padding: 0 40px 32px 40px;" align="center">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" bgcolor="#4f46e5" style="border-radius: 6px;">
+                    <a href="https://helpdesk.rs-erba.go.id/login" target="_blank" style="display: inline-block; padding: 12px 28px; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 6px; background-color: #4f46e5;">
+                      Login ke IT Helpdesk &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td bgcolor="#f8fafc" style="background-color:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 48px;text-align:center;">
-              <p style="margin:0;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:1.8;">This is an automated notification. Please do not reply to this email.<br>&copy; IT Helpdesk. Ernaldi Bahar Hospital. All rights reserved.</p>
+            <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px 40px; text-align: center;">
+              <p style="margin: 0; color: #64748b; font-size: 12px; line-height: 1.6;">
+                Email ini dikirim secara otomatis oleh sistem IT Helpdesk.<br>
+                <strong>RS Ernaldi Bahar</strong> &copy; All rights reserved.
+              </p>
             </td>
           </tr>
 
         </table>
+
       </td>
     </tr>
   </table>
@@ -109,17 +171,19 @@ func welcomeUserHTMLBody(name, email, password string) string {
 
 func welcomeUserTextBody(name, email, password string) string {
 	return fmt.Sprintf(
-		"WELCOME TO IT HELPDESK\n"+
-			"======================\n\n"+
-			"Hello %s,\n\n"+
-			"Your account has been created. Use the credentials below to sign in:\n\n"+
-			"Email             : %s\n"+
-			"Temporary Password: %s\n\n"+
-			"IMPORTANT: Please change your password immediately after your first login.\n"+
-			"Do not share your credentials with anyone.\n\n"+
+		"SELAMAT DATANG DI IT HELPDESK RS ERNALDI BAHAR\n"+
+			"===============================================\n\n"+
+			"Halo %s,\n\n"+
+			"Akun IT Helpdesk Anda telah aktif. Gunakan kredensial berikut untuk login pertama kali:\n\n"+
+			"Email                : %s\n"+
+			"Kata Sandi Sementara : %s\n\n"+
+			"PERINGATAN KEAMANAN:\n"+
+			"Harap segera ubah kata sandi Anda setelah berhasil login pertama kali.\n"+
+			"Jangan berikan kredensial ini kepada siapapun.\n\n"+
+			"Login sekarang: https://helpdesk.rs-erba.go.id/login\n\n"+
 			"---\n"+
-			"This is an automated notification from the Helpdesk system.\n"+
-			"Please do not reply to this email.",
+			"Email ini dikirim secara otomatis oleh sistem IT Helpdesk RS Ernaldi Bahar.\n"+
+			"Mohon tidak membalas email ini.",
 		name, email, password,
 	)
 }

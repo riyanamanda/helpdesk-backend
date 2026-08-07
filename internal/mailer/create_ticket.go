@@ -14,114 +14,183 @@ func NewTicketMessage(ticketID int64, title, description, submitterName string, 
 
 func newTicketHTMLBody(ticketID int64, title, description, submittedBy string) string {
 	return fmt.Sprintf(`<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="id" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="x-apple-disable-message-reformatting">
-  <title>New Support Ticket #%d</title>
+  <title>Tiket Dukungan Baru #%%d</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f1f5f9;-webkit-text-size-adjust:100%%;-ms-text-size-adjust:100%%;">
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; -webkit-text-size-adjust: 100%%%%; -ms-text-size-adjust: 100%%%%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
 
-  <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f1f5f9">
+  <!-- Wrapper Outer -->
+  <table role="presentation" width="100%%%%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f6f8">
     <tr>
-      <td align="center" style="padding:48px 20px;">
+      <td align="center" style="padding: 40px 16px;">
 
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
-          style="max-width:600px;width:100%%;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.10);">
-
-          <!-- Header -->
+        <!-- Main Card Container -->
+        <table role="presentation" width="100%%%%" cellpadding="0" cellspacing="0" border="0" style="max-width: 580px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0;">
+          
+          <!-- Header Accent Strip -->
           <tr>
-            <td bgcolor="#0f172a" style="background-color:#0f172a;padding:40px 48px;text-align:center;">
-              <p style="margin:0;color:#475569;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">IT Helpdesk</p>
-              <h1 style="margin:12px 0 0;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:26px;font-weight:700;letter-spacing:-0.5px;line-height:1.3;">New Ticket Submitted</h1>
+            <td height="4" bgcolor="#4f46e5" style="background-color: #4f46e5; font-size: 0; line-height: 0;">&nbsp;</td>
+          </tr>
+
+          <!-- Header Body -->
+          <tr>
+            <td style="padding: 32px 40px 24px 40px;">
+              <table role="presentation" width="100%%%%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td valign="middle">
+                    <!-- Brand Section dengan Logo SVG -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td valign="middle" style="padding-right: 12px;">
+                          <img src="https://helpdesk.rs-erba.go.id/favicon-96x96.png" alt="Logo RS Ernaldi Bahar" width="40" height="40" style="display: block; border: 0; outline: none; text-decoration: none; width: 40px; height: 40px;">
+                        </td>
+                        <td valign="middle">
+                          <p style="margin: 0; color: #4f46e5; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
+                            RS ERNALDI BAHAR
+                          </p>
+                          <h1 style="margin: 2px 0 0 0; color: #0f172a; font-size: 20px; font-weight: 700; line-height: 1.2;">
+                            IT Helpdesk Support
+                          </h1>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td align="right" valign="top">
+                    <!-- Status Badge -->
+                    <span style="display: inline-block; padding: 6px 12px; background-color: #fef3c7; color: #92400e; font-size: 11px; font-weight: 700; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Perlu Review
+                    </span>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
-          <!-- Accent bar -->
+          <!-- Hero Ticket Box -->
           <tr>
-            <td bgcolor="#6366f1" style="background-color:#6366f1;height:4px;font-size:4px;line-height:4px;">&nbsp;</td>
+            <td style="padding: 0 40px 24px 40px;">
+              <table role="presentation" width="100%%%%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 20px;">
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                      Nomor Referensi Tiket
+                    </p>
+                    <p style="margin: 4px 0 0 0; color: #4f46e5; font-size: 32px; font-weight: 800; letter-spacing: -0.5px; line-height: 1;">
+                      #%d
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
           </tr>
 
-          <!-- Body -->
+          <!-- Divider -->
           <tr>
-            <td bgcolor="#ffffff" style="background-color:#ffffff;padding:40px 48px 32px;">
+            <td style="padding: 0 40px;">
+              <div style="border-top: 1px solid #f1f5f9; height: 1px;"></div>
+            </td>
+          </tr>
 
-              <p style="margin:0 0 32px;color:#64748b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:1.7;">A new support ticket has been submitted and is waiting for your review.</p>
-
-              <!-- Ticket ID badge -->
-              <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0">
+          <!-- Details Content -->
+          <tr>
+            <td style="padding: 24px 40px;">
+              <table role="presentation" width="100%%%%" cellpadding="0" cellspacing="0" border="0">
+                
+                <!-- Submitter -->
                 <tr>
-                  <td bgcolor="#f8fafc" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px 24px;margin-bottom:28px;">
-                    <p style="margin:0;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;">Ticket Reference</p>
-                    <p style="margin:6px 0 0;color:#6366f1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:36px;font-weight:800;letter-spacing:-1px;line-height:1;">#%d</p>
+                  <td valign="top" style="padding-bottom: 20px;">
+                    <p style="margin: 0; color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Pelapor / Pengirim
+                    </p>
+                    <p style="margin: 4px 0 0 0; color: #0f172a; font-size: 14px; font-weight: 600;">
+                      %s
+                    </p>
                   </td>
                 </tr>
+
+                <!-- Subject/Title -->
+                <tr>
+                  <td valign="top" style="padding-bottom: 20px;">
+                    <p style="margin: 0; color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Judul Kendala
+                    </p>
+                    <p style="margin: 4px 0 0 0; color: #0f172a; font-size: 15px; font-weight: 600; line-height: 1.4;">
+                      %s
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Description Box -->
+                <tr>
+                  <td valign="top">
+                    <p style="margin: 0; color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Deskripsi Masalah
+                    </p>
+                    <div style="margin-top: 8px; background-color: #f8fafc; border-left: 3px solid #4f46e5; border-radius: 0 6px 6px 0; padding: 12px 16px;">
+                      <p style="margin: 0; color: #334155; font-size: 14px; line-height: 1.6; white-space: pre-line;">
+                        %s
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+
               </table>
+            </td>
+          </tr>
 
-              <!-- Spacer -->
-              <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0">
-                <tr><td style="height:28px;line-height:28px;">&nbsp;</td></tr>
-              </table>
-
-              <!-- Details -->
-              <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0">
-
+          <!-- Call to Action Button -->
+          <tr>
+            <td style="padding: 8px 40px 32px 40px;" align="center">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="padding:16px 0;border-bottom:1px solid #f1f5f9;">
-                    <p style="margin:0;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Title</p>
-                    <p style="margin:6px 0 0;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;font-weight:600;line-height:1.5;">%s</p>
+                  <td align="center" bgcolor="#4f46e5" style="border-radius: 6px;">
+                    <a href="https://helpdesk.rs-erba.go.id" target="_blank" style="display: inline-block; padding: 12px 28px; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 6px; background-color: #4f46e5;">
+                      Buka Helpdesk Dashboard &rarr;
+                    </a>
                   </td>
                 </tr>
-
-                <tr>
-                  <td style="padding:16px 0;border-bottom:1px solid #f1f5f9;">
-                    <p style="margin:0;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Description</p>
-                    <p style="margin:6px 0 0;color:#475569;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:1.7;">%s</p>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td style="padding:16px 0;">
-                    <p style="margin:0;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Submitted By</p>
-                    <p style="margin:6px 0 0;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;font-weight:600;">%s</p>
-                  </td>
-                </tr>
-
               </table>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td bgcolor="#f8fafc" style="background-color:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 48px;text-align:center;">
-              <p style="margin:0;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:1.8;">This is an automated notification. Please do not reply to this email.<br>&copy; IT Helpdesk. Ernaldi Bahar Hospital. All rights reserved.</p>
+            <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px 40px; text-align: center;">
+              <p style="margin: 0; color: #64748b; font-size: 12px; line-height: 1.6;">
+                Email ini dikirim secara otomatis oleh sistem IT Helpdesk.<br>
+                <strong>RS Ernaldi Bahar</strong> &copy; All rights reserved.
+              </p>
             </td>
           </tr>
 
         </table>
+
       </td>
     </tr>
   </table>
 
 </body>
-</html>`, ticketID, ticketID, title, description, submittedBy)
+</html>`, ticketID, submittedBy, title, description)
 }
 
 func newTicketTextBody(ticketID int64, title, description, submittedBy string) string {
 	return fmt.Sprintf(
-		"NEW TICKET SUBMITTED\n"+
-			"====================\n\n"+
-			"Ticket Reference : #%d\n"+
-			"Title            : %s\n"+
-			"Submitted By     : %s\n\n"+
-			"Description\n"+
-			"-----------\n"+
+		"PEMBERITAHUAN TIKET BARU\n"+
+			"========================\n\n"+
+			"Nomor Referensi : #%d\n"+
+			"Pelapor         : %s\n"+
+			"Judul           : %s\n\n"+
+			"Deskripsi Masalah\n"+
+			"-----------------\n"+
 			"%s\n\n"+
 			"---\n"+
-			"This is an automated notification from the Helpdesk system.\n"+
-			"Please do not reply to this email.",
-		ticketID, title, submittedBy, description,
+			"Email ini dikirim secara otomatis oleh sistem IT Helpdesk RS Ernaldi Bahar.\n"+
+			"Mohon tidak membalas email ini.",
+		ticketID, submittedBy, title, description,
 	)
 }
