@@ -51,7 +51,10 @@ func buildTicketWhere(params GetTicketParams) (string, []any) {
 		args  []any
 	)
 
-	if params.Status != "" {
+	if params.Status == "" {
+		args = append(args, StatusClosed)
+		where += fmt.Sprintf(" AND t.status <> $%d", len(args))
+	} else {
 		args = append(args, params.Status)
 		where += fmt.Sprintf(" AND t.status = $%d", len(args))
 	}
