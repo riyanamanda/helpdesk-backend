@@ -29,15 +29,6 @@ func (h *Handler) GetSummary(c *echo.Context) error {
 	return response.OK(c, summary)
 }
 
-func (h *Handler) GetRecentTickets(c *echo.Context) error {
-	tickets, err := h.svc.GetRecentTickets(c.Request().Context())
-	if err != nil {
-		return response.Error(c, err)
-	}
-
-	return response.OK(c, tickets)
-}
-
 func (h *Handler) GetMonthlyTrend(c *echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)

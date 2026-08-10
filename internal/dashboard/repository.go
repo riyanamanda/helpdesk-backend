@@ -8,7 +8,6 @@ import (
 
 type DashboardRepository interface {
 	GetSummary(ctx context.Context) (SummaryProjection, error)
-	GetRecentTickets(ctx context.Context) ([]RecentTicketProjection, error)
 	GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendProjection, error)
 	GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsProjection, error)
 	GetAgentWorkload(ctx context.Context) ([]AgentWorkloadProjection, error)
@@ -34,8 +33,7 @@ func (r *repository) GetSummary(ctx context.Context) (SummaryProjection, error) 
 			COUNT(*) FILTER (WHERE status = 'RESOLVED')                                               AS resolved,
 			COUNT(*) FILTER (WHERE status = 'CLOSED')                                                 AS closed,
 			COUNT(*)                                                                                   AS total,
-			COUNT(*) FILTER (WHERE status = 'OPEN' AND assigned_to IS NULL)                           AS unassigned,
-			COUNT(*) FILTER (WHERE status = 'IN_PROGRESS' AND updated_at < NOW() - INTERVAL '3 days') AS stale
+			COUNT(*) FILTER (WHERE status = 'OPEN' AND assigned_to IS NULL)                           AS unassigned
 		FROM tickets
 	`
 
@@ -61,33 +59,6 @@ func (r *repository) GetSummary(ctx context.Context) (SummaryProjection, error) 
 		Status:   statusRow,
 		Priority: priorityRow,
 	}, nil
-}
-
-func (r *repository) GetRecentTickets(ctx context.Context) ([]RecentTicketProjection, error) {
-	var tickets []RecentTicketProjection
-
-	const query = `
-		SELECT
-			t.id,
-			t.title,
-			t.status,
-			t.priority,
-			u.name   AS created_by_name,
-			uat.name AS assigned_to_name,
-			t.created_at
-		FROM tickets t
-		JOIN  users u   ON u.id  = t.created_by
-		LEFT JOIN users uat ON uat.id = t.assigned_to
-		WHERE t.status IN ('OPEN', 'IN_PROGRESS')
-		ORDER BY t.created_at DESC
-		LIMIT 5
-	`
-
-	if err := r.db.SelectContext(ctx, &tickets, query); err != nil {
-		return nil, err
-	}
-
-	return tickets, nil
 }
 
 func (r *repository) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendProjection, error) {

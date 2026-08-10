@@ -6,7 +6,6 @@ type TicketStatusStats struct {
 	Closed     int64 `json:"closed"`
 	Total      int64 `json:"total"`
 	Unassigned int64 `json:"unassigned"`
-	Stale      int64 `json:"stale"`
 }
 
 type TicketPriorityStats struct {

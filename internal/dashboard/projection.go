@@ -13,7 +13,6 @@ type StatusStatsProjection struct {
 	Closed     int64 `db:"closed"`
 	Total      int64 `db:"total"`
 	Unassigned int64 `db:"unassigned"`
-	Stale      int64 `db:"stale"`
 }
 
 type PriorityStatsProjection struct {

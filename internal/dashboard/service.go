@@ -11,7 +11,6 @@ import (
 
 type DashboardService interface {
 	GetSummary(ctx context.Context) (*SummaryResponse, error)
-	GetRecentTickets(ctx context.Context) ([]RecentTicketResponse, error)
 	GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendResponse, error)
 	GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsResponse, error)
 	GetAgentWorkload(ctx context.Context) ([]AgentWorkloadResponse, error)
@@ -50,29 +49,6 @@ func (s *service) GetSummary(ctx context.Context) (*SummaryResponse, error) {
 	}
 
 	return &summary, nil
-}
-
-func (s *service) GetRecentTickets(ctx context.Context) ([]RecentTicketResponse, error) {
-	cached, err := s.cache.Get(ctx, RecentTicketsCacheKey)
-	if err == nil {
-		var tickets []RecentTicketResponse
-		if err := json.Unmarshal([]byte(cached), &tickets); err == nil {
-			return tickets, nil
-		}
-	}
-
-	recentTickets, err := s.repo.GetRecentTickets(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	tickets := toRecentTickets(recentTickets)
-
-	if data, err := json.Marshal(tickets); err == nil {
-		_ = s.cache.Set(ctx, RecentTicketsCacheKey, string(data), 30*time.Second)
-	}
-
-	return tickets, nil
 }
 
 func (s *service) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendResponse, error) {
