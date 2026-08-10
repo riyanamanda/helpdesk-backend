@@ -21,9 +21,9 @@ type UserProjection struct {
 	DivisionName  string     `db:"division_name"`
 	IsActive      bool       `db:"is_active"`
 	CreatedByID   *uuid.UUID `db:"created_by_id"`
-	CreatedByName *string        `db:"created_by_name"`
-	CreatedAt     time.Time      `db:"created_at"`
-	UpdatedAt     time.Time      `db:"updated_at"`
+	CreatedByName *string    `db:"created_by_name"`
+	CreatedAt     time.Time  `db:"created_at"`
+	UpdatedAt     time.Time  `db:"updated_at"`
 }
 
 type AssignableUserProjection struct {

@@ -45,12 +45,18 @@ func (w *Worker) HandleNewTicketEmail(ctx context.Context, d amqp.Delivery) erro
 		_ = d.Nack(false, true)
 		return fmt.Errorf("mailer: get admin emails: %w", err)
 	}
+
 	if len(adminEmails) == 0 {
 		_ = d.Ack(false)
 		return nil
 	}
 
-	msg := NewTicketMessage(p.TicketID, p.Title, p.Description, submitterName, adminEmails)
+	msg, err := NewTicketMessage(p.TicketID, p.Title, p.Description, submitterName, adminEmails)
+	if err != nil {
+		_ = d.Nack(false, false)
+		return fmt.Errorf("mailer: create ticket message: %w", err)
+	}
+
 	if err := w.mailerSvc.Send(ctx, msg); err != nil {
 		slog.ErrorContext(ctx, "mailer: failed to send email", "error", err)
 		_ = d.Nack(false, true)
@@ -68,7 +74,12 @@ func (w *Worker) HandleWelcomeUserEmail(ctx context.Context, d amqp.Delivery) er
 		return fmt.Errorf("mailer: unmarshal welcome payload: %w", err)
 	}
 
-	msg := NewWelcomeUserMessage(p.Name, p.Email, p.Password)
+	msg, err := NewWelcomeUserMessage(p.Name, p.Email, p.Password)
+	if err != nil {
+		_ = d.Nack(false, false)
+		return fmt.Errorf("mailer: create welcome message: %w", err)
+	}
+
 	if err := w.mailerSvc.Send(ctx, msg); err != nil {
 		slog.ErrorContext(ctx, "mailer: failed to send welcome email", "error", err)
 		_ = d.Nack(false, true)
