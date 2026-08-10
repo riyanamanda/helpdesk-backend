@@ -34,6 +34,7 @@ func (r *repository) GetAll(ctx context.Context, userID uuid.UUID) ([]Notificati
 			id, user_id, type, reference_type, reference_id, metadata, is_read, read_at, created_at
 		FROM notifications
 		WHERE user_id = $1
+			AND is_read = false
 		ORDER BY created_at DESC
 		LIMIT 10
 	`
