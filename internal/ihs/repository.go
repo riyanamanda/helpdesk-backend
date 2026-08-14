@@ -44,12 +44,12 @@ func (r *repository) GetPatients(ctx context.Context, params GetPatientParams) (
 	offset := (params.Page - 1) * params.Limit
 	selectArgs = append(selectArgs, params.Limit, offset)
 
-	col, dir := buildPatientSort(params)
+	orderBy := buildPatientSort(params)
 	query := fmt.Sprintf(patientSelectBase+`
 	%s
-	ORDER BY %s %s
+	ORDER BY %s
 	LIMIT ? OFFSET ?
-	`, where, col, dir)
+	`, where, orderBy)
 
 	if err := r.db.SelectContext(ctx, &patients, query, selectArgs...); err != nil {
 		return nil, 0, err

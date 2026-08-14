@@ -1,8 +1,11 @@
 package ihs
 
+import "fmt"
+
 var allowedSortColumns = map[string]string{
-	"http_method": "ip.httpRequest",
-	"get_date":    "ip.getDate",
+	"http_method":       "ip.httpRequest",
+	"get_date":          "ip.getDate",
+	"last_registration": "pen_last.TANGGAL",
 }
 
 const patientSelectBase = `
@@ -56,19 +59,29 @@ func buildPatientWhere(params GetPatientParams) (string, []any) {
 		where += " AND ip.httpRequest = ?"
 	}
 
+	if params.StartDate != "" {
+		args = append(args, params.StartDate)
+		where += " AND pen_last.TANGGAL >= ?"
+	}
+
+	if params.EndDate != "" {
+		args = append(args, params.EndDate)
+		where += " AND pen_last.TANGGAL <= ?"
+	}
+
 	return where, args
 }
 
-func buildPatientSort(params GetPatientParams) (string, string) {
+func buildPatientSort(params GetPatientParams) string {
 	col, ok := allowedSortColumns[params.SortBy]
 	if !ok {
-		col = "ip.getDate"
+		col = "pen_last.TANGGAL"
 	}
 
-	dir := "ASC"
-	if params.SortType == "DESC" {
-		dir = "DESC"
+	dir := "DESC"
+	if params.SortType == "ASC" {
+		dir = "ASC"
 	}
 
-	return col, dir
+	return fmt.Sprintf("%s %s, (ip.httpRequest = 'GET') DESC", col, dir)
 }
