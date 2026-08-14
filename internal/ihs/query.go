@@ -8,14 +8,7 @@ var allowedSortColumns = map[string]string{
 	"last_registration": "pen_last.TANGGAL",
 }
 
-const patientSelectBase = `
-	SELECT
-		ip.refId				AS norm,
-		p.NAMA					AS name,
-		ip.nik					AS identity_number,
-		ip.httpRequest			AS http_request,
-		pen_last.TANGGAL		AS last_registration,
-		pen_last.nama_ruangan	AS poly
+const patientFromBase = `
 	FROM ` + "`kemkes-ihs`" + `.patient ip
 	JOIN master.pasien p
 		ON ip.refId = p.NORM
@@ -41,6 +34,16 @@ const patientSelectBase = `
 		ON pen_last.NORM = ip.refId
 	AND pen_last.rn = 1
 `
+
+const patientSelectBase = `
+	SELECT
+		ip.refId				AS norm,
+		p.NAMA					AS name,
+		ip.nik					AS identity_number,
+		ip.httpRequest			AS http_request,
+		pen_last.TANGGAL		AS last_registration,
+		pen_last.nama_ruangan	AS poly
+` + patientFromBase
 
 func buildPatientWhere(params GetPatientParams) (string, []any) {
 	var (

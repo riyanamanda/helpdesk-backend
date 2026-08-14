@@ -33,7 +33,7 @@ func (r *repository) GetPatients(ctx context.Context, params GetPatientParams) (
 
 	where, whereArgs := buildPatientWhere(params)
 
-	queryTotal := fmt.Sprintf("SELECT COUNT(*) FROM `kemkes-ihs`.patient ip JOIN master.pasien p ON ip.refId = p.NORM %s", where)
+	queryTotal := fmt.Sprintf("SELECT COUNT(*) "+patientFromBase+" %s", where)
 	if err := r.db.GetContext(ctx, &total, queryTotal, whereArgs...); err != nil {
 		return nil, 0, err
 	}
