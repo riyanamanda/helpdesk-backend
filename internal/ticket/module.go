@@ -13,9 +13,10 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
+	"github.com/riyanamanda/helpdesk-backend/internal/websocket"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier, userRepo user.UserRepository, notificationNotifier notification.Notifier) {
+func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier, userRepo user.UserRepository, notificationNotifier notification.Notifier, publisher websocket.Publisher) {
 	catRepo := category.NewCategoryRepository(db)
 	catSvc := category.NewCategoryService(catRepo, cache)
 
@@ -23,7 +24,7 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storag
 	divSvc := division.NewDivisionService(divRepo, cache)
 
 	repo := NewTicketRepository(db)
-	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier, notificationNotifier, catSvc, divSvc)
+	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier, notificationNotifier, catSvc, divSvc, publisher)
 	handler := NewTicketHandler(svc)
 
 	e.GET("/tickets", handler.ListTickets, middleware.RequirePermission(rbac.PermissionTicketView))

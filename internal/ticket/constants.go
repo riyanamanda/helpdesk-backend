@@ -3,7 +3,12 @@ package ticket
 type (
 	TicketStatus   string
 	TicketPriority string
+	TicketEvent    string
 	AttachmentType string
+)
+
+const (
+	TicketCreatedEvent TicketEvent = "ticket.created"
 )
 
 const (

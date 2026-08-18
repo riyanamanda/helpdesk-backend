@@ -18,6 +18,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
+	"github.com/riyanamanda/helpdesk-backend/internal/websocket"
 )
 
 type TicketService interface {
@@ -49,6 +50,7 @@ type service struct {
 	notificationSvc notification.Notifier
 	categorySvc     categorySvc
 	divisionSvc     divisionSvc
+	publisher       websocket.Publisher
 }
 
 func NewTicketService(
@@ -60,6 +62,7 @@ func NewTicketService(
 	notificationSvc notification.Notifier,
 	categorySvc categorySvc,
 	divisionSvc divisionSvc,
+	publisher websocket.Publisher,
 ) TicketService {
 	return &service{
 		repo:            repo,
@@ -70,6 +73,7 @@ func NewTicketService(
 		notificationSvc: notificationSvc,
 		categorySvc:     categorySvc,
 		divisionSvc:     divisionSvc,
+		publisher:       publisher,
 	}
 }
 
@@ -152,6 +156,13 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 		dashboard.InvalidateCache(ctx, s.cache)
 		s.notifier.NewTicketEmail(ctx, ticketID, req.Title, req.Description, createdBy)
 		s.notificationSvc.NewTicket(ctx, ticketID, createdBy)
+
+		s.publisher.Publish(websocket.Message{
+			Type: "ticket.created",
+			Data: map[string]any{
+				"ticket_id": ticketID,
+			},
+		})
 	}
 
 	return err

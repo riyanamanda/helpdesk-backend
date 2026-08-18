@@ -21,6 +21,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/ticket"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 	"github.com/riyanamanda/helpdesk-backend/internal/user_device"
+	"github.com/riyanamanda/helpdesk-backend/internal/websocket"
 )
 
 func registerRoutes(cfg *config.Config, d *deps) http.Handler {
@@ -38,13 +39,15 @@ func registerRoutes(cfg *config.Config, d *deps) http.Handler {
 	api := e.Group("/api/v1")
 	auth.Register(api, d.userRepo, cfg.Auth, cfg.Storage, d.redisClient, d.permissionService)
 
+	websocket.Register(api, d.wsHub)
+
 	protected := api.Group("")
 	protected.Use(middleware.AuthMiddleware(cfg.Auth, d.redisClient, d.permissionService))
 
 	category.Register(protected, d.db, d.cacheStore)
 	division.Register(protected, d.db, d.cacheStore)
 	user.Register(protected, d.userRepo, cfg.Storage, d.cacheStore, d.notifier)
-	ticket.Register(protected, d.db, d.storageService, cfg.Storage, d.cacheStore, d.notifier, d.userRepo, d.notificationNotifier)
+	ticket.Register(protected, d.db, d.storageService, cfg.Storage, d.cacheStore, d.notifier, d.userRepo, d.notificationNotifier, d.wsPublisher)
 	dashboard.Register(protected, d.db, d.cacheStore)
 	profile.Register(protected, d.db, d.storageService, cfg.Storage, cfg.Auth)
 	feedback.Register(protected, d.db, d.notificationNotifier)

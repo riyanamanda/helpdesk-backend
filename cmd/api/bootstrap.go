@@ -24,6 +24,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 	"github.com/riyanamanda/helpdesk-backend/internal/user_device"
+	"github.com/riyanamanda/helpdesk-backend/internal/websocket"
 )
 
 type deps struct {
@@ -36,6 +37,9 @@ type deps struct {
 	notifier             mailer.Notifier
 	notificationNotifier notification.Notifier
 	permissionService    ctxkey.PermissionService
+
+	wsHub       *websocket.Hub
+	wsPublisher websocket.Publisher
 }
 
 func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), error) {
@@ -141,6 +145,10 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 	rbacRepo := rbac.NewRBACRepository(db)
 	permissionService := rbac.NewPermissionService(rbacRepo, cacheStore)
 
+	hub := websocket.NewHub()
+	go hub.Run()
+	publisher := websocket.NewHubPublisher(hub)
+
 	d := &deps{
 		db:                   db,
 		simgosDB:             simgosDB,
@@ -151,6 +159,9 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 		notifier:             notifier,
 		notificationNotifier: notificationNotifier,
 		permissionService:    permissionService,
+
+		wsHub:       hub,
+		wsPublisher: publisher,
 	}
 
 	server := &http.Server{
