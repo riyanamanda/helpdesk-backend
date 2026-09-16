@@ -36,6 +36,10 @@ func registerRoutes(cfg *config.Config, d *deps) http.Handler {
 		})
 	})
 
+	e.GET("/health", func(c *echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
+	})
+
 	api := e.Group("/api/v1")
 	auth.Register(api, d.userRepo, cfg.Auth, cfg.Storage, d.redisClient, d.permissionService)
 

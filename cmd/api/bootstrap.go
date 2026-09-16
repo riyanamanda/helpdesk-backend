@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
+	amqp "github.com/rabbitmq/amqp091-go"
 	goredis "github.com/redis/go-redis/v9"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
@@ -104,29 +105,11 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 	cacheStore := cache.NewRedisCache(redisClient)
 	userRepo := user.NewUserRepository(db)
 
-	slog.Info("connecting to rabbitmq")
-	rmqConn, err := rabbitmq.NewConnection(cfg.RabbitMQ)
-	if err != nil {
-		cleanup()
-		return nil, nil, fmt.Errorf("rabbitmq: %w", err)
+	slog.Info("preparing rabbitmq notifier")
+	dialer := func() (*amqp.Connection, error) {
+		return rabbitmq.NewConnection(cfg.RabbitMQ)
 	}
-	closers = append(closers, func() { rmqConn.Close() })
-
-	publishCh, err := rabbitmq.NewChannel(rmqConn, mailer.QueueNewTicketEmail)
-	if err != nil {
-		cleanup()
-		return nil, nil, fmt.Errorf("rabbitmq publish channel: %w", err)
-	}
-	closers = append(closers, func() { publishCh.Close() })
-
-	welcomePublishCh, err := rabbitmq.NewChannel(rmqConn, mailer.QueueWelcomeUserEmail)
-	if err != nil {
-		cleanup()
-		return nil, nil, fmt.Errorf("rabbitmq welcome publish channel: %w", err)
-	}
-	closers = append(closers, func() { welcomePublishCh.Close() })
-
-	notifier := mailer.NewNotifier(publishCh, welcomePublishCh)
+	notifier := mailer.NewNotifier(dialer)
 
 	slog.Info("initializing fcm sender")
 	fcmSender, err := firebase.NewFCMSender(ctx, cfg.Auth.FirebaseProjectID, cfg.Auth.FirebaseCredentialsFile)
