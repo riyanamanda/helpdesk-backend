@@ -36,7 +36,7 @@ func registerRoutes(cfg *config.Config, d *deps) http.Handler {
 		})
 	})
 
-	e.GET("/health", func(c *echo.Context) error {
+	e.Match([]string{http.MethodGet, http.MethodHead}, "/health", func(c *echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
 
