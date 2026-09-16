@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
@@ -27,51 +28,25 @@ func bootstrap(cfg *config.Config) (func(), error) {
 	userRepo := user.NewUserRepository(db)
 	mailerSvc := mailer.NewMailerService(cfg.Email)
 
-	slog.Info("connecting to rabbitmq")
-	rmqConn, err := rabbitmq.NewConnection(cfg.RabbitMQ)
-	if err != nil {
-		cleanup()
-		return nil, fmt.Errorf("rabbitmq: %w", err)
-	}
-	closers = append(closers, func() { rmqConn.Close() })
-
-	ticketConsumeCh, err := rabbitmq.NewChannel(rmqConn, mailer.QueueNewTicketEmail)
-	if err != nil {
-		cleanup()
-		return nil, fmt.Errorf("rabbitmq ticket consume channel: %w", err)
-	}
-	if err := ticketConsumeCh.Qos(1, 0, false); err != nil {
-		cleanup()
-		return nil, fmt.Errorf("rabbitmq ticket qos: %w", err)
-	}
-
-	welcomeConsumeCh, err := rabbitmq.NewChannel(rmqConn, mailer.QueueWelcomeUserEmail)
-	if err != nil {
-		cleanup()
-		return nil, fmt.Errorf("rabbitmq welcome consume channel: %w", err)
-	}
-	if err := welcomeConsumeCh.Qos(1, 0, false); err != nil {
-		cleanup()
-		return nil, fmt.Errorf("rabbitmq welcome qos: %w", err)
+	dialer := func() (*amqp.Connection, error) {
+		return rabbitmq.NewConnection(cfg.RabbitMQ)
 	}
 
 	mailerWorker := mailer.NewWorker(mailerSvc, userRepo)
-	ticketConsumer := mailer.NewConsumer(ticketConsumeCh, mailer.QueueNewTicketEmail, mailerWorker)
-	welcomeConsumer := mailer.NewConsumer(welcomeConsumeCh, mailer.QueueWelcomeUserEmail, mailerWorker)
+	ticketConsumer := mailer.NewConsumer(dialer, mailer.QueueNewTicketEmail, mailerWorker)
+	welcomeConsumer := mailer.NewConsumer(dialer, mailer.QueueWelcomeUserEmail, mailerWorker)
 
 	slog.Info("starting worker")
 	go func() {
-		if err := ticketConsumer.Start(context.Background()); err != nil {
+		if err := ticketConsumer.Run(context.Background()); err != nil {
 			slog.Error("ticket consumer exited with error", "error", err)
 		}
 	}()
 	go func() {
-		if err := welcomeConsumer.Start(context.Background()); err != nil {
+		if err := welcomeConsumer.Run(context.Background()); err != nil {
 			slog.Error("welcome consumer exited with error", "error", err)
 		}
 	}()
-	closers = append(closers, ticketConsumer.Shutdown)
-	closers = append(closers, welcomeConsumer.Shutdown)
 
 	return cleanup, nil
 }
