@@ -7,9 +7,9 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o api ./cmd/api && \
-    CGO_ENABLED=0 GOOS=linux go build -o worker ./cmd/worker && \
-    CGO_ENABLED=0 GOOS=linux go build -o seed ./cmd/seed
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o api ./cmd/api && \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o worker ./cmd/worker && \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o seed ./cmd/seed
 
 FROM alpine:3.21
 
@@ -34,4 +34,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-ENTRYPOINT ["./api"]
+CMD ["./api"]
