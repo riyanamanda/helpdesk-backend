@@ -33,7 +33,7 @@ func (r *repository) GetPatients(ctx context.Context, params GetPatientParams) (
 
 	where, whereArgs := buildPatientWhere(params)
 
-	queryTotal := fmt.Sprintf("SELECT COUNT(*) "+patientFromBase+" %s", where)
+	queryTotal := fmt.Sprintf("SELECT COUNT(*) %s %s", patientFromBase, where)
 	if err := r.db.GetContext(ctx, &total, queryTotal, whereArgs...); err != nil {
 		return nil, 0, err
 	}
@@ -45,11 +45,7 @@ func (r *repository) GetPatients(ctx context.Context, params GetPatientParams) (
 	selectArgs = append(selectArgs, params.Limit, offset)
 
 	orderBy := buildPatientSort(params)
-	query := fmt.Sprintf(patientSelectBase+`
-	%s
-	ORDER BY %s
-	LIMIT ? OFFSET ?
-	`, where, orderBy)
+	query := fmt.Sprintf("%s %s ORDER BY %s LIMIT ? OFFSET ?", patientSelectBase, where, orderBy)
 
 	if err := r.db.SelectContext(ctx, &patients, query, selectArgs...); err != nil {
 		return nil, 0, err
@@ -129,8 +125,23 @@ func (r *repository) UpdatePatientMethod(ctx context.Context, NORM string) error
 	}
 
 	if affected == 0 {
-		return ErrPatientNotFound
+		return r.classifyIneligible(ctx, NORM)
 	}
 
 	return nil
+}
+
+func (r *repository) classifyIneligible(ctx context.Context, NORM string) error {
+	const query = "SELECT EXISTS(SELECT 1 FROM `kemkes-ihs`.patient WHERE refId = ?)"
+
+	var exists bool
+	if err := r.db.GetContext(ctx, &exists, query, NORM); err != nil {
+		return err
+	}
+
+	if !exists {
+		return ErrPatientNotFound
+	}
+
+	return ErrPatientNotEligible
 }

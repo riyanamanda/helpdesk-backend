@@ -55,6 +55,9 @@ func (s *service) UpdatePatientMethodByNORM(ctx context.Context, NORM string) er
 		if errors.Is(err, ErrPatientNotFound) {
 			return apperr.NotFound("patient")
 		}
+		if errors.Is(err, ErrPatientNotEligible) {
+			return apperr.Conflict("patient has already been submitted or is currently being processed")
+		}
 		return err
 	}
 

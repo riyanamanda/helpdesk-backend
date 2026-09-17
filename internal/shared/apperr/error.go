@@ -32,6 +32,14 @@ func AlreadyExists(resource string) *Error {
 	}
 }
 
+func Conflict(message string) *Error {
+	return &Error{
+		Code:    CodeConflict,
+		Message: message,
+		Status:  http.StatusConflict,
+	}
+}
+
 func BadRequest(message string) *Error {
 	return &Error{
 		Code:    CodeBadRequest,

@@ -27,6 +27,16 @@ func ParsePositiveInt64PathParam(c *echo.Context, paramName, resourceName string
 	return id, nil
 }
 
+func ParseRequiredStringPathParam(c *echo.Context, paramName, resourceName string, maxLen int) (string, error) {
+	value := strings.TrimSpace(c.Param(paramName))
+
+	if value == "" || len(value) > maxLen {
+		return "", apperr.BadRequest(fmt.Sprintf("invalid %s %s", resourceName, paramName))
+	}
+
+	return value, nil
+}
+
 func GenerateObjectKey(prefix, filename string) string {
 	ext := filepath.Ext(filename)
 	random := strings.ReplaceAll(

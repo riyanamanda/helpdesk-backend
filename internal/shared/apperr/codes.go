@@ -3,6 +3,7 @@ package apperr
 const (
 	CodeNotFound        = "NOT_FOUND"
 	CodeAlreadyExists   = "ALREADY_EXISTS"
+	CodeConflict        = "CONFLICT"
 	CodeValidationError = "VALIDATION_ERROR"
 	CodeInternalError   = "INTERNAL_SERVER_ERROR"
 	CodeBadRequest      = "BAD_REQUEST"

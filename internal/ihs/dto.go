@@ -9,7 +9,7 @@ import (
 type PatientResponse struct {
 	Norm             string     `json:"norm"`
 	Name             string     `json:"name"`
-	IdentityNumber   string     `json:"identity_number"`
+	IdentityNumber   *string    `json:"identity_number"`
 	HttpMethod       string     `json:"http_method"`
 	LastRegistration *time.Time `json:"last_registration"`
 	Poly             *string    `json:"poly"`
@@ -27,14 +27,14 @@ type PatientDetailResponse struct {
 }
 
 type IdentityCardResponse struct {
-	IdentityNumber string `json:"identity_number"`
-	Address        string `json:"address"`
-	RT             string `json:"rt"`
-	RW             string `json:"rw"`
-	Province       string `json:"province"`
-	City           string `json:"city"`
-	District       string `json:"district"`
-	SubDistrict    string `json:"sub_district"`
+	IdentityNumber *string `json:"identity_number"`
+	Address        *string `json:"address"`
+	RT             *string `json:"rt"`
+	RW             *string `json:"rw"`
+	Province       *string `json:"province"`
+	City           *string `json:"city"`
+	District       *string `json:"district"`
+	SubDistrict    *string `json:"sub_district"`
 }
 
 type GetPatientParams struct {
