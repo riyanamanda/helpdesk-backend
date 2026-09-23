@@ -25,23 +25,17 @@ type UserService interface {
 	ListAssignableUser(ctx context.Context) ([]UserBrief, error)
 }
 
-type WelcomeMailer interface {
-	WelcomeUserEmail(ctx context.Context, name, email, password string)
-}
-
 type service struct {
 	repo          UserRepository
 	storageConfig config.Storage
 	cache         cache.Cache
-	mailer        WelcomeMailer
 }
 
-func NewUserService(repo UserRepository, storageConfig config.Storage, cache cache.Cache, mailer WelcomeMailer) UserService {
+func NewUserService(repo UserRepository, storageConfig config.Storage, cache cache.Cache) UserService {
 	return &service{
 		repo:          repo,
 		storageConfig: storageConfig,
 		cache:         cache,
-		mailer:        mailer,
 	}
 }
 
@@ -90,8 +84,6 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 	}
 
 	InvalidateCache(ctx, s.cache)
-
-	s.mailer.WelcomeUserEmail(ctx, req.Name, user.Email, req.Password)
 
 	return nil
 }

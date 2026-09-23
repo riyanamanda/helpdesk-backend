@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 )
@@ -18,12 +17,11 @@ type FeedbackService interface {
 }
 
 type service struct {
-	repo            FeedbackRepository
-	notificationSvc notification.Notifier
+	repo FeedbackRepository
 }
 
-func NewFeedbackService(repo FeedbackRepository, notificationSvc notification.Notifier) FeedbackService {
-	return &service{repo: repo, notificationSvc: notificationSvc}
+func NewFeedbackService(repo FeedbackRepository) FeedbackService {
+	return &service{repo: repo}
 }
 
 func (s *service) ListFeedbacks(ctx context.Context, params *GetFeedbackParams) ([]FeedbackResponse, int64, error) {
@@ -94,7 +92,6 @@ func (s *service) UpdateFeedbackStatus(ctx context.Context, id int64, req Update
 		return err
 	}
 
-	s.notificationSvc.FeedbackStatusUpdated(ctx, id, existing.CreatedByID, reviewerID, string(req.Status))
 	return nil
 }
 

@@ -8,39 +8,27 @@ import (
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
-	amqp "github.com/rabbitmq/amqp091-go"
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
-	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/minio"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/rabbitmq"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/redis"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
-	"github.com/riyanamanda/helpdesk-backend/internal/user_device"
-	"github.com/riyanamanda/helpdesk-backend/internal/websocket"
 )
 
 type deps struct {
-	db                   *sqlx.DB
-	simgosDB             *sqlx.DB
-	storageService       storage.Storage
-	redisClient          *goredis.Client
-	cacheStore           cache.Cache
-	userRepo             user.UserRepository
-	notifier             mailer.Notifier
-	notificationNotifier notification.Notifier
-	permissionService    ctxkey.PermissionService
-
-	wsHub       *websocket.Hub
-	wsPublisher websocket.Publisher
+	db                *sqlx.DB
+	simgosDB          *sqlx.DB
+	storageService    storage.Storage
+	redisClient       *goredis.Client
+	cacheStore        cache.Cache
+	userRepo          user.UserRepository
+	permissionService ctxkey.PermissionService
 }
 
 func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), error) {
@@ -104,47 +92,17 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 
 	cacheStore := cache.NewRedisCache(redisClient)
 	userRepo := user.NewUserRepository(db)
-
-	slog.Info("preparing rabbitmq notifier")
-	dialer := func() (*amqp.Connection, error) {
-		return rabbitmq.NewConnection(cfg.RabbitMQ)
-	}
-	notifier := mailer.NewNotifier(dialer)
-
-	slog.Info("initializing fcm sender")
-	fcmSender, err := firebase.NewFCMSender(ctx, cfg.Auth.FirebaseProjectID, cfg.Auth.FirebaseCredentialsFile)
-	if err != nil {
-		slog.Warn("fcm sender unavailable, push notifications disabled", "error", err)
-		fcmSender = firebase.NewNoopFCMSender()
-	}
-
-	notificationNotifier := notification.NewNotifier(
-		notification.NewNotificationRepository(db),
-		userRepo,
-		user_device.NewUserDeviceRepository(db),
-		fcmSender,
-	)
-
 	rbacRepo := rbac.NewRBACRepository(db)
 	permissionService := rbac.NewPermissionService(rbacRepo, cacheStore)
 
-	hub := websocket.NewHub()
-	go hub.Run()
-	publisher := websocket.NewHubPublisher(hub)
-
 	d := &deps{
-		db:                   db,
-		simgosDB:             simgosDB,
-		storageService:       storageService,
-		redisClient:          redisClient,
-		cacheStore:           cacheStore,
-		userRepo:             userRepo,
-		notifier:             notifier,
-		notificationNotifier: notificationNotifier,
-		permissionService:    permissionService,
-
-		wsHub:       hub,
-		wsPublisher: publisher,
+		db:                db,
+		simgosDB:          simgosDB,
+		storageService:    storageService,
+		redisClient:       redisClient,
+		cacheStore:        cacheStore,
+		userRepo:          userRepo,
+		permissionService: permissionService,
 	}
 
 	server := &http.Server{

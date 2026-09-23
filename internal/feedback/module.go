@@ -3,14 +3,13 @@ package feedback
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
-	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, notificationNotifier notification.Notifier) {
+func Register(e *echo.Group, db *sqlx.DB) {
 	repo := NewFeedbackRepository(db)
-	svc := NewFeedbackService(repo, notificationNotifier)
+	svc := NewFeedbackService(repo)
 	handler := NewFeedbackHandler(svc)
 
 	admin := e.Group("/admin")

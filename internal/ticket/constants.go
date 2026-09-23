@@ -8,10 +8,6 @@ type (
 )
 
 const (
-	TicketCreatedEvent TicketEvent = "ticket.created"
-)
-
-const (
 	StatusOpen       TicketStatus = "OPEN"
 	StatusInProgress TicketStatus = "IN_PROGRESS"
 	StatusResolved   TicketStatus = "RESOLVED"

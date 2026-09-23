@@ -9,8 +9,6 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
-	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
-	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
@@ -18,7 +16,6 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
-	"github.com/riyanamanda/helpdesk-backend/internal/websocket"
 )
 
 type TicketService interface {
@@ -42,15 +39,12 @@ type divisionSvc interface {
 }
 
 type service struct {
-	repo            TicketRepository
-	storage         storage.Storage
-	storageConfig   config.Storage
-	cache           cache.Cache
-	notifier        mailer.Notifier
-	notificationSvc notification.Notifier
-	categorySvc     categorySvc
-	divisionSvc     divisionSvc
-	publisher       websocket.Publisher
+	repo          TicketRepository
+	storage       storage.Storage
+	storageConfig config.Storage
+	cache         cache.Cache
+	categorySvc   categorySvc
+	divisionSvc   divisionSvc
 }
 
 func NewTicketService(
@@ -58,22 +52,16 @@ func NewTicketService(
 	store storage.Storage,
 	storageConfig config.Storage,
 	cache cache.Cache,
-	notifier mailer.Notifier,
-	notificationSvc notification.Notifier,
 	categorySvc categorySvc,
 	divisionSvc divisionSvc,
-	publisher websocket.Publisher,
 ) TicketService {
 	return &service{
-		repo:            repo,
-		storage:         store,
-		storageConfig:   storageConfig,
-		cache:           cache,
-		notifier:        notifier,
-		notificationSvc: notificationSvc,
-		categorySvc:     categorySvc,
-		divisionSvc:     divisionSvc,
-		publisher:       publisher,
+		repo:          repo,
+		storage:       store,
+		storageConfig: storageConfig,
+		cache:         cache,
+		categorySvc:   categorySvc,
+		divisionSvc:   divisionSvc,
 	}
 }
 
@@ -154,15 +142,6 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 	err = tx.Commit()
 	if err == nil {
 		dashboard.InvalidateCache(ctx, s.cache)
-		s.notifier.NewTicketEmail(ctx, ticketID, req.Title, req.Description, createdBy)
-		s.notificationSvc.NewTicket(ctx, ticketID, createdBy)
-
-		s.publisher.Publish(websocket.Message{
-			Type: "ticket.created",
-			Data: map[string]any{
-				"ticket_id": ticketID,
-			},
-		})
 	}
 
 	return err
@@ -322,8 +301,6 @@ func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAs
 	}
 
 	dashboard.InvalidateCache(ctx, s.cache)
-	s.notificationSvc.TicketAssigned(ctx, ticketID, req.AssignedTo, actorID)
-	s.notificationSvc.TicketInProgress(ctx, ticketID, existing.CreatedByID, actorID)
 
 	return nil
 }
@@ -436,7 +413,6 @@ func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
 	}
 
 	dashboard.InvalidateCache(ctx, s.cache)
-	s.notificationSvc.TicketClosed(ctx, ticketID, existing.CreatedByID, userID)
 
 	return nil
 }

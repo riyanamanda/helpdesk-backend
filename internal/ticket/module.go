@@ -5,18 +5,15 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
-	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
-	"github.com/riyanamanda/helpdesk-backend/internal/notification"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
-	"github.com/riyanamanda/helpdesk-backend/internal/websocket"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache, notifier mailer.Notifier, userRepo user.UserRepository, notificationNotifier notification.Notifier, publisher websocket.Publisher) {
+func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache, userRepo user.UserRepository) {
 	catRepo := category.NewCategoryRepository(db)
 	catSvc := category.NewCategoryService(catRepo, cache)
 
@@ -24,7 +21,7 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storag
 	divSvc := division.NewDivisionService(divRepo, cache)
 
 	repo := NewTicketRepository(db)
-	svc := NewTicketService(repo, storageService, storageConfig, cache, notifier, notificationNotifier, catSvc, divSvc, publisher)
+	svc := NewTicketService(repo, storageService, storageConfig, cache, catSvc, divSvc)
 	handler := NewTicketHandler(svc)
 
 	e.GET("/tickets", handler.ListTickets, middleware.RequirePermission(rbac.PermissionTicketView))
