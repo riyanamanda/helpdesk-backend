@@ -8,7 +8,6 @@ RUN go mod download
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o api ./cmd/api && \
-    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o worker ./cmd/worker && \
     CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o seed ./cmd/seed
 
 FROM alpine:3.21
@@ -21,7 +20,6 @@ RUN addgroup -g 1000 appgroup && \
 WORKDIR /app
 
 COPY --from=builder /app/api .
-COPY --from=builder /app/worker .
 COPY --from=builder /app/seed .
 COPY --from=builder /app/migrations ./migrations
 
