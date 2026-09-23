@@ -23,6 +23,7 @@ import (
 
 type deps struct {
 	db                *sqlx.DB
+	txManager         *database.Manager
 	simgosDB          *sqlx.DB
 	storageService    storage.Storage
 	redisClient       *goredis.Client
@@ -42,6 +43,7 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 	slog.Info("connecting to database")
 	db := database.NewPostgres(cfg.Database.ConnString())
 	closers = append(closers, func() { db.Close() })
+	txManager := database.NewManager(db)
 
 	slog.Info("running migrations")
 	if err := database.RunMigrations(db); err != nil {
@@ -103,6 +105,7 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 		cacheStore:        cacheStore,
 		userRepo:          userRepo,
 		permissionService: permissionService,
+		txManager:         txManager,
 	}
 
 	server := &http.Server{

@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
@@ -27,13 +28,15 @@ type UserService interface {
 
 type service struct {
 	repo          UserRepository
+	txManager     *database.Manager
 	storageConfig config.Storage
 	cache         cache.Cache
 }
 
-func NewUserService(repo UserRepository, storageConfig config.Storage, cache cache.Cache) UserService {
+func NewUserService(repo UserRepository, txManager *database.Manager, storageConfig config.Storage, cache cache.Cache) UserService {
 	return &service{
 		repo:          repo,
+		txManager:     txManager,
 		storageConfig: storageConfig,
 		cache:         cache,
 	}
@@ -75,11 +78,24 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 		CreatedBy:  createdBy,
 	}
 
-	if err := s.repo.Create(ctx, user); err != nil {
+	// start db transaction from platform/database/transaction.go
+	tx, err := s.txManager.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	// defer rollback db transaction
+	defer tx.Rollback()
+
+	if err := s.repo.Create(ctx, tx, user); err != nil {
 		if errors.Is(err, ErrUserAlreadyExists) {
 			return apperr.AlreadyExists("user")
 		}
 
+		return err
+	}
+
+	// commit db transaction
+	if err := tx.Commit(); err != nil {
 		return err
 	}
 
