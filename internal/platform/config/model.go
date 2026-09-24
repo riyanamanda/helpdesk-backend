@@ -14,6 +14,7 @@ type Config struct {
 	Redis       Redis
 	Email       Email
 	Antrol      Antrol
+	RabbitMQ    RabbitMQ
 }
 
 type Antrol struct {
@@ -59,6 +60,13 @@ type Redis struct {
 	Password string
 }
 
+type RabbitMQ struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+}
+
 type Email struct {
 	Host     string
 	Port     string
@@ -77,6 +85,16 @@ func (d Database) ConnString() string {
 		d.Password,
 		d.Name,
 		d.SSLMode,
+	)
+}
+
+func (rq RabbitMQ) RabbitMQConnString() string {
+	return fmt.Sprintf(
+		"amqp://%s:%s@%s:%s/",
+		rq.Username,
+		rq.Password,
+		rq.Host,
+		rq.Port,
 	)
 }
 

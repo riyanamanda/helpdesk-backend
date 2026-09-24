@@ -55,6 +55,12 @@ func Load() *Config {
 			Port:     getEnv("REDIS_PORT", "6379"),
 			Password: getEnv("REDIS_PASSWORD", ""),
 		},
+		RabbitMQ: RabbitMQ{
+			Host:     getEnv("RABBITMQ_HOST", "localhost"),
+			Port:     getEnv("RABBITMQ_PORT", "5672"),
+			Username: getEnv("RABBITMQ_USERNAME", "guest"),
+			Password: getEnv("RABBITMQ_PASSWORD", "guest"),
+		},
 		Email: Email{
 			Host:     getEnv("MAIL_HOST", ""),
 			Port:     getEnv("MAIL_PORT", ""),
