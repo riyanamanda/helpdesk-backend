@@ -23,7 +23,7 @@ func NewRepository(db *sqlx.DB) Repository {
 
 func (r *repository) Create(ctx context.Context, tx database.Tx, event OutboxEvent) error {
 	const query = `
-		INSERT INTO outbox_events (event_type, agregate_id, payload)
+		INSERT INTO outbox_events (event_type, aggregate_id, payload)
 		VALUES ($1, $2, $3)
 		ON CONFLICT DO NOTHING
 	`

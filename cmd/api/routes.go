@@ -44,7 +44,7 @@ func registerRoutes(cfg *config.Config, d *deps) http.Handler {
 
 	category.Register(protected, d.db, d.cacheStore)
 	division.Register(protected, d.db, d.cacheStore)
-	user.Register(protected, d.userRepo, d.txManager, cfg.Storage, d.cacheStore)
+	user.Register(protected, d.userRepo, d.outboxRepo, d.txManager, cfg.Storage, d.cacheStore)
 	ticket.Register(protected, d.db, d.storageService, cfg.Storage, d.cacheStore, d.userRepo)
 	dashboard.Register(protected, d.db, d.cacheStore)
 	profile.Register(protected, d.db, d.storageService, cfg.Storage, cfg.Auth)

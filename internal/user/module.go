@@ -2,6 +2,7 @@ package user
 
 import (
 	"github.com/labstack/echo/v5"
+	"github.com/riyanamanda/helpdesk-backend/internal/outbox"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
@@ -9,8 +10,8 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-func Register(e *echo.Group, repo UserRepository, txManager *database.Manager, storageConfig config.Storage, cache cache.Cache) {
-	svc := NewUserService(repo, txManager, storageConfig, cache)
+func Register(e *echo.Group, repo UserRepository, outboxRepo outbox.Repository, txManager *database.Manager, storageConfig config.Storage, cache cache.Cache) {
+	svc := NewUserService(repo, outboxRepo, txManager, storageConfig, cache)
 	handler := NewUserHandler(svc)
 
 	e.GET("/users", handler.ListUsers, middleware.RequirePermission(rbac.PermissionUserView))

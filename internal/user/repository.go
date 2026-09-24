@@ -14,7 +14,7 @@ import (
 
 type UserRepository interface {
 	GetAll(ctx context.Context, params GetUserParams) ([]UserProjection, int64, error)
-	Create(ctx context.Context, tx database.Tx, user *User) error
+	Create(ctx context.Context, tx database.Tx, user *User) (uuid.UUID, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*UserProjection, error)
 	GetByEmail(ctx context.Context, email string) (*UserProjection, error)
 	UpdateByID(ctx context.Context, id uuid.UUID, user User) error
@@ -64,22 +64,26 @@ func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]UserPr
 	return users, total, nil
 }
 
-func (r *repository) Create(ctx context.Context, tx database.Tx, user *User) error {
+func (r *repository) Create(ctx context.Context, tx database.Tx, user *User) (uuid.UUID, error) {
 	const query = `
 		INSERT INTO users (name, email, password, role_id, gender, division_id, created_by)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id
 	`
 
-	_, err := tx.ExecContext(ctx, query, user.Name, user.Email, user.Password, user.RoleID, user.Gender, user.DivisionID, user.CreatedBy)
+	var id uuid.UUID
+	err := tx.QueryRowxContext(
+		ctx, query, user.Name, user.Email, user.Password, user.RoleID, user.Gender, user.DivisionID, user.CreatedBy,
+	).Scan(&id)
 	if err != nil {
 		if database.IsUniqueViolation(err) {
-			return ErrUserAlreadyExists
+			return uuid.Nil, ErrUserAlreadyExists
 		}
 
-		return err
+		return uuid.Nil, err
 	}
 
-	return nil
+	return id, nil
 }
 
 func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*UserProjection, error) {

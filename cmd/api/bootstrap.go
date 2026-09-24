@@ -10,6 +10,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	goredis "github.com/redis/go-redis/v9"
 
+	"github.com/riyanamanda/helpdesk-backend/internal/outbox"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
@@ -29,6 +30,7 @@ type deps struct {
 	redisClient       *goredis.Client
 	cacheStore        cache.Cache
 	userRepo          user.UserRepository
+	outboxRepo        outbox.Repository
 	permissionService ctxkey.PermissionService
 }
 
@@ -94,6 +96,7 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 
 	cacheStore := cache.NewRedisCache(redisClient)
 	userRepo := user.NewUserRepository(db)
+	outboxRepo := outbox.NewRepository(db)
 	rbacRepo := rbac.NewRBACRepository(db)
 	permissionService := rbac.NewPermissionService(rbacRepo, cacheStore)
 
@@ -104,6 +107,7 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 		redisClient:       redisClient,
 		cacheStore:        cacheStore,
 		userRepo:          userRepo,
+		outboxRepo:        outboxRepo,
 		permissionService: permissionService,
 		txManager:         txManager,
 	}

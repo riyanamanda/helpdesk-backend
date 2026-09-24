@@ -9,6 +9,7 @@ import (
 
 type Tx interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryRowxContext(ctx context.Context, query string, args ...any) *sqlx.Row
 	Commit() error
 	Rollback() error
 }
@@ -36,6 +37,10 @@ func (m *Manager) Begin(ctx context.Context) (Tx, error) {
 	return &transaction{
 		tx: tx,
 	}, nil
+}
+
+func (t *transaction) QueryRowxContext(ctx context.Context, query string, args ...any) *sqlx.Row {
+	return t.tx.QueryRowxContext(ctx, query, args...)
 }
 
 func (t *transaction) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {

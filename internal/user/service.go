@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/riyanamanda/helpdesk-backend/internal/outbox"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
@@ -28,14 +29,16 @@ type UserService interface {
 
 type service struct {
 	repo          UserRepository
+	outboxRepo    outbox.Repository
 	txManager     *database.Manager
 	storageConfig config.Storage
 	cache         cache.Cache
 }
 
-func NewUserService(repo UserRepository, txManager *database.Manager, storageConfig config.Storage, cache cache.Cache) UserService {
+func NewUserService(repo UserRepository, outboxRepo outbox.Repository, txManager *database.Manager, storageConfig config.Storage, cache cache.Cache) UserService {
 	return &service{
 		repo:          repo,
+		outboxRepo:    outboxRepo,
 		txManager:     txManager,
 		storageConfig: storageConfig,
 		cache:         cache,
@@ -86,11 +89,31 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 	// defer rollback db transaction
 	defer tx.Rollback()
 
-	if err := s.repo.Create(ctx, tx, user); err != nil {
+	userID, err := s.repo.Create(ctx, tx, user)
+	if err != nil {
 		if errors.Is(err, ErrUserAlreadyExists) {
 			return apperr.AlreadyExists("user")
 		}
 
+		return err
+	}
+
+	payload, err := json.Marshal(map[string]any{
+		"name":  user.Name,
+		"email": user.Email,
+	})
+	if err != nil {
+		return err
+	}
+
+	event := outbox.OutboxEvent{
+		ID:          uuid.New(),
+		EventType:   "user.created",
+		AggregateID: userID.String(),
+		Payload:     payload,
+	}
+
+	if err := s.outboxRepo.Create(ctx, tx, event); err != nil {
 		return err
 	}
 
