@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
 	"github.com/riyanamanda/helpdesk-backend/internal/outbox"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
@@ -20,7 +21,7 @@ func main() {
 	ctx := context.Background()
 	cfg := config.Load()
 
-	slog.Info("Worker started successfully")
+	slog.Info("Worker started...")
 
 	// RabbitMQ Initial
 	client, err := rabbitmq.Connect(cfg.RabbitMQ.RabbitMQConnString())
@@ -40,12 +41,14 @@ func main() {
 	defer db.Close()
 
 	outboxRepo := outbox.NewRepository(db)
+	mailer := mailer.NewMailer(cfg.Email)
 	publisher := worker.NewPublisher(outboxRepo, client)
-	consumer := worker.NewConsumer(client)
+	consumer := worker.NewConsumer(client, mailer)
 
+	// goroutine
 	go publisher.Run(ctx)
 	go func() {
-		if err := consumer.Run(); err != nil {
+		if err := consumer.Run(ctx); err != nil {
 			slog.Error("consumer stopped", "error", err)
 		}
 	}()

@@ -1,23 +1,27 @@
 package worker
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 
+	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/rabbitmq"
 )
 
 type Consumer struct {
 	rabbitmq *rabbitmq.Client
+	mailer   *mailer.Mailer
 }
 
-func NewConsumer(rabbitmq *rabbitmq.Client) *Consumer {
+func NewConsumer(rabbitmq *rabbitmq.Client, mailer *mailer.Mailer) *Consumer {
 	return &Consumer{
 		rabbitmq: rabbitmq,
+		mailer:   mailer,
 	}
 }
 
-func (c *Consumer) Run() error {
+func (c *Consumer) Run(ctx context.Context) error {
 	messages, err := c.rabbitmq.Consume("helpdesk.email")
 	if err != nil {
 		return err
@@ -32,9 +36,11 @@ func (c *Consumer) Run() error {
 			continue
 		}
 
-		slog.Info("user.created event received", "name", event.Name, "email", event.Email)
-
-		// TODO: send welcome email
+		if err := c.mailer.SendWelcomeEmail(ctx, event.Name, event.Email); err != nil {
+			slog.Error("send welcome email failed", "error", err)
+			msg.Nack(false, false)
+			continue
+		}
 
 		if err := msg.Ack(false); err != nil {
 			slog.Error("message ack failed", "error", err)
