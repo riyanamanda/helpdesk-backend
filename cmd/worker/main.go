@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
 	"github.com/riyanamanda/helpdesk-backend/internal/outbox"
@@ -12,13 +15,10 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/worker"
 )
 
-type UserCreatedEvent struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-}
-
 func main() {
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	cfg := config.Load()
 
 	slog.Info("Worker started...")
@@ -35,11 +35,14 @@ func main() {
 	err = client.SetupEmailTopology()
 	if err != nil {
 		slog.Error("RabbitMQ setup email topology failed", "error", err)
+		return
 	}
 
+	// Database connection
 	db := database.NewPostgres(cfg.Database.ConnString())
 	defer db.Close()
 
+	// Dependencies
 	outboxRepo := outbox.NewRepository(db)
 	mailer := mailer.NewMailer(cfg.Email)
 	publisher := worker.NewPublisher(outboxRepo, client)
@@ -47,11 +50,13 @@ func main() {
 
 	// goroutine
 	go publisher.Run(ctx)
+
 	go func() {
 		if err := consumer.Run(ctx); err != nil {
 			slog.Error("consumer stopped", "error", err)
 		}
 	}()
 
-	select {}
+	<-ctx.Done()
+	slog.Info("shutdown signal received")
 }

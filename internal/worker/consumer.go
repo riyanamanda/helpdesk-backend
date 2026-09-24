@@ -27,28 +27,38 @@ func (c *Consumer) Run(ctx context.Context) error {
 		return err
 	}
 
-	for msg := range messages {
-		var event UserCreatedEvent
-		if err := json.Unmarshal(msg.Body, &event); err != nil {
-			slog.Error("decode user.created event failed", "error", err)
+	for {
+		select {
+		case <-ctx.Done():
+			slog.Info("consumer stopped")
+			return nil
 
-			msg.Nack(false, false)
-			continue
+		case msg, ok := <-messages:
+			if !ok {
+				slog.Error("rabbitmq message closed")
+				return nil
+			}
+
+			var event UserCreatedEvent
+			if err := json.Unmarshal(msg.Body, &event); err != nil {
+				slog.Error("decode user.created event failed", "error", err)
+
+				msg.Nack(false, false)
+				continue
+			}
+
+			if err := c.mailer.SendWelcomeEmail(ctx, event.Name, event.Email); err != nil {
+				slog.Error("send welcome email failed", "error", err)
+				msg.Nack(false, false)
+				continue
+			}
+
+			if err := msg.Ack(false); err != nil {
+				slog.Error("message ack failed", "error", err)
+				continue
+			}
+
+			slog.Info("message acknoledged")
 		}
-
-		if err := c.mailer.SendWelcomeEmail(ctx, event.Name, event.Email); err != nil {
-			slog.Error("send welcome email failed", "error", err)
-			msg.Nack(false, false)
-			continue
-		}
-
-		if err := msg.Ack(false); err != nil {
-			slog.Error("message ack failed", "error", err)
-			continue
-		}
-
-		slog.Info("message acknoledged")
 	}
-
-	return nil
 }
