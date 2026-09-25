@@ -9,7 +9,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o api ./cmd/api && \
     CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o seed ./cmd/seed && \
-    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o seed ./cmd/worker
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o worker ./cmd/worker
 
 FROM alpine:3.21
 
