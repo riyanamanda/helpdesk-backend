@@ -35,5 +35,18 @@ func InitBucket(ctx context.Context, client *s3.Client, bucketName string) error
 		}
 	}
 
+	policy := fmt.Sprintf(
+		`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::%s/*"]}]}`,
+		bucketName,
+	)
+
+	_, err = client.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
+		Bucket: aws.String(bucketName),
+		Policy: aws.String(policy),
+	})
+	if err != nil {
+		return fmt.Errorf("set bucket policy: %w", err)
+	}
+
 	return nil
 }
