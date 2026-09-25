@@ -14,8 +14,8 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/minio"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/redis"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/rustfs"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
@@ -67,24 +67,18 @@ func bootstrap(ctx context.Context, cfg *config.Config) (*http.Server, func(), e
 		slog.Warn("simgos database not configured, simgos routes disabled")
 	}
 
-	slog.Info("connecting to minio")
-	minioClient, err := minio.NewMinioClient(
-		cfg.Storage.Endpoint,
-		cfg.Storage.AccessKey,
-		cfg.Storage.SecretKey,
-		cfg.Storage.UseSSL,
+	slog.Info("connecting to object storage")
+	rustfsClient := rustfs.NewRustFSClient(cfg.Storage.Endpoint, cfg.Storage.AccessKey, cfg.Storage.SecretKey)
+
+	if err := rustfs.InitBucket(ctx, rustfsClient, cfg.Storage.Bucket); err != nil {
+		cleanup()
+		return nil, nil, fmt.Errorf("rustfs bucket: %w", err)
+	}
+
+	storageService := storage.NewRustFSStorage(
+		rustfsClient,
+		cfg.Storage.Bucket,
 	)
-	if err != nil {
-		cleanup()
-		return nil, nil, fmt.Errorf("minio: %w", err)
-	}
-
-	if err := minio.InitBucket(ctx, minioClient, cfg.Storage.Bucket); err != nil {
-		cleanup()
-		return nil, nil, fmt.Errorf("minio bucket: %w", err)
-	}
-
-	storageService := storage.NewMinioStorage(minioClient, cfg.Storage.Bucket)
 
 	slog.Info("connecting to redis")
 	redisClient, err := redis.NewRedisClient(ctx, cfg.Redis)

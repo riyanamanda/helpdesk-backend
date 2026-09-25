@@ -44,11 +44,10 @@ func Load() *Config {
 			FirebaseCredentialsFile: getEnv("FIREBASE_CREDENTIALS_FILE", ""),
 		},
 		Storage: Storage{
-			Endpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),
-			AccessKey: getEnv("MINIO_ACCESS_KEY", "minioadmin"),
-			SecretKey: getEnv("MINIO_SECRET_KEY", "minioadmin"),
-			Bucket:    getEnv("MINIO_BUCKET", "helpdesk-dev"),
-			UseSSL:    getBoolEnv("MINIO_USE_SSL", false),
+			Endpoint:  getEnv("RUSTFS_ENDPOINT", "localhost:9000"),
+			AccessKey: getEnv("RUSTFS_ACCESS_KEY", "rustfsadmin"),
+			SecretKey: getEnv("RUSTFS_SECRET_KEY", "rustfsadmin"),
+			Bucket:    getEnv("RUSTFS_BUCKET", "helpdesk-dev"),
 		},
 		Redis: Redis{
 			Host:     getEnv("REDIS_HOST", "localhost"),
