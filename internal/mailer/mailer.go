@@ -3,6 +3,7 @@ package mailer
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/smtp"
@@ -27,6 +28,12 @@ type TicketEmailData struct {
 	Description string
 }
 
+//go:embed templates/user/welcome.html
+var welcomeTemplate string
+
+//go:embed templates/ticket/created.html
+var ticketCreatedTemplate string
+
 func NewMailer(config config.Email) *Mailer {
 	return &Mailer{
 		config: config,
@@ -34,7 +41,7 @@ func NewMailer(config config.Email) *Mailer {
 }
 
 func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string) error {
-	tmpl, err := template.ParseFiles("internal/mailer/templates/user/welcome.html")
+	tmpl, err := template.New("welcome.html").Parse(welcomeTemplate)
 	if err != nil {
 		return fmt.Errorf("parse welcome email template: %w", err)
 	}
@@ -69,7 +76,7 @@ func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string
 }
 
 func (m *Mailer) SendNewTicketEmail(ctx context.Context, email string, ticketID int64, submittedBy string, title string, description string) error {
-	tmpl, err := template.ParseFiles("internal/mailer/templates/ticket/created.html")
+	tmpl, err := template.New("created.html").Parse(ticketCreatedTemplate)
 	if err != nil {
 		return fmt.Errorf("parse ticket email template: %w", err)
 	}
