@@ -11,6 +11,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
@@ -40,6 +41,7 @@ type divisionSvc interface {
 
 type service struct {
 	repo          TicketRepository
+	txManager     *database.Manager
 	storage       storage.Storage
 	storageConfig config.Storage
 	cache         cache.Cache
@@ -49,6 +51,7 @@ type service struct {
 
 func NewTicketService(
 	repo TicketRepository,
+	txManager *database.Manager,
 	store storage.Storage,
 	storageConfig config.Storage,
 	cache cache.Cache,
@@ -57,6 +60,7 @@ func NewTicketService(
 ) TicketService {
 	return &service{
 		repo:          repo,
+		txManager:     txManager,
 		storage:       store,
 		storageConfig: storageConfig,
 		cache:         cache,
@@ -101,20 +105,14 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 		CreatedBy:   createdBy,
 	}
 
-	tx, err := s.repo.Begin(ctx)
+	// begin transaction
+	tx, err := s.txManager.Begin(ctx)
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 
-	defer func() {
-		if err != nil {
-			if rbErr := tx.Rollback(); rbErr != nil {
-				slog.ErrorContext(ctx, "rollback failed", "error", rbErr)
-			}
-		}
-	}()
-
-	ticketID, err := tx.Create(ctx, ticket)
+	ticketID, err := s.repo.Create(ctx, tx, ticket)
 	if err != nil {
 		return err
 	}
@@ -130,7 +128,7 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 				UploadedBy:     createdBy,
 			}
 
-			if attachErr := tx.CreateAttachment(ctx, attachment); attachErr != nil {
+			if attachErr := s.repo.CreateAttachment(ctx, tx, attachment); attachErr != nil {
 				_ = s.storage.Delete(ctx, objectKey)
 				slog.ErrorContext(ctx, "failed to create ticket attachment", "ticket_id", ticketID, "error", attachErr)
 			}
@@ -139,10 +137,12 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 		}
 	}
 
-	err = tx.Commit()
-	if err == nil {
-		dashboard.InvalidateCache(ctx, s.cache)
+	// commit transaction
+	if err = tx.Commit(); err != nil {
+		return err
 	}
+
+	dashboard.InvalidateCache(ctx, s.cache)
 
 	return err
 }
@@ -229,24 +229,17 @@ func (s *service) DeleteTicket(ctx context.Context, ticketID int64) error {
 		return err
 	}
 
-	tx, err := s.repo.Begin(ctx)
+	tx, err := s.txManager.Begin(ctx)
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 
-	defer func() {
-		if err != nil {
-			if rbErr := tx.Rollback(); rbErr != nil {
-				slog.ErrorContext(ctx, "rollback failed", "error", rbErr)
-			}
-		}
-	}()
-
-	if err = tx.DeleteAttachmentsByTicketID(ctx, ticketID); err != nil {
+	if err = s.repo.DeleteAttachmentsByTicketID(ctx, tx, ticketID); err != nil {
 		return err
 	}
 
-	if err = tx.Delete(ctx, ticketID); err != nil {
+	if err = s.repo.Delete(ctx, tx, ticketID); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperr.NotFound("ticket")
 		}
@@ -333,25 +326,18 @@ func (s *service) CreateResolution(ctx context.Context, ticketID int64, req Tick
 		return apperr.BadRequest("please assign the ticket before adding a resolution")
 	}
 
-	tx, err := s.repo.Begin(ctx)
+	tx, err := s.txManager.Begin(ctx)
 	if err != nil {
 		return err
 	}
-
-	defer func() {
-		if err != nil {
-			if rbErr := tx.Rollback(); rbErr != nil {
-				slog.ErrorContext(ctx, "rollback failed", "error", rbErr)
-			}
-		}
-	}()
+	defer tx.Rollback()
 
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
-	if err = tx.UpdateResolution(ctx, ticketID, req.ResolvedBy, req.Resolution); err != nil {
+	if err = s.repo.UpdateResolution(ctx, tx, ticketID, req.ResolvedBy, req.Resolution); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperr.NotFound("ticket")
 		}
@@ -369,7 +355,7 @@ func (s *service) CreateResolution(ctx context.Context, ticketID int64, req Tick
 				UploadedBy:     userID,
 			}
 
-			if attachErr := tx.CreateAttachment(ctx, attachment); attachErr != nil {
+			if attachErr := s.repo.CreateAttachment(ctx, tx, attachment); attachErr != nil {
 				_ = s.storage.Delete(ctx, objectKey)
 				slog.ErrorContext(ctx, "failed to create ticket attachment", "ticket_id", ticketID, "error", attachErr)
 			}
@@ -378,10 +364,11 @@ func (s *service) CreateResolution(ctx context.Context, ticketID int64, req Tick
 		}
 	}
 
-	err = tx.Commit()
-	if err == nil {
-		dashboard.InvalidateCache(ctx, s.cache)
+	if err = tx.Commit(); err != nil {
+		return err
 	}
+
+	dashboard.InvalidateCache(ctx, s.cache)
 
 	return err
 }

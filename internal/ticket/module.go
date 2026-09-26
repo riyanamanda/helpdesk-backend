@@ -7,13 +7,14 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, cache cache.Cache, userRepo user.UserRepository) {
+func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, txManager *database.Manager, storageConfig config.Storage, cache cache.Cache, userRepo user.UserRepository) {
 	catRepo := category.NewCategoryRepository(db)
 	catSvc := category.NewCategoryService(catRepo, cache)
 
@@ -21,7 +22,7 @@ func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storag
 	divSvc := division.NewDivisionService(divRepo, cache)
 
 	repo := NewTicketRepository(db)
-	svc := NewTicketService(repo, storageService, storageConfig, cache, catSvc, divSvc)
+	svc := NewTicketService(repo, txManager, storageService, storageConfig, cache, catSvc, divSvc)
 	handler := NewTicketHandler(svc)
 
 	e.GET("/tickets", handler.ListTickets, middleware.RequirePermission(rbac.PermissionTicketView))
