@@ -2,13 +2,18 @@ package ticket
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
+	"github.com/riyanamanda/helpdesk-backend/internal/event"
+	"github.com/riyanamanda/helpdesk-backend/internal/outbox"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
@@ -39,33 +44,43 @@ type divisionSvc interface {
 	GetDivision(ctx context.Context, id int64) (*division.DivisionResponse, error)
 }
 
+type userSvc interface {
+	GetUser(ctx context.Context, id uuid.UUID) (*user.UserResponse, error)
+}
+
 type service struct {
 	repo          TicketRepository
+	outboxRepo    outbox.Repository
 	txManager     *database.Manager
 	storage       storage.Storage
 	storageConfig config.Storage
 	cache         cache.Cache
 	categorySvc   categorySvc
 	divisionSvc   divisionSvc
+	userSvc       userSvc
 }
 
 func NewTicketService(
 	repo TicketRepository,
+	outboxRepo outbox.Repository,
 	txManager *database.Manager,
 	store storage.Storage,
 	storageConfig config.Storage,
 	cache cache.Cache,
 	categorySvc categorySvc,
 	divisionSvc divisionSvc,
+	userSvc userSvc,
 ) TicketService {
 	return &service{
 		repo:          repo,
+		outboxRepo:    outboxRepo,
 		txManager:     txManager,
 		storage:       store,
 		storageConfig: storageConfig,
 		cache:         cache,
 		categorySvc:   categorySvc,
 		divisionSvc:   divisionSvc,
+		userSvc:       userSvc,
 	}
 }
 
@@ -97,6 +112,11 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
+	getUser, err := s.userSvc.GetUser(ctx, createdBy)
+	if err != nil {
+		return err
+	}
+
 	ticket := Ticket{
 		Title:       req.Title,
 		Description: req.Description,
@@ -105,7 +125,7 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 		CreatedBy:   createdBy,
 	}
 
-	// begin transaction
+	// Begin transaction
 	tx, err := s.txManager.Begin(ctx)
 	if err != nil {
 		return err
@@ -117,34 +137,67 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 		return err
 	}
 
-	if file != nil {
-		objectKey := httputil.GenerateObjectKey(fmt.Sprintf("tickets/%d/report", ticketID), file.Filename)
-
-		if uploadErr := s.storage.Upload(ctx, objectKey, file); uploadErr == nil {
-			attachment := TicketAttachment{
-				TicketID:       ticketID,
-				FileKey:        objectKey,
-				AttachmentType: string(Report),
-				UploadedBy:     createdBy,
-			}
-
-			if attachErr := s.repo.CreateAttachment(ctx, tx, attachment); attachErr != nil {
-				_ = s.storage.Delete(ctx, objectKey)
-				slog.ErrorContext(ctx, "failed to create ticket attachment", "ticket_id", ticketID, "error", attachErr)
-			}
-		} else {
-			slog.ErrorContext(ctx, "failed to upload ticket attachment", "ticket_id", ticketID, "error", uploadErr)
-		}
+	event := event.TicketCreatedEvent{
+		TicketID:    ticketID,
+		SubmittedBy: getUser.Name,
+		Title:       req.Title,
+		Description: req.Description,
 	}
 
-	// commit transaction
-	if err = tx.Commit(); err != nil {
+	payload, err := json.Marshal(event)
+	if err != nil {
 		return err
 	}
 
+	outboxEvent := outbox.OutboxEvent{
+		EventType:   "ticket.created",
+		AggregateID: strconv.FormatInt(ticketID, 10),
+		Payload:     payload,
+	}
+
+	if err := s.outboxRepo.Create(ctx, tx, outboxEvent); err != nil {
+		return err
+	}
+
+	var objectKey string
+	var uploaded bool
+
+	defer func() {
+		if uploaded {
+			if err := s.storage.Delete(ctx, objectKey); err != nil {
+				slog.ErrorContext(ctx, "failed to cleanup ticket attachment", "object_key", objectKey, "error", err)
+			}
+		}
+	}()
+
+	if file != nil {
+		objectKey = httputil.GenerateObjectKey(fmt.Sprintf("tickets/%d/report", ticketID), file.Filename)
+
+		if err := s.storage.Upload(ctx, objectKey, file); err != nil {
+			return err
+		}
+
+		uploaded = true
+		attachment := TicketAttachment{
+			TicketID:       ticketID,
+			FileKey:        objectKey,
+			AttachmentType: string(Report),
+			UploadedBy:     createdBy,
+		}
+
+		if err := s.repo.CreateAttachment(ctx, tx, attachment); err != nil {
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	uploaded = false
 	dashboard.InvalidateCache(ctx, s.cache)
 
-	return err
+	return nil
 }
 
 func (s *service) GetTicket(ctx context.Context, id int64) (*TicketDetailResponse, error) {

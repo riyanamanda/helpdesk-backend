@@ -62,7 +62,7 @@ func (h *Handler) GetUser(c *echo.Context) error {
 		return response.Error(c, apperr.BadRequest("invalid user id"))
 	}
 
-	user, err := h.svc.GetUser(c.Request().Context(), &id)
+	user, err := h.svc.GetUser(c.Request().Context(), id)
 	if err != nil {
 		return response.Error(c, err)
 	}

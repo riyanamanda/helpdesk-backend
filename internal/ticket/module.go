@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
+	"github.com/riyanamanda/helpdesk-backend/internal/outbox"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
@@ -14,15 +15,18 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, txManager *database.Manager, storageConfig config.Storage, cache cache.Cache, userRepo user.UserRepository) {
+func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, outboxRepo outbox.Repository, txManager *database.Manager, storageConfig config.Storage, cache cache.Cache) {
 	catRepo := category.NewCategoryRepository(db)
 	catSvc := category.NewCategoryService(catRepo, cache)
 
 	divRepo := division.NewDivisionRepository(db)
 	divSvc := division.NewDivisionService(divRepo, cache)
 
+	userRepo := user.NewUserRepository(db)
+	userSvc := user.NewUserService(userRepo, outboxRepo, txManager, storageConfig, cache)
+
 	repo := NewTicketRepository(db)
-	svc := NewTicketService(repo, txManager, storageService, storageConfig, cache, catSvc, divSvc)
+	svc := NewTicketService(repo, outboxRepo, txManager, storageService, storageConfig, cache, catSvc, divSvc, userSvc)
 	handler := NewTicketHandler(svc)
 
 	e.GET("/tickets", handler.ListTickets, middleware.RequirePermission(rbac.PermissionTicketView))

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/riyanamanda/helpdesk-backend/internal/event"
 	"github.com/riyanamanda/helpdesk-backend/internal/outbox"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
@@ -21,7 +22,7 @@ import (
 type UserService interface {
 	ListUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error)
 	CreateUser(ctx context.Context, req *UserCreateRequest) error
-	GetUser(ctx context.Context, id *uuid.UUID) (*UserResponse, error)
+	GetUser(ctx context.Context, id uuid.UUID) (*UserResponse, error)
 	UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error
 	UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePasswordRequest) error
 	ListAssignableUser(ctx context.Context) ([]UserBrief, error)
@@ -98,22 +99,22 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 		return err
 	}
 
-	payload, err := json.Marshal(map[string]any{
-		"name":  user.Name,
-		"email": user.Email,
-	})
+	event := event.UserCreatedEvent{
+		Name:  user.Name,
+		Email: user.Email,
+	}
+	payload, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
 
-	event := outbox.OutboxEvent{
-		ID:          uuid.New(),
+	outboxEvent := outbox.OutboxEvent{
 		EventType:   "user.created",
 		AggregateID: userID.String(),
 		Payload:     payload,
 	}
 
-	if err := s.outboxRepo.Create(ctx, tx, event); err != nil {
+	if err := s.outboxRepo.Create(ctx, tx, outboxEvent); err != nil {
 		return err
 	}
 
@@ -127,8 +128,8 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 	return nil
 }
 
-func (s *service) GetUser(ctx context.Context, id *uuid.UUID) (*UserResponse, error) {
-	user, err := s.repo.GetByID(ctx, *id)
+func (s *service) GetUser(ctx context.Context, id uuid.UUID) (*UserResponse, error) {
+	user, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
 			return nil, apperr.NotFound("user")

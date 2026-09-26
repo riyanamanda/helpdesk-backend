@@ -12,6 +12,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/rabbitmq"
+	"github.com/riyanamanda/helpdesk-backend/internal/user"
 	"github.com/riyanamanda/helpdesk-backend/internal/worker"
 )
 
@@ -44,9 +45,10 @@ func main() {
 
 	// Dependencies
 	outboxRepo := outbox.NewRepository(db)
+	userRepo := user.NewUserRepository(db)
 	mailer := mailer.NewMailer(cfg.Email)
 	publisher := worker.NewPublisher(outboxRepo, client)
-	consumer := worker.NewConsumer(client, mailer)
+	consumer := worker.NewConsumer(client, mailer, userRepo)
 
 	// goroutine
 	go publisher.Run(ctx)
