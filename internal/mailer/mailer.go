@@ -121,9 +121,9 @@ func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string
 	}
 
 	message := []byte(
-		"From: " + m.config.From + "\r\n" +
+		"From: IT Helpdesk <" + m.config.From + ">\r\n" +
 			"To: " + email + "\r\n" +
-			"Subject: Selamat Datang di IT Helpdesk\r\n" +
+			"Subject: Welcome to IT Helpdesk\r\n" +
 			"MIME-Version: 1.0\r\n" +
 			"Content-Type: text/html; charset=UTF-8\r\n" +
 			"\r\n" +
@@ -152,9 +152,9 @@ func (m *Mailer) SendNewTicketEmail(ctx context.Context, email string, ticketID 
 	}
 
 	message := []byte(
-		"From: " + m.config.From + "\r\n" +
+		"From: IT Helpdesk <" + m.config.From + ">\r\n" +
 			"To: " + email + "\r\n" +
-			"Subject: Tiket Dukungan Baru #" + strconv.FormatInt(ticketID, 10) + "\r\n" +
+			"Subject: [IT Helpdesk] New Ticket #" + strconv.FormatInt(ticketID, 10) + " — Need Review ASAP\r\n" +
 			"MIME-Version: 1.0\r\n" +
 			"Content-Type: text/html; charset=UTF-8\r\n" +
 			"\r\n" +
