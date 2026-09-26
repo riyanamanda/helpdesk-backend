@@ -3,9 +3,11 @@ package mailer
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	_ "embed"
 	"fmt"
 	"html/template"
+	"net"
 	"net/smtp"
 	"strconv"
 
@@ -40,6 +42,68 @@ func NewMailer(config config.Email) *Mailer {
 	}
 }
 
+func (m *Mailer) send(ctx context.Context, email string, message []byte) error {
+	addr := net.JoinHostPort(m.config.Host, m.config.Port)
+
+	if m.config.UseSSL {
+		tlsConfig := &tls.Config{
+			ServerName: m.config.Host,
+		}
+
+		conn, err := tls.Dial("tcp", addr, tlsConfig)
+		if err != nil {
+			return fmt.Errorf("connect SMTP with TLS: %w", err)
+		}
+		defer conn.Close()
+
+		client, err := smtp.NewClient(conn, m.config.Host)
+		if err != nil {
+			return fmt.Errorf("create SMTP client: %w", err)
+		}
+		defer client.Close()
+
+		auth := smtp.PlainAuth("", m.config.Username, m.config.Password, m.config.Host)
+
+		if err := client.Auth(auth); err != nil {
+			return fmt.Errorf("SMTP authentication: %w", err)
+		}
+
+		if err := client.Mail(m.config.From); err != nil {
+			return fmt.Errorf("SMTP MAIL FROM: %w", err)
+		}
+
+		if err := client.Rcpt(email); err != nil {
+			return fmt.Errorf("SMTP RCPT TO: %w", err)
+		}
+
+		writer, err := client.Data()
+		if err != nil {
+			return fmt.Errorf("SMTP DATA: %w", err)
+		}
+
+		if _, err := writer.Write(message); err != nil {
+			writer.Close()
+			return fmt.Errorf("write SMTP message: %w", err)
+		}
+
+		if err := writer.Close(); err != nil {
+			return fmt.Errorf("close SMTP message: %w", err)
+		}
+
+		return client.Quit()
+	}
+
+	auth := smtp.PlainAuth("", m.config.Username, m.config.Password, m.config.Host)
+
+	return smtp.SendMail(
+		addr,
+		auth,
+		m.config.From,
+		[]string{email},
+		message,
+	)
+}
+
 func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string) error {
 	tmpl, err := template.New("welcome.html").Parse(welcomeTemplate)
 	if err != nil {
@@ -47,6 +111,7 @@ func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string
 	}
 
 	var body bytes.Buffer
+
 	err = tmpl.Execute(&body, WelcomeEmailData{
 		Name:  name,
 		Email: email,
@@ -55,7 +120,6 @@ func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string
 		return fmt.Errorf("execute welcome email template: %w", err)
 	}
 
-	auth := smtp.PlainAuth("", m.config.Username, m.config.Password, m.config.Host)
 	message := []byte(
 		"From: " + m.config.From + "\r\n" +
 			"To: " + email + "\r\n" +
@@ -66,13 +130,7 @@ func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string
 			body.String(),
 	)
 
-	return smtp.SendMail(
-		m.config.Host+":"+m.config.Port,
-		auth,
-		m.config.From,
-		[]string{email},
-		message,
-	)
+	return m.send(ctx, email, message)
 }
 
 func (m *Mailer) SendNewTicketEmail(ctx context.Context, email string, ticketID int64, submittedBy string, title string, description string) error {
@@ -93,13 +151,6 @@ func (m *Mailer) SendNewTicketEmail(ctx context.Context, email string, ticketID 
 		return fmt.Errorf("execute ticket email template: %w", err)
 	}
 
-	auth := smtp.PlainAuth(
-		"",
-		m.config.Username,
-		m.config.Password,
-		m.config.Host,
-	)
-
 	message := []byte(
 		"From: " + m.config.From + "\r\n" +
 			"To: " + email + "\r\n" +
@@ -110,11 +161,5 @@ func (m *Mailer) SendNewTicketEmail(ctx context.Context, email string, ticketID 
 			body.String(),
 	)
 
-	return smtp.SendMail(
-		m.config.Host+":"+m.config.Port,
-		auth,
-		m.config.From,
-		[]string{email},
-		message,
-	)
+	return m.send(ctx, email, message)
 }
