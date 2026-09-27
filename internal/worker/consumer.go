@@ -17,18 +17,20 @@ type Consumer struct {
 	rabbitmq *rabbitmq.Client
 	mailer   *mailer.Mailer
 	userRepo user.UserRepository
+	queue    string
 }
 
-func NewConsumer(rabbitmq *rabbitmq.Client, mailer *mailer.Mailer, userRepo user.UserRepository) *Consumer {
+func NewConsumer(rabbitmq *rabbitmq.Client, mailer *mailer.Mailer, userRepo user.UserRepository, queue string) *Consumer {
 	return &Consumer{
 		rabbitmq: rabbitmq,
 		mailer:   mailer,
 		userRepo: userRepo,
+		queue:    queue,
 	}
 }
 
 func (c *Consumer) Run(ctx context.Context) error {
-	messages, err := c.rabbitmq.Consume("helpdesk.email")
+	messages, err := c.rabbitmq.Consume(c.queue)
 	if err != nil {
 		return err
 	}
@@ -46,14 +48,14 @@ func (c *Consumer) Run(ctx context.Context) error {
 			}
 
 			switch msg.RoutingKey {
-			case "user.created":
+			case event.UserCreated:
 				if err := c.handleUserCreated(ctx, msg.Body); err != nil {
 					slog.Error("handle user.created failed", "error", err)
 					msg.Nack(false, false)
 					continue
 				}
 
-			case "ticket.created":
+			case event.TicketCreated:
 				if err := c.handleTicketCreated(ctx, msg.Body); err != nil {
 					slog.Error("handle ticket.created failed", "error", err)
 					msg.Nack(false, false)

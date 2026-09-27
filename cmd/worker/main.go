@@ -48,14 +48,21 @@ func main() {
 	userRepo := user.NewUserRepository(db)
 	mailer := mailer.NewMailer(cfg.Email)
 	publisher := worker.NewPublisher(outboxRepo, client)
-	consumer := worker.NewConsumer(client, mailer, userRepo)
+	welcomeConsumer := worker.NewConsumer(client, mailer, userRepo, rabbitmq.QueueWelcome)
+	ticketConsumer := worker.NewConsumer(client, mailer, userRepo, rabbitmq.QueueTicket)
 
 	// goroutine
 	go publisher.Run(ctx)
 
 	go func() {
-		if err := consumer.Run(ctx); err != nil {
-			slog.Error("consumer stopped", "error", err)
+		if err := welcomeConsumer.Run(ctx); err != nil {
+			slog.Error("welcome consumer stopped", "error", err)
+		}
+	}()
+
+	go func() {
+		if err := ticketConsumer.Run(ctx); err != nil {
+			slog.Error("ticket consumer stopped", "error", err)
 		}
 	}()
 

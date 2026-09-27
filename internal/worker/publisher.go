@@ -44,7 +44,7 @@ func (p *Publisher) publish(ctx context.Context) {
 	}
 
 	for _, event := range events {
-		err := p.rabbitmq.Publish(ctx, "helpdesk.events", event.EventType, "application/json", event.Payload)
+		err := p.rabbitmq.Publish(ctx, rabbitmq.ExchangeEvent, event.EventType, "application/json", event.Payload)
 		if err != nil {
 			slog.Error("publish outbox event failed", "id", event.ID, "event_type", event.EventType, "error", err)
 			continue
