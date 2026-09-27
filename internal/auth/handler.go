@@ -61,3 +61,29 @@ func (h *Handler) Me(c *echo.Context) error {
 
 	return response.OK(c, user)
 }
+
+func (h *Handler) ForgotPassword(c *echo.Context) error {
+	req, err := httputil.BindAndValidate[ForgotPasswordRequest](c)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	if err := h.svc.ForgotPassword(c.Request().Context(), *req); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.NoContent(c)
+}
+
+func (h *Handler) ResetPassword(c *echo.Context) error {
+	req, err := httputil.BindAndValidate[ResetPasswordRequest](c)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	if err := h.svc.ResetPassword(c.Request().Context(), *req); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.NoContent(c)
+}

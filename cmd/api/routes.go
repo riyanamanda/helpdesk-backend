@@ -37,7 +37,7 @@ func registerRoutes(cfg *config.Config, d *deps) http.Handler {
 	})
 
 	api := e.Group("/api/v1")
-	auth.Register(api, d.userRepo, cfg.Auth, cfg.Storage, d.redisClient, d.permissionService)
+	auth.Register(api, d.userRepo, cfg.Auth, cfg.Storage, d.redisClient, d.permissionService, d.outboxRepo, d.txManager)
 
 	protected := api.Group("")
 	protected.Use(middleware.AuthMiddleware(cfg.Auth, d.redisClient, d.permissionService))

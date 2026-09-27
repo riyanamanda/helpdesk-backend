@@ -2,12 +2,17 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/riyanamanda/helpdesk-backend/internal/outbox"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
@@ -20,6 +25,8 @@ type AuthService interface {
 	LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (*LoginResponse, error)
 	Logout(ctx context.Context) error
 	Me(ctx context.Context) (*CurrentUserResponse, error)
+	ForgotPassword(ctx context.Context, req ForgotPasswordRequest) error
+	ResetPassword(ctx context.Context, req ResetPasswordRequest) error
 }
 
 type service struct {
@@ -28,15 +35,27 @@ type service struct {
 	storageConfig     config.Storage
 	redis             cache.Cache
 	permissionService ctxkey.PermissionService
+	txManager         *database.Manager
+	outboxRepo        outbox.Repository
 }
 
-func NewAuthService(repo user.UserRepository, cfg config.Auth, storageConfig config.Storage, redis cache.Cache, permissionService ctxkey.PermissionService) AuthService {
+func NewAuthService(
+	repo user.UserRepository,
+	cfg config.Auth,
+	storageConfig config.Storage,
+	redis cache.Cache,
+	permissionService ctxkey.PermissionService,
+	txManager *database.Manager,
+	outboxRepo outbox.Repository,
+) AuthService {
 	return &service{
 		userRepo:          repo,
 		config:            cfg,
 		storageConfig:     storageConfig,
 		redis:             redis,
 		permissionService: permissionService,
+		txManager:         txManager,
+		outboxRepo:        outboxRepo,
 	}
 }
 
@@ -135,4 +154,33 @@ func (s *service) Me(ctx context.Context) (*CurrentUserResponse, error) {
 	}
 
 	return toCurrentUserResponse(*u, s.storageConfig, authUser.Permissions.ToSlice()), nil
+}
+
+func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest) error {
+	userValue, err := s.userRepo.GetByEmail(ctx, req.Email)
+	if err != nil {
+		// prevent user enumeration
+		if errors.Is(err, user.ErrUserNotFound) {
+			return nil
+		}
+
+		return err
+	}
+
+	tokenByte := make([]byte, 32)
+	if _, err := rand.Read(tokenByte); err != nil {
+		return err
+	}
+
+	token := hex.EncodeToString(tokenByte)
+
+	if err := s.redis.Set(ctx, PasswordResetCacheKey+token, userValue.ID.String(), 15*time.Minute); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) ResetPassword(ctx context.Context, req ResetPasswordRequest) error {
+	panic("unimplement")
 }
