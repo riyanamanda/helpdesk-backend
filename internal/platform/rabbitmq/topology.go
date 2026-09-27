@@ -7,38 +7,72 @@ import (
 
 func (c *Client) SetupEmailTopology() error {
 	// exchange
-	err := c.ch.ExchangeDeclare(ExchangeEvent, "topic", true, false, false, false, nil)
-	if err != nil {
+	if err := c.ch.ExchangeDeclare(ExchangeEvent, "topic", true, false, false, false, nil); err != nil {
 		return err
 	}
 
-	// queue
-	_, err = c.ch.QueueDeclare(QueueWelcome, true, false, false, false, amqp.Table{
-		"x-queue-type": "quorum",
-	})
-	if err != nil {
+	// welcome DLX
+	if err := c.ch.ExchangeDeclare(ExchangeWelcomeDLX, "direct", true, false, false, false, nil); err != nil {
 		return err
 	}
 
-	_, err = c.ch.QueueDeclare(QueueTicket, true, false, false, false, amqp.Table{
+	// ticket DLX
+	if err := c.ch.ExchangeDeclare(ExchangeTicketDLX, "direct", true, false, false, false, nil); err != nil {
+		return err
+	}
+
+	// welcome queue
+	if _, err := c.ch.QueueDeclare(QueueWelcome, true, false, false, false, amqp.Table{
+		"x-queue-type":              "quorum",
+		"x-dead-letter-exchange":    ExchangeWelcomeDLX,
+		"x-dead-letter-routing-key": event.UserCreated,
+	}); err != nil {
+		return err
+	}
+
+	// ticket queue
+	if _, err := c.ch.QueueDeclare(QueueTicket, true, false, false, false, amqp.Table{
+		"x-queue-type":              "quorum",
+		"x-dead-letter-exchange":    ExchangeTicketDLX,
+		"x-dead-letter-routing-key": event.TicketCreated,
+	}); err != nil {
+		return err
+	}
+
+	// welcome DLQ
+	if _, err := c.ch.QueueDeclare(QueueWelcomeDLQ, true, false, false, false, amqp.Table{
 		"x-queue-type": "quorum",
-	})
-	if err != nil {
+	}); err != nil {
+		return err
+	}
+
+	// ticket DLQ
+	if _, err := c.ch.QueueDeclare(QueueTicketDLQ, true, false, false, false, amqp.Table{
+		"x-queue-type": "quorum",
+	}); err != nil {
 		return err
 	}
 	// end queue
 
-	// bind
-	err = c.ch.QueueBind(QueueWelcome, event.UserCreated, ExchangeEvent, false, nil)
-	if err != nil {
+	// main queue
+	if err := c.ch.QueueBind(QueueWelcome, event.UserCreated, ExchangeEvent, false, nil); err != nil {
 		return err
 	}
 
-	err = c.ch.QueueBind(QueueTicket, event.TicketCreated, ExchangeEvent, false, nil)
-	if err != nil {
+	if err := c.ch.QueueBind(QueueTicket, event.TicketCreated, ExchangeEvent, false, nil); err != nil {
 		return err
 	}
-	// end bind
+	// end main queue
+
+	// DLQ queue
+	if err := c.ch.QueueBind(QueueWelcomeDLQ, event.UserCreated, ExchangeWelcomeDLX, false, nil); err != nil {
+		return err
+	}
+
+	if err := c.ch.QueueBind(QueueTicketDLQ, event.TicketCreated, ExchangeTicketDLX, false, nil); err != nil {
+		return err
+	}
+	// End DLQ queue
 
 	return nil
 }

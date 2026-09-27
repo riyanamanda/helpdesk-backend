@@ -51,20 +51,26 @@ func (c *Consumer) Run(ctx context.Context) error {
 			case event.UserCreated:
 				if err := c.handleUserCreated(ctx, msg.Body); err != nil {
 					slog.Error("handle user.created failed", "error", err)
-					msg.Nack(false, false)
+					if err := msg.Nack(false, false); err != nil {
+						slog.Error("message nack failed", "error", err)
+					}
 					continue
 				}
 
 			case event.TicketCreated:
 				if err := c.handleTicketCreated(ctx, msg.Body); err != nil {
 					slog.Error("handle ticket.created failed", "error", err)
-					msg.Nack(false, false)
+					if err := msg.Nack(false, false); err != nil {
+						slog.Error("message nack failed", "error", err)
+					}
 					continue
 				}
 
 			default:
-				slog.Error("unknow event", "routing_key", msg.RoutingKey)
-				msg.Nack(false, false)
+				slog.Error("unknown event", "routing_key", msg.RoutingKey)
+				if err := msg.Nack(false, false); err != nil {
+					slog.Error("message nack failed, unknown event", "error", err)
+				}
 				continue
 			}
 
@@ -73,7 +79,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 				continue
 			}
 
-			slog.Info("message acknoledged", "routing_key", msg.RoutingKey)
+			slog.Info("message acknowledged", "routing_key", msg.RoutingKey)
 		}
 	}
 }
