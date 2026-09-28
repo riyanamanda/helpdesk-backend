@@ -1,6 +1,6 @@
 package rbac
 
-const UserPermissionsCacheKey = "user_permissions:%s"
+const UserPermissionsCacheKey = "user:permissions:%s"
 const UserRoleCacheKey = "auth:role:%s"
 
 type RoleType string

@@ -174,6 +174,12 @@ func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 
 	token := hex.EncodeToString(tokenByte)
 
+	// set request token
+	if err := s.redis.Set(ctx, PasswordResetRequestCacheKey+userValue.ID.String(), token, 60*time.Second); err != nil {
+		return err
+	}
+
+	// set reset token
 	if err := s.redis.Set(ctx, PasswordResetCacheKey+token, userValue.ID.String(), 15*time.Minute); err != nil {
 		return err
 	}

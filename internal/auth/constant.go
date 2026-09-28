@@ -1,5 +1,6 @@
 package auth
 
 const (
-	PasswordResetCacheKey = "password-reset:token:"
+	PasswordResetRequestCacheKey = "password-reset-request:user:"
+	PasswordResetCacheKey        = "password-reset:token:"
 )
