@@ -9,11 +9,10 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/riyanamanda/helpdesk-backend/internal/outbox"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/rabbitmq"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/jwtutil"
@@ -35,8 +34,7 @@ type service struct {
 	storageConfig     config.Storage
 	redis             cache.Cache
 	permissionService ctxkey.PermissionService
-	txManager         *database.Manager
-	outboxRepo        outbox.Repository
+	rabbitmq          rabbitmq.Client
 }
 
 func NewAuthService(
@@ -45,8 +43,7 @@ func NewAuthService(
 	storageConfig config.Storage,
 	redis cache.Cache,
 	permissionService ctxkey.PermissionService,
-	txManager *database.Manager,
-	outboxRepo outbox.Repository,
+	rabbitmq rabbitmq.Client,
 ) AuthService {
 	return &service{
 		userRepo:          repo,
@@ -54,8 +51,7 @@ func NewAuthService(
 		storageConfig:     storageConfig,
 		redis:             redis,
 		permissionService: permissionService,
-		txManager:         txManager,
-		outboxRepo:        outboxRepo,
+		rabbitmq:          rabbitmq,
 	}
 }
 
@@ -167,20 +163,28 @@ func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 		return err
 	}
 
+	// invalidate old token if exists
+	userKey := buildPasswordResetRequestCache(userValue.ID.String())
+	existingToken, err := s.redis.Get(ctx, userKey)
+	if err == nil && existingToken != "" {
+		InvalidateResetPasswordCache(ctx, s.redis, userValue.ID.String(), existingToken)
+	}
+
+	// generate new reset password token
 	tokenByte := make([]byte, 32)
 	if _, err := rand.Read(tokenByte); err != nil {
 		return err
 	}
-
 	token := hex.EncodeToString(tokenByte)
 
 	// set request token
-	if err := s.redis.Set(ctx, PasswordResetRequestCacheKey+userValue.ID.String(), token, 60*time.Second); err != nil {
+	if err := s.redis.Set(ctx, buildPasswordResetRequestCache(userValue.ID.String()), token, 60*time.Second); err != nil {
 		return err
 	}
 
 	// set reset token
-	if err := s.redis.Set(ctx, PasswordResetCacheKey+token, userValue.ID.String(), 15*time.Minute); err != nil {
+	if err := s.redis.Set(ctx, buildPasswordResetCache(token), userValue.ID.String(), 15*time.Minute); err != nil {
+		_ = s.redis.Delete(ctx, buildPasswordResetRequestCache(userValue.ID.String()))
 		return err
 	}
 
@@ -188,5 +192,5 @@ func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 }
 
 func (s *service) ResetPassword(ctx context.Context, req ResetPasswordRequest) error {
-	panic("unimplement")
+	return nil
 }

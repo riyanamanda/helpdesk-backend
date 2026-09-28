@@ -11,3 +11,9 @@ type TicketCreatedEvent struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }
+
+type PasswordResetRequestedEvent struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	ResetURL string `json:"reset_url"`
+}

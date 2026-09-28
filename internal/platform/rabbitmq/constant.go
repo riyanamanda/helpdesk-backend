@@ -11,4 +11,7 @@ const (
 	QueueWelcomeDLQ = "helpdesk.welcome.dlq"
 	QueueTicket     = "helpdesk.ticket"
 	QueueTicketDLQ  = "helpdesk.ticket.dlq"
+
+	// no need dlq | fire and forget
+	QueuePasswordReset = "helpdesk.password-reset"
 )

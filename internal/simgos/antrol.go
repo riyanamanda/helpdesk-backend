@@ -1,26 +1,25 @@
-package antrian
+package simgos
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 )
 
 const antrolBasePath = "webservice/registrasionline/bpjs"
 
-type antrolClient struct {
+type AntrolClient struct {
 	baseURL    string
 	username   string
 	password   string
 	httpClient *http.Client
 }
 
-func newAntrolClient(domain, username, password string) *antrolClient {
-	return &antrolClient{
+func NewAntrolClient(domain, username, password string) *AntrolClient {
+	return &AntrolClient{
 		baseURL:  domain + antrolBasePath,
 		username: username,
 		password: password,
@@ -30,7 +29,7 @@ func newAntrolClient(domain, username, password string) *antrolClient {
 	}
 }
 
-func (c *antrolClient) getToken(ctx context.Context) (string, error) {
+func (c *AntrolClient) getToken(ctx context.Context) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/getToken", nil)
 	if err != nil {
 		return "", err
@@ -45,20 +44,8 @@ func (c *antrolClient) getToken(ctx context.Context) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	var result struct {
-		Metadata struct {
-			Code int `json:"code"`
-		} `json:"metadata"`
-		Response struct {
-			Token string `json:"token"`
-		} `json:"response"`
-	}
-	if err := json.Unmarshal(body, &result); err != nil {
+	var result antrolTokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return "", err
 	}
 
@@ -69,21 +56,22 @@ func (c *antrolClient) getToken(ctx context.Context) (string, error) {
 	return result.Response.Token, nil
 }
 
-func (c *antrolClient) checkIn(ctx context.Context, kodeBooking int64) error {
+func (c *AntrolClient) CheckIn(ctx context.Context, kodeBooking int64) error {
 	token, err := c.getToken(ctx)
 	if err != nil {
 		return err
 	}
 
-	payload, err := json.Marshal(map[string]any{
-		"kodebooking": fmt.Sprintf("%d", kodeBooking),
-		"waktu":       time.Now().Format("2006-01-02 15:04:05"),
-	})
+	payload := antrolCheckInRequest{
+		KodeBooking: fmt.Sprintf("%d", kodeBooking),
+		Waktu:       time.Now().Format("2006-01-02 15:04:05"),
+	}
+	body, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/checkInAntrian", bytes.NewReader(payload))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/checkInAntrian", bytes.NewReader(body))
 	if err != nil {
 		return err
 	}

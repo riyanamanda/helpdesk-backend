@@ -1,15 +1,10 @@
 package profile
 
 import (
-	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, storageService storage.Storage, storageConfig config.Storage, authConfig config.Auth) {
-	repo := NewProfileRepository(db)
-	svc := NewProfileService(repo, storageService, storageConfig, authConfig)
+func Register(e *echo.Group, svc ProfileService) {
 	handler := NewProfileHandler(svc)
 
 	profileGroup := e.Group("/profile")

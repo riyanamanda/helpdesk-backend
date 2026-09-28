@@ -1,15 +1,12 @@
 package feedback
 
 import (
-	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-func Register(e *echo.Group, db *sqlx.DB) {
-	repo := NewFeedbackRepository(db)
-	svc := NewFeedbackService(repo)
+func Register(e *echo.Group, svc FeedbackService) {
 	handler := NewFeedbackHandler(svc)
 
 	admin := e.Group("/admin")

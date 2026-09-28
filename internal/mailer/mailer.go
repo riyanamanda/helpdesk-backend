@@ -30,8 +30,16 @@ type TicketEmailData struct {
 	Description string
 }
 
+type ResetPasswordEmailData struct {
+	Name     string
+	ResetURL string
+}
+
 //go:embed templates/user/welcome.html
 var welcomeTemplate string
+
+//go:embed templates/user/reset-password.html
+var resetPasswordTemplate string
 
 //go:embed templates/ticket/created.html
 var ticketCreatedTemplate string
@@ -124,6 +132,35 @@ func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string
 		"From: IT Helpdesk <" + m.config.From + ">\r\n" +
 			"To: " + email + "\r\n" +
 			"Subject: Welcome to IT Helpdesk\r\n" +
+			"MIME-Version: 1.0\r\n" +
+			"Content-Type: text/html; charset=UTF-8\r\n" +
+			"\r\n" +
+			body.String(),
+	)
+
+	return m.send(ctx, email, message)
+}
+
+func (m *Mailer) SendResetPasswordEmail(ctx context.Context, name string, email string, resetUrl string) error {
+	tmpl, err := template.New("reset-password.html").Parse(resetPasswordTemplate)
+	if err != nil {
+		return fmt.Errorf("parse reset password email template: %w", err)
+	}
+
+	var body bytes.Buffer
+
+	err = tmpl.Execute(&body, ResetPasswordEmailData{
+		Name:     name,
+		ResetURL: resetUrl,
+	})
+	if err != nil {
+		return fmt.Errorf("execute reset password email template: %w", err)
+	}
+
+	message := []byte(
+		"From: IT Helpdesk <" + m.config.From + ">\r\n" +
+			"To: " + email + "\r\n" +
+			"Subject: [IT Helpdesk] Reset Password\r\n" +
 			"MIME-Version: 1.0\r\n" +
 			"Content-Type: text/html; charset=UTF-8\r\n" +
 			"\r\n" +

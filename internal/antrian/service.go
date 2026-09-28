@@ -1,6 +1,10 @@
 package antrian
 
-import "context"
+import (
+	"context"
+
+	"github.com/riyanamanda/helpdesk-backend/internal/simgos"
+)
 
 type AntrianService interface {
 	ListAntrian(ctx context.Context, params *GetAntrianParams) ([]AntrianResponse, int64, error)
@@ -9,11 +13,14 @@ type AntrianService interface {
 
 type service struct {
 	repo   AntrianRepository
-	antrol *antrolClient
+	simgos *simgos.AntrolClient
 }
 
-func NewAntrianService(repo AntrianRepository, antrol *antrolClient) AntrianService {
-	return &service{repo: repo, antrol: antrol}
+func NewAntrianService(repo AntrianRepository, simgos *simgos.AntrolClient) AntrianService {
+	return &service{
+		repo:   repo,
+		simgos: simgos,
+	}
 }
 
 func (s *service) ListAntrian(ctx context.Context, params *GetAntrianParams) ([]AntrianResponse, int64, error) {
@@ -31,5 +38,5 @@ func (s *service) ListAntrian(ctx context.Context, params *GetAntrianParams) ([]
 }
 
 func (s *service) CheckIn(ctx context.Context, kodeBooking int64) error {
-	return s.antrol.checkIn(ctx, kodeBooking)
+	return s.simgos.CheckIn(ctx, kodeBooking)
 }

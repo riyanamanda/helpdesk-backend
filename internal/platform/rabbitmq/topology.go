@@ -39,6 +39,13 @@ func (c *Client) SetupEmailTopology() error {
 		return err
 	}
 
+	// password reset queue | fire and forget
+	if _, err := c.ch.QueueDeclare(QueuePasswordReset, true, false, false, false, amqp.Table{
+		"x-queue-type": "quorum",
+	}); err != nil {
+		return err
+	}
+
 	// welcome DLQ
 	if _, err := c.ch.QueueDeclare(QueueWelcomeDLQ, true, false, false, false, amqp.Table{
 		"x-queue-type": "quorum",
@@ -60,6 +67,10 @@ func (c *Client) SetupEmailTopology() error {
 	}
 
 	if err := c.ch.QueueBind(QueueTicket, event.TicketCreated, ExchangeEvent, false, nil); err != nil {
+		return err
+	}
+
+	if err := c.ch.QueueBind(QueuePasswordReset, event.PasswordResetRequested, ExchangeEvent, false, nil); err != nil {
 		return err
 	}
 	// end main queue

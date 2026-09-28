@@ -20,6 +20,7 @@ func Load() *Config {
 			Name:        getEnv("APP_NAME", "Helpdesk Api"),
 			Host:        getEnv("APP_HOST", "localhost"),
 			Port:        getEnv("APP_PORT", "8080"),
+			URL:         getEnv("APP_URL", "http://localhost:3000"),
 			CORSOrigins: getStringSliceEnv("CORS_ORIGINS", []string{"http://localhost:3000"}),
 		},
 		Database: Database{

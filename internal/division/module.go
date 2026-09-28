@@ -1,16 +1,12 @@
 package division
 
 import (
-	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, cache cache.Cache) {
-	repo := NewDivisionRepository(db)
-	svc := NewDivisionService(repo, cache)
+func Register(e *echo.Group, svc DivisionService) {
 	handler := NewDivisionHandler(svc)
 
 	e.GET("/divisions", handler.ListDivisions, middleware.RequirePermission(rbac.PermissionDivisionView))

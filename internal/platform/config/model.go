@@ -27,6 +27,7 @@ type App struct {
 	Name        string
 	Host        string
 	Port        string
+	URL         string
 	CORSOrigins []string
 }
 

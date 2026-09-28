@@ -1,15 +1,11 @@
 package rbac
 
 import (
-	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
-	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 )
 
-func Register(e *echo.Group, db *sqlx.DB, cache cache.Cache) {
-	repo := NewRBACRepository(db)
-	svc := NewRBACService(repo, cache)
+func Register(e *echo.Group, svc RBACService) {
 	handler := NewRBACHandler(svc)
 
 	e.GET("/roles", handler.ListRoles, middleware.RequirePermission(PermissionRBACView))
