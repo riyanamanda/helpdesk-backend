@@ -172,10 +172,17 @@ func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 		return err
 	}
 
+	requestKey, err := s.redis.TTL(ctx, buildPasswordResetRequestCache(userValue.ID.String()))
+	if err != nil {
+		return err
+	}
+
 	// return cooldown if password request exists
 	existingToken, err := s.redis.Get(ctx, buildPasswordResetRequestCache(userValue.ID.String()))
 	if err == nil && existingToken != "" {
-		return apperr.BadRequest("your request in cooldown")
+		if requestKey > 0 {
+			return apperr.RateLimited("your request is in cooldown", int64(requestKey.Seconds())+1)
+		}
 	}
 	if err != nil && !errors.Is(err, redis.Nil) {
 		return err

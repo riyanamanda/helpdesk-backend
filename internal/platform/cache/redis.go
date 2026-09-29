@@ -35,3 +35,7 @@ func (r *RedisCache) DeleteMany(ctx context.Context, keys ...string) error {
 	}
 	return r.client.Del(ctx, keys...).Err()
 }
+
+func (r *RedisCache) TTL(ctx context.Context, key string) (time.Duration, error) {
+	return r.client.TTL(ctx, key).Result()
+}

@@ -72,6 +72,17 @@ func Internal() *Error {
 	}
 }
 
+func RateLimited(message string, retryAfter int64) *Error {
+	return &Error{
+		Code:    CodeRateLimited,
+		Message: message,
+		Status:  http.StatusTooManyRequests,
+		Details: map[string]any{
+			"retry_after": retryAfter,
+		},
+	}
+}
+
 func As(err error) *Error {
 	if e, ok := errors.AsType[*Error](err); ok {
 		return e

@@ -9,6 +9,7 @@ const (
 	CodeBadRequest      = "BAD_REQUEST"
 	CodeForbidden       = "FORBIDDEN"
 	CodeUnauthorized    = "UNAUTHORIZED"
+	CodeRateLimited     = "RATE_LIMITED"
 
 	CodeInvalidToken = "INVALID_TOKEN"
 	CodeTokenExpired = "TOKEN_EXPIRED"

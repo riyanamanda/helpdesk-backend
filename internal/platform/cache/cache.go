@@ -10,4 +10,5 @@ type Cache interface {
 	Set(ctx context.Context, key string, value string, ttl time.Duration) error
 	Delete(ctx context.Context, key string) error
 	DeleteMany(ctx context.Context, keys ...string) error
+	TTL(ctx context.Context, key string) (time.Duration, error)
 }
