@@ -50,6 +50,7 @@ func main() {
 	publisher := worker.NewPublisher(outboxRepo, client)
 	welcomeConsumer := worker.NewConsumer(client, mailer, userRepo, rabbitmq.QueueWelcome)
 	ticketConsumer := worker.NewConsumer(client, mailer, userRepo, rabbitmq.QueueTicket)
+	passwordResetConsumer := worker.NewConsumer(client, mailer, userRepo, rabbitmq.QueuePasswordReset)
 
 	// goroutine
 	go publisher.Run(ctx)
@@ -63,6 +64,12 @@ func main() {
 	go func() {
 		if err := ticketConsumer.Run(ctx); err != nil {
 			slog.Error("ticket consumer stopped", "error", err)
+		}
+	}()
+
+	go func() {
+		if err := passwordResetConsumer.Run(ctx); err != nil {
+			slog.Error("password request consumer stopped", "error", err)
 		}
 	}()
 

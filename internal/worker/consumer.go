@@ -66,6 +66,15 @@ func (c *Consumer) Run(ctx context.Context) error {
 					continue
 				}
 
+			case event.PasswordResetRequested:
+				if err := c.handlePasswordResetRequested(ctx, msg.Body); err != nil {
+					slog.Error("handle password.reset.requested failed", "error", err)
+					if err := msg.Nack(false, false); err != nil {
+						slog.Error("message nack failed", "error", err)
+					}
+					continue
+				}
+
 			default:
 				slog.Error("unknown event", "routing_key", msg.RoutingKey)
 				if err := msg.Nack(false, false); err != nil {
@@ -113,4 +122,14 @@ func (c *Consumer) handleTicketCreated(ctx context.Context, body []byte) error {
 	}
 
 	return nil
+}
+
+func (c *Consumer) handlePasswordResetRequested(ctx context.Context, body []byte) error {
+	var passwordRequestedEvent event.PasswordResetRequestedEvent
+
+	if err := json.Unmarshal(body, &passwordRequestedEvent); err != nil {
+		return err
+	}
+
+	return c.mailer.SendResetPasswordEmail(ctx, passwordRequestedEvent.Name, passwordRequestedEvent.Email, passwordRequestedEvent.ResetURL)
 }

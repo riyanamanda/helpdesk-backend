@@ -206,7 +206,9 @@ func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 		return err
 	}
 
-	_ = s.rabbitmq.Publish(ctx, rabbitmq.ExchangeEvent, event.PasswordResetRequested, "application/json", payload)
+	if err := s.rabbitmq.Publish(ctx, rabbitmq.ExchangeEvent, event.PasswordResetRequested, "application/json", payload); err != nil {
+		return err
+	}
 
 	return nil
 }
