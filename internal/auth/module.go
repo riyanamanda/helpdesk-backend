@@ -10,6 +10,7 @@ func Register(e *echo.Group, svc AuthService, authMiddleware echo.MiddlewareFunc
 	e.POST("/auth/login", handler.Login)
 	e.POST("/auth/google", handler.LoginWithGoogle)
 	e.POST("/auth/forgot-password", handler.ForgotPassword)
+	e.POST("/auth/reset-password", handler.ResetPassword)
 
 	protected := e.Group("")
 	protected.Use(authMiddleware)

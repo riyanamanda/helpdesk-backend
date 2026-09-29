@@ -8,8 +8,11 @@ import (
 )
 
 func InvalidateResetPasswordCache(ctx context.Context, c cache.Cache, userID string, token string) {
-	_ = c.Delete(ctx, buildPasswordResetRequestCache(userID))
-	_ = c.Delete(ctx, buildPasswordResetCache(token))
+	_ = c.DeleteMany(
+		ctx,
+		buildPasswordResetRequestCache(userID),
+		buildPasswordResetCache(token),
+	)
 }
 
 func buildPasswordResetRequestCache(userID string) string {

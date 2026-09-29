@@ -12,6 +12,8 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/riyanamanda/helpdesk-backend/internal/event"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
@@ -170,11 +172,13 @@ func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 		return err
 	}
 
-	// invalidate old token if exists
-	userKey := buildPasswordResetRequestCache(userValue.ID.String())
-	existingToken, err := s.redis.Get(ctx, userKey)
+	// return cooldown if password request exists
+	existingToken, err := s.redis.Get(ctx, buildPasswordResetRequestCache(userValue.ID.String()))
 	if err == nil && existingToken != "" {
-		InvalidateResetPasswordCache(ctx, s.redis, userValue.ID.String(), existingToken)
+		return apperr.BadRequest("your request in cooldown")
+	}
+	if err != nil && !errors.Is(err, redis.Nil) {
+		return err
 	}
 
 	// generate new reset password token
@@ -207,6 +211,7 @@ func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 	}
 
 	if err := s.rabbitmq.Publish(ctx, rabbitmq.ExchangeEvent, event.PasswordResetRequested, "application/json", payload); err != nil {
+		InvalidateResetPasswordCache(ctx, s.redis, userValue.ID.String(), token)
 		return err
 	}
 
@@ -214,5 +219,30 @@ func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 }
 
 func (s *service) ResetPassword(ctx context.Context, req ResetPasswordRequest) error {
+	userID, err := s.redis.Get(ctx, buildPasswordResetCache(req.Token))
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return apperr.BadRequest("token invalid or expired, please make a reset request again")
+		}
+
+		return err
+	}
+
+	id, err := uuid.Parse(userID)
+	if err != nil {
+		return apperr.BadRequest("token invalid or expired, please make a reset request again")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	if err := s.userRepo.UpdatePassword(ctx, id, string(hashedPassword)); err != nil {
+		return err
+	}
+
+	InvalidateResetPasswordCache(ctx, s.redis, id.String(), req.Token)
+
 	return nil
 }
