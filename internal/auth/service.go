@@ -229,7 +229,7 @@ func (s *service) ResetPassword(ctx context.Context, req ResetPasswordRequest) e
 	userID, err := s.redis.Get(ctx, buildPasswordResetCache(req.Token))
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			return apperr.BadRequest("token invalid or expired, please make a reset request again")
+			return apperr.TokenExpired("token invalid or expired, please make a reset request again")
 		}
 
 		return err
@@ -237,7 +237,7 @@ func (s *service) ResetPassword(ctx context.Context, req ResetPasswordRequest) e
 
 	id, err := uuid.Parse(userID)
 	if err != nil {
-		return apperr.BadRequest("token invalid or expired, please make a reset request again")
+		return apperr.TokenExpired("token invalid or expired, please make a reset request again")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)

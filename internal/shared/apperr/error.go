@@ -83,6 +83,14 @@ func RateLimited(message string, retryAfter int64) *Error {
 	}
 }
 
+func TokenExpired(message string) *Error {
+	return &Error{
+		Code:    CodeTokenExpired,
+		Message: message,
+		Status:  http.StatusBadRequest,
+	}
+}
+
 func As(err error) *Error {
 	if e, ok := errors.AsType[*Error](err); ok {
 		return e
