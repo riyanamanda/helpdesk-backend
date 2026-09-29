@@ -143,6 +143,7 @@ func main() {
 
 	ihsService := ihs.NewPatientService(ihsRepo)
 	antrianService := antrian.NewAntrianService(antrianRepo, simgosClient)
+	authService := auth.NewAuthService(userRepo, cfg.Auth, cfg.Storage, cfg.App, cacheStore, permissionService, *rabbitmqClient)
 
 	// HTTP
 	e := echo.New()
@@ -163,12 +164,9 @@ func main() {
 
 	// API
 	api := e.Group("/api/v1")
-
-	auth.Register(api, userRepo, cfg.Auth, cfg.Storage, redisClient, permissionService, *rabbitmqClient)
-
 	protected := api.Group("")
 	protected.Use(middleware.AuthMiddleware(cfg.Auth, redisClient, permissionService))
-
+	auth.Register(api, authService, middleware.AuthMiddleware(cfg.Auth, redisClient, permissionService))
 	category.Register(protected, categoryService)
 	division.Register(protected, divisionService)
 	user.Register(protected, userService)

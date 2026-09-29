@@ -4,11 +4,15 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"net/url"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/riyanamanda/helpdesk-backend/internal/event"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
@@ -30,8 +34,9 @@ type AuthService interface {
 
 type service struct {
 	userRepo          user.UserRepository
-	config            config.Auth
+	authConfig        config.Auth
 	storageConfig     config.Storage
+	appConfig         config.App
 	redis             cache.Cache
 	permissionService ctxkey.PermissionService
 	rabbitmq          rabbitmq.Client
@@ -39,16 +44,18 @@ type service struct {
 
 func NewAuthService(
 	repo user.UserRepository,
-	cfg config.Auth,
+	authConfig config.Auth,
 	storageConfig config.Storage,
+	appConfig config.App,
 	redis cache.Cache,
 	permissionService ctxkey.PermissionService,
 	rabbitmq rabbitmq.Client,
 ) AuthService {
 	return &service{
 		userRepo:          repo,
-		config:            cfg,
+		authConfig:        authConfig,
 		storageConfig:     storageConfig,
+		appConfig:         appConfig,
 		redis:             redis,
 		permissionService: permissionService,
 		rabbitmq:          rabbitmq,
@@ -60,12 +67,12 @@ func (s *service) issueSession(ctx context.Context, user user.UserProjection) (s
 		return "", apperr.Forbidden("user is inactive")
 	}
 
-	token, jti, err := jwtutil.GenerateToken(user.ID, s.config.JWTSecret, s.config.JWTExp)
+	token, jti, err := jwtutil.GenerateToken(user.ID, s.authConfig.JWTSecret, s.authConfig.JWTExp)
 	if err != nil {
 		return "", err
 	}
 
-	if err := s.redis.Set(ctx, jwtutil.TokenKeyPrefix+jti, user.ID.String(), s.config.JWTExp); err != nil {
+	if err := s.redis.Set(ctx, jwtutil.TokenKeyPrefix+jti, user.ID.String(), s.authConfig.JWTExp); err != nil {
 		return "", err
 	}
 
@@ -99,7 +106,7 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse,
 }
 
 func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (*LoginResponse, error) {
-	firebaseClaims, err := firebase.VerifyIDToken(req.IDToken, s.config.FirebaseProjectID)
+	firebaseClaims, err := firebase.VerifyIDToken(req.IDToken, s.authConfig.FirebaseProjectID)
 	if err != nil {
 		return nil, apperr.Unauthorized(apperr.CodeUnauthorized, "invalid google token")
 	}
@@ -187,6 +194,19 @@ func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 		_ = s.redis.Delete(ctx, buildPasswordResetRequestCache(userValue.ID.String()))
 		return err
 	}
+
+	resetUrl := fmt.Sprintf("%s/reset-password?token=%s", s.appConfig.URL, url.QueryEscape(token))
+	passwordEvent := event.PasswordResetRequestedEvent{
+		Name:     userValue.Name,
+		Email:    userValue.Email,
+		ResetURL: resetUrl,
+	}
+	payload, err := json.Marshal(passwordEvent)
+	if err != nil {
+		return err
+	}
+
+	_ = s.rabbitmq.Publish(ctx, rabbitmq.ExchangeEvent, event.PasswordResetRequested, "application/json", payload)
 
 	return nil
 }
