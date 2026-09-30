@@ -164,7 +164,6 @@ func (s *service) Me(ctx context.Context) (*CurrentUserResponse, error) {
 func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest) error {
 	userValue, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
-		// prevent user enumeration
 		if errors.Is(err, user.ErrUserNotFound) {
 			return nil
 		}
@@ -172,52 +171,81 @@ func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 		return err
 	}
 
-	requestKey, err := s.redis.TTL(ctx, buildPasswordResetRequestCache(userValue.ID.String()))
+	// Check cooldown
+	cooldownKey := buildPasswordResetCooldownCache(userValue.ID.String())
+
+	ttl, err := s.redis.TTL(ctx, cooldownKey)
 	if err != nil {
 		return err
 	}
 
-	// return cooldown if password request exists
-	existingToken, err := s.redis.Get(ctx, buildPasswordResetRequestCache(userValue.ID.String()))
-	if err == nil && existingToken != "" {
-		if requestKey > 0 {
-			return apperr.RateLimited("your request is in cooldown", int64(requestKey.Seconds())+1)
-		}
+	if ttl > 0 {
+		return apperr.RateLimited(
+			"your request is in cooldown",
+			int64(ttl.Seconds())+1,
+		)
 	}
+
+	// Check active token
+	requestKey := buildPasswordResetRequestCache(userValue.ID.String())
+
+	existingToken, err := s.redis.Get(ctx, requestKey)
+	if err == nil && existingToken != "" {
+		return apperr.BadRequest("you already have an active reset token")
+	}
+
 	if err != nil && !errors.Is(err, redis.Nil) {
 		return err
 	}
 
-	// generate new reset password token
+	// Generate token
 	tokenByte := make([]byte, 32)
 	if _, err := rand.Read(tokenByte); err != nil {
 		return err
 	}
+
 	token := hex.EncodeToString(tokenByte)
 
-	// set request token
-	if err := s.redis.Set(ctx, buildPasswordResetRequestCache(userValue.ID.String()), token, 60*time.Second); err != nil {
+	// Active token: 15 minutes
+	if err := s.redis.Set(ctx, requestKey, token, 15*time.Minute); err != nil {
 		return err
 	}
 
-	// set reset token
-	if err := s.redis.Set(ctx, buildPasswordResetCache(token), userValue.ID.String(), 15*time.Minute); err != nil {
-		_ = s.redis.Delete(ctx, buildPasswordResetRequestCache(userValue.ID.String()))
+	if err := s.redis.Set(ctx, buildPasswordResetTokenCache(token), userValue.ID.String(), 15*time.Minute); err != nil {
+		_ = s.redis.Delete(ctx, requestKey)
 		return err
 	}
 
-	resetUrl := fmt.Sprintf("%s/reset-password?token=%s", s.appConfig.URL, url.QueryEscape(token))
+	// Cooldown: 60 seconds
+	if err := s.redis.Set(ctx, cooldownKey, "1", 60*time.Second); err != nil {
+		_ = s.redis.DeleteMany(ctx, requestKey, buildPasswordResetTokenCache(token))
+		return err
+	}
+
+	resetURL := fmt.Sprintf(
+		"%s/reset-password?token=%s",
+		s.appConfig.URL,
+		url.QueryEscape(token),
+	)
+
 	passwordEvent := event.PasswordResetRequestedEvent{
 		Name:     userValue.Name,
 		Email:    userValue.Email,
-		ResetURL: resetUrl,
+		ResetURL: resetURL,
 	}
+
 	payload, err := json.Marshal(passwordEvent)
 	if err != nil {
 		return err
 	}
 
-	if err := s.rabbitmq.Publish(ctx, rabbitmq.ExchangeEvent, event.PasswordResetRequested, "application/json", payload); err != nil {
+	if err := s.rabbitmq.Publish(
+		ctx,
+		rabbitmq.ExchangeEvent,
+		event.PasswordResetRequested,
+		"application/json",
+		payload,
+	); err != nil {
 		InvalidateResetPasswordCache(ctx, s.redis, userValue.ID.String(), token)
 		return err
 	}
@@ -226,7 +254,7 @@ func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 }
 
 func (s *service) ResetPassword(ctx context.Context, req ResetPasswordRequest) error {
-	userID, err := s.redis.Get(ctx, buildPasswordResetCache(req.Token))
+	userID, err := s.redis.Get(ctx, buildPasswordResetTokenCache(req.Token))
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return apperr.TokenExpired("token invalid or expired, please make a reset request again")

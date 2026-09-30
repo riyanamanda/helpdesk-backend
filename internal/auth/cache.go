@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 )
@@ -11,14 +10,18 @@ func InvalidateResetPasswordCache(ctx context.Context, c cache.Cache, userID str
 	_ = c.DeleteMany(
 		ctx,
 		buildPasswordResetRequestCache(userID),
-		buildPasswordResetCache(token),
+		buildPasswordResetTokenCache(token),
 	)
 }
 
-func buildPasswordResetRequestCache(userID string) string {
-	return fmt.Sprintf(PasswordResetRequestCacheKey, userID)
+func buildPasswordResetCooldownCache(userID string) string {
+	return "password-reset:cooldown:" + userID
 }
 
-func buildPasswordResetCache(token string) string {
-	return fmt.Sprintf(PasswordResetCacheKey, token)
+func buildPasswordResetRequestCache(userID string) string {
+	return "password-reset:request:" + userID
+}
+
+func buildPasswordResetTokenCache(token string) string {
+	return "password-reset:token:" + token
 }
