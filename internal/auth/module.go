@@ -16,6 +16,6 @@ func Register(e *echo.Group, svc AuthService, authMiddleware echo.MiddlewareFunc
 	protected.Use(authMiddleware)
 
 	protected.Use()
-	protected.POST("/logout", handler.Logout)
-	protected.GET("/me", handler.Me)
+	protected.POST("/auth/logout", handler.Logout)
+	protected.GET("/auth/me", handler.Me)
 }
