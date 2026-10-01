@@ -1,6 +1,8 @@
 package profile
 
 import (
+	"context"
+
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
@@ -9,11 +11,20 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 )
 
-type Handler struct {
-	svc ProfileService
+type service interface {
+	GetProfile(ctx context.Context) (*ProfileResponse, error)
+	UpdateProfile(ctx context.Context, req *UpdateProfileRequest) error
+	UpdateAvatar(ctx context.Context, file *storage.File) error
+	SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error
+	RevokeGoogle(ctx context.Context) error
+	UpdatePassword(ctx context.Context, req UpdatePasswordRequest) error
 }
 
-func NewProfileHandler(svc ProfileService) *Handler {
+type Handler struct {
+	svc service
+}
+
+func NewHandler(svc service) *Handler {
 	return &Handler{
 		svc: svc,
 	}

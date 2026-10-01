@@ -9,29 +9,17 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 )
 
-type RBACRepository interface {
-	GetRoles(ctx context.Context) ([]Role, error)
-
-	GetPermissions(ctx context.Context) ([]Permission, error)
-	GetPermissionsByRoleID(ctx context.Context, roleID int64) ([]Permission, error)
-	GetPermissionsByUserID(ctx context.Context, userID uuid.UUID) ([]Permission, error)
-
-	GetUserRoleCode(ctx context.Context, userID uuid.UUID) (string, error)
-	SetRolePermissions(ctx context.Context, roleID int64, permissionIDs []int64) error
-	GetUserIDsByRoleID(ctx context.Context, roleID int64) ([]uuid.UUID, error)
-}
-
-type repository struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func NewRBACRepository(db *sqlx.DB) RBACRepository {
-	return &repository{
+func NewRepository(db *sqlx.DB) *Repository {
+	return &Repository{
 		db: db,
 	}
 }
 
-func (r *repository) GetRoles(ctx context.Context) ([]Role, error) {
+func (r *Repository) GetRoles(ctx context.Context) ([]Role, error) {
 	var roles []Role
 
 	const query = `
@@ -46,7 +34,7 @@ func (r *repository) GetRoles(ctx context.Context) ([]Role, error) {
 	return roles, nil
 }
 
-func (r *repository) GetPermissions(ctx context.Context) ([]Permission, error) {
+func (r *Repository) GetPermissions(ctx context.Context) ([]Permission, error) {
 	var permissions []Permission
 
 	const query = `
@@ -61,7 +49,7 @@ func (r *repository) GetPermissions(ctx context.Context) ([]Permission, error) {
 	return permissions, nil
 }
 
-func (r *repository) GetPermissionsByRoleID(ctx context.Context, roleID int64) ([]Permission, error) {
+func (r *Repository) GetPermissionsByRoleID(ctx context.Context, roleID int64) ([]Permission, error) {
 	var permissions []Permission
 
 	const query = `
@@ -80,7 +68,7 @@ func (r *repository) GetPermissionsByRoleID(ctx context.Context, roleID int64) (
 	return permissions, nil
 }
 
-func (r *repository) GetPermissionsByUserID(ctx context.Context, userID uuid.UUID) ([]Permission, error) {
+func (r *Repository) GetPermissionsByUserID(ctx context.Context, userID uuid.UUID) ([]Permission, error) {
 	var permissions []Permission
 
 	const query = `
@@ -100,7 +88,7 @@ func (r *repository) GetPermissionsByUserID(ctx context.Context, userID uuid.UUI
 	return permissions, nil
 }
 
-func (r *repository) GetUserRoleCode(ctx context.Context, userID uuid.UUID) (string, error) {
+func (r *Repository) GetUserRoleCode(ctx context.Context, userID uuid.UUID) (string, error) {
 	var code string
 
 	const query = `
@@ -117,7 +105,7 @@ func (r *repository) GetUserRoleCode(ctx context.Context, userID uuid.UUID) (str
 	return code, nil
 }
 
-func (r *repository) SetRolePermissions(ctx context.Context, roleID int64, permissionIDs []int64) error {
+func (r *Repository) SetRolePermissions(ctx context.Context, roleID int64, permissionIDs []int64) error {
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return err
@@ -143,7 +131,7 @@ func (r *repository) SetRolePermissions(ctx context.Context, roleID int64, permi
 	return tx.Commit()
 }
 
-func (r *repository) GetUserIDsByRoleID(ctx context.Context, roleID int64) ([]uuid.UUID, error) {
+func (r *Repository) GetUserIDsByRoleID(ctx context.Context, roleID int64) ([]uuid.UUID, error) {
 	var ids []uuid.UUID
 
 	const query = `SELECT id FROM users WHERE role_id = $1`

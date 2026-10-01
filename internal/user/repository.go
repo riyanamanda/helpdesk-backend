@@ -12,29 +12,17 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-type UserRepository interface {
-	GetAll(ctx context.Context, params GetUserParams) ([]UserProjection, int64, error)
-	Create(ctx context.Context, tx database.Tx, user *User) (uuid.UUID, error)
-	GetByID(ctx context.Context, id uuid.UUID) (*UserProjection, error)
-	GetByEmail(ctx context.Context, email string) (*UserProjection, error)
-	UpdateByID(ctx context.Context, id uuid.UUID, user User) error
-	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
-	AssignableUser(ctx context.Context) ([]AssignableUserProjection, error)
-	GetEmailsByRoles(ctx context.Context, roles ...rbac.RoleType) ([]string, error)
-	GetIDsByRoleAndDivision(ctx context.Context, role rbac.RoleType, divisionName string) ([]uuid.UUID, error)
-}
-
-type repository struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func NewUserRepository(db *sqlx.DB) UserRepository {
-	return &repository{
+func NewRepository(db *sqlx.DB) *Repository {
+	return &Repository{
 		db: db,
 	}
 }
 
-func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]UserProjection, int64, error) {
+func (r *Repository) GetAll(ctx context.Context, params GetUserParams) ([]UserProjection, int64, error) {
 	var (
 		total int64
 		users []UserProjection
@@ -64,7 +52,7 @@ func (r *repository) GetAll(ctx context.Context, params GetUserParams) ([]UserPr
 	return users, total, nil
 }
 
-func (r *repository) Create(ctx context.Context, tx database.Tx, user *User) (uuid.UUID, error) {
+func (r *Repository) Create(ctx context.Context, tx database.Tx, user *User) (uuid.UUID, error) {
 	const query = `
 		INSERT INTO users (name, email, password, role_id, gender, division_id, created_by)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -86,7 +74,7 @@ func (r *repository) Create(ctx context.Context, tx database.Tx, user *User) (uu
 	return id, nil
 }
 
-func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*UserProjection, error) {
+func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*UserProjection, error) {
 	var user UserProjection
 
 	const query = userSelectBase + `WHERE u.id = $1`
@@ -102,7 +90,7 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*UserProjection
 	return &user, nil
 }
 
-func (r *repository) GetByEmail(ctx context.Context, email string) (*UserProjection, error) {
+func (r *Repository) GetByEmail(ctx context.Context, email string) (*UserProjection, error) {
 	var user UserProjection
 
 	const query = userSelectWithPassword + `WHERE LOWER(u.email) = LOWER($1)`
@@ -118,7 +106,7 @@ func (r *repository) GetByEmail(ctx context.Context, email string) (*UserProject
 	return &user, nil
 }
 
-func (r *repository) UpdateByID(ctx context.Context, id uuid.UUID, user User) error {
+func (r *Repository) UpdateByID(ctx context.Context, id uuid.UUID, user User) error {
 	const query = `
 		UPDATE users
 		SET name 		= $2,
@@ -142,7 +130,7 @@ func (r *repository) UpdateByID(ctx context.Context, id uuid.UUID, user User) er
 	return database.CheckRowsAffected(result, ErrUserNotFound)
 }
 
-func (r *repository) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
+func (r *Repository) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
 	const query = `
 		UPDATE users
 		SET password	= $2,
@@ -158,7 +146,7 @@ func (r *repository) UpdatePassword(ctx context.Context, id uuid.UUID, password 
 	return database.CheckRowsAffected(result, ErrUserNotFound)
 }
 
-func (r *repository) GetEmailsByRoles(ctx context.Context, roles ...rbac.RoleType) ([]string, error) {
+func (r *Repository) GetEmailsByRoles(ctx context.Context, roles ...rbac.RoleType) ([]string, error) {
 	var emails []string
 
 	const query = `
@@ -176,7 +164,7 @@ func (r *repository) GetEmailsByRoles(ctx context.Context, roles ...rbac.RoleTyp
 	return emails, nil
 }
 
-func (r *repository) GetIDsByRoleAndDivision(ctx context.Context, role rbac.RoleType, divisionName string) ([]uuid.UUID, error) {
+func (r *Repository) GetIDsByRoleAndDivision(ctx context.Context, role rbac.RoleType, divisionName string) ([]uuid.UUID, error) {
 	var ids []uuid.UUID
 
 	const query = `
@@ -195,7 +183,7 @@ func (r *repository) GetIDsByRoleAndDivision(ctx context.Context, role rbac.Role
 	return ids, nil
 }
 
-func (r *repository) AssignableUser(ctx context.Context) ([]AssignableUserProjection, error) {
+func (r *Repository) AssignableUser(ctx context.Context) ([]AssignableUserProjection, error) {
 	var users []AssignableUserProjection
 
 	const query = `

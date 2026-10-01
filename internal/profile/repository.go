@@ -11,26 +11,17 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
-type ProfileRepository interface {
-	GetByID(ctx context.Context, id uuid.UUID) (*user.UserProjection, error)
-	UpdateProfile(ctx context.Context, id uuid.UUID, name string, email string, phone *string, gender string) error
-	UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error
-	SetGoogleID(ctx context.Context, id uuid.UUID, googleID string) error
-	UnsetGoogleID(ctx context.Context, id uuid.UUID) error
-	UpdatePassword(ctx context.Context, userID uuid.UUID, password string) error
-}
-
-type repository struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func NewProfileRepository(db *sqlx.DB) ProfileRepository {
-	return &repository{
+func NewRepository(db *sqlx.DB) *Repository {
+	return &Repository{
 		db: db,
 	}
 }
 
-func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*user.UserProjection, error) {
+func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*user.UserProjection, error) {
 	var user user.UserProjection
 
 	const query = `
@@ -69,7 +60,7 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*user.UserProje
 	return &user, nil
 }
 
-func (r *repository) UpdateProfile(ctx context.Context, id uuid.UUID, name string, email string, phone *string, gender string) error {
+func (r *Repository) UpdateProfile(ctx context.Context, id uuid.UUID, name string, email string, phone *string, gender string) error {
 	const query = `
 		UPDATE users
 		SET name       	= $2,
@@ -88,7 +79,7 @@ func (r *repository) UpdateProfile(ctx context.Context, id uuid.UUID, name strin
 	return database.CheckRowsAffected(result, ErrProfileNotFound)
 }
 
-func (r *repository) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error {
+func (r *Repository) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error {
 	const query = `
 		UPDATE users
 		SET avatar_key = $2,
@@ -104,7 +95,7 @@ func (r *repository) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey s
 	return database.CheckRowsAffected(result, ErrProfileNotFound)
 }
 
-func (r *repository) SetGoogleID(ctx context.Context, id uuid.UUID, googleID string) error {
+func (r *Repository) SetGoogleID(ctx context.Context, id uuid.UUID, googleID string) error {
 	const query = `
 		UPDATE users
 		SET google_id  = $2,
@@ -123,7 +114,7 @@ func (r *repository) SetGoogleID(ctx context.Context, id uuid.UUID, googleID str
 	return database.CheckRowsAffected(result, ErrProfileNotFound)
 }
 
-func (r *repository) UnsetGoogleID(ctx context.Context, id uuid.UUID) error {
+func (r *Repository) UnsetGoogleID(ctx context.Context, id uuid.UUID) error {
 	const query = `
 		UPDATE users
 		SET google_id	= null,
@@ -139,7 +130,7 @@ func (r *repository) UnsetGoogleID(ctx context.Context, id uuid.UUID) error {
 	return database.CheckRowsAffected(result, ErrProfileNotFound)
 }
 
-func (r *repository) UpdatePassword(ctx context.Context, userID uuid.UUID, password string) error {
+func (r *Repository) UpdatePassword(ctx context.Context, userID uuid.UUID, password string) error {
 	const query = `
 		UPDATE users
 		SET password   = $2,

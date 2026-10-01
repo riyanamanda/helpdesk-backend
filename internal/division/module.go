@@ -6,8 +6,8 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-func Register(e *echo.Group, svc DivisionService) {
-	handler := NewDivisionHandler(svc)
+func Register(e *echo.Group, svc service) {
+	handler := NewHandler(svc)
 
 	e.GET("/divisions", handler.ListDivisions, middleware.RequirePermission(rbac.PermissionDivisionView))
 	e.GET("/divisions/options", handler.ListDivisionOptions)

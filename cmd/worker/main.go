@@ -45,12 +45,12 @@ func main() {
 
 	// Dependencies
 	outboxRepo := outbox.NewRepository(db)
-	userRepo := user.NewUserRepository(db)
+	userRepo := user.NewRepository(db)
 	mailer := mailer.NewMailer(cfg.Email)
 	publisher := worker.NewPublisher(outboxRepo, client)
-	welcomeConsumer := worker.NewConsumer(client, mailer, userRepo, rabbitmq.QueueWelcome)
-	ticketConsumer := worker.NewConsumer(client, mailer, userRepo, rabbitmq.QueueTicket)
-	passwordResetConsumer := worker.NewConsumer(client, mailer, userRepo, rabbitmq.QueuePasswordReset)
+	welcomeConsumer := worker.NewConsumer(client, mailer, *userRepo, rabbitmq.QueueWelcome)
+	ticketConsumer := worker.NewConsumer(client, mailer, *userRepo, rabbitmq.QueueTicket)
+	passwordResetConsumer := worker.NewConsumer(client, mailer, *userRepo, rabbitmq.QueuePasswordReset)
 
 	// goroutine
 	go publisher.Run(ctx)

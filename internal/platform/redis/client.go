@@ -9,7 +9,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 )
 
-func NewRedisClient(ctx context.Context, cfg config.Redis) (*redis.Client, error) {
+func NewClient(ctx context.Context, cfg config.Redis) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     net.JoinHostPort(cfg.Host, cfg.Port),
 		Password: cfg.Password,

@@ -9,23 +9,17 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type PatientRepository interface {
-	GetPatients(ctx context.Context, params GetPatientParams) ([]PatientProjection, int64, error)
-	GetPatientDetail(ctx context.Context, NORM string) (*PatientDetailProjection, error)
-	UpdatePatientMethod(ctx context.Context, NORM string) error
-}
-
-type repository struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func NewPatientRepository(db *sqlx.DB) PatientRepository {
-	return &repository{
+func NewRepository(db *sqlx.DB) *Repository {
+	return &Repository{
 		db: db,
 	}
 }
 
-func (r *repository) GetPatients(ctx context.Context, params GetPatientParams) ([]PatientProjection, int64, error) {
+func (r *Repository) GetPatients(ctx context.Context, params GetPatientParams) ([]PatientProjection, int64, error) {
 	var (
 		patients []PatientProjection
 		total    int64
@@ -54,7 +48,7 @@ func (r *repository) GetPatients(ctx context.Context, params GetPatientParams) (
 	return patients, total, nil
 }
 
-func (r *repository) GetPatientDetail(ctx context.Context, NORM string) (*PatientDetailProjection, error) {
+func (r *Repository) GetPatientDetail(ctx context.Context, NORM string) (*PatientDetailProjection, error) {
 	var patient PatientDetailProjection
 
 	const query = `
@@ -105,7 +99,7 @@ func (r *repository) GetPatientDetail(ctx context.Context, NORM string) (*Patien
 	return &patient, nil
 }
 
-func (r *repository) UpdatePatientMethod(ctx context.Context, NORM string) error {
+func (r *Repository) UpdatePatientMethod(ctx context.Context, NORM string) error {
 	const query = `
 		UPDATE ` + "`kemkes-ihs`" + `.patient
 		SET httpRequest = 'POST'
@@ -131,7 +125,7 @@ func (r *repository) UpdatePatientMethod(ctx context.Context, NORM string) error
 	return nil
 }
 
-func (r *repository) classifyIneligible(ctx context.Context, NORM string) error {
+func (r *Repository) classifyIneligible(ctx context.Context, NORM string) error {
 	const query = "SELECT EXISTS(SELECT 1 FROM `kemkes-ihs`.patient WHERE refId = ?)"
 
 	var exists bool

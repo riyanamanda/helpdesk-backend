@@ -6,32 +6,34 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
+	"github.com/riyanamanda/helpdesk-backend/internal/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type ProfileService interface {
-	GetProfile(ctx context.Context) (*ProfileResponse, error)
-	UpdateProfile(ctx context.Context, req *UpdateProfileRequest) error
-	UpdateAvatar(ctx context.Context, file *storage.File) error
-	SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error
-	RevokeGoogle(ctx context.Context) error
-	UpdatePassword(ctx context.Context, req UpdatePasswordRequest) error
+type repository interface {
+	GetByID(ctx context.Context, id uuid.UUID) (*user.UserProjection, error)
+	UpdateProfile(ctx context.Context, id uuid.UUID, name string, email string, phone *string, gender string) error
+	UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey string) error
+	SetGoogleID(ctx context.Context, id uuid.UUID, googleID string) error
+	UnsetGoogleID(ctx context.Context, id uuid.UUID) error
+	UpdatePassword(ctx context.Context, userID uuid.UUID, password string) error
 }
 
-type service struct {
-	repo          ProfileRepository
+type Service struct {
+	repo          repository
 	storage       storage.Storage
 	storageConfig config.Storage
 	authConfig    config.Auth
 }
 
-func NewProfileService(repo ProfileRepository, store storage.Storage, storageConfig config.Storage, authConfig config.Auth) ProfileService {
-	return &service{
+func NewService(repo repository, store storage.Storage, storageConfig config.Storage, authConfig config.Auth) *Service {
+	return &Service{
 		repo:          repo,
 		storage:       store,
 		storageConfig: storageConfig,
@@ -39,7 +41,7 @@ func NewProfileService(repo ProfileRepository, store storage.Storage, storageCon
 	}
 }
 
-func (s *service) GetProfile(ctx context.Context) (*ProfileResponse, error) {
+func (s *Service) GetProfile(ctx context.Context) (*ProfileResponse, error) {
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return nil, apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
@@ -58,7 +60,7 @@ func (s *service) GetProfile(ctx context.Context) (*ProfileResponse, error) {
 	return &result, nil
 }
 
-func (s *service) UpdateProfile(ctx context.Context, req *UpdateProfileRequest) error {
+func (s *Service) UpdateProfile(ctx context.Context, req *UpdateProfileRequest) error {
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
@@ -85,7 +87,7 @@ func (s *service) UpdateProfile(ctx context.Context, req *UpdateProfileRequest) 
 	return nil
 }
 
-func (s *service) UpdateAvatar(ctx context.Context, file *storage.File) error {
+func (s *Service) UpdateAvatar(ctx context.Context, file *storage.File) error {
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
@@ -99,7 +101,7 @@ func (s *service) UpdateAvatar(ctx context.Context, file *storage.File) error {
 	return s.repo.UpdateAvatar(ctx, userID, objectKey)
 }
 
-func (s *service) SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error {
+func (s *Service) SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error {
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
@@ -129,7 +131,7 @@ func (s *service) SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error 
 	return nil
 }
 
-func (s *service) RevokeGoogle(ctx context.Context) error {
+func (s *Service) RevokeGoogle(ctx context.Context) error {
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
@@ -147,7 +149,7 @@ func (s *service) RevokeGoogle(ctx context.Context) error {
 	return s.repo.UnsetGoogleID(ctx, userID)
 }
 
-func (s *service) UpdatePassword(ctx context.Context, req UpdatePasswordRequest) error {
+func (s *Service) UpdatePassword(ctx context.Context, req UpdatePasswordRequest) error {
 	userID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")

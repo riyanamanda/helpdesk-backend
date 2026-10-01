@@ -14,7 +14,7 @@ type Tx interface {
 	Rollback() error
 }
 
-type Manager struct {
+type TxManager struct {
 	db *sqlx.DB
 }
 
@@ -22,13 +22,13 @@ type transaction struct {
 	tx *sqlx.Tx
 }
 
-func NewManager(db *sqlx.DB) *Manager {
-	return &Manager{
+func NewTxManager(db *sqlx.DB) *TxManager {
+	return &TxManager{
 		db: db,
 	}
 }
 
-func (m *Manager) Begin(ctx context.Context) (Tx, error) {
+func (m *TxManager) Begin(ctx context.Context) (Tx, error) {
 	tx, err := m.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return nil, err

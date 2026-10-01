@@ -7,19 +7,15 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type AntrianRepository interface {
-	GetAntrian(ctx context.Context, params GetAntrianParams) ([]Antrian, int64, error)
-}
-
-type repository struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func NewAntrianRepository(db *sqlx.DB) AntrianRepository {
-	return &repository{db: db}
+func NewRepository(db *sqlx.DB) *Repository {
+	return &Repository{db: db}
 }
 
-func (r *repository) GetAntrian(ctx context.Context, params GetAntrianParams) ([]Antrian, int64, error) {
+func (r *Repository) GetAntrian(ctx context.Context, params GetAntrianParams) ([]Antrian, int64, error) {
 	var (
 		antrian []Antrian
 		total   int64

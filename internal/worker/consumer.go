@@ -16,11 +16,11 @@ import (
 type Consumer struct {
 	rabbitmq *rabbitmq.Client
 	mailer   *mailer.Mailer
-	userRepo user.UserRepository
+	userRepo user.Repository
 	queue    string
 }
 
-func NewConsumer(rabbitmq *rabbitmq.Client, mailer *mailer.Mailer, userRepo user.UserRepository, queue string) *Consumer {
+func NewConsumer(rabbitmq *rabbitmq.Client, mailer *mailer.Mailer, userRepo user.Repository, queue string) *Consumer {
 	return &Consumer{
 		rabbitmq: rabbitmq,
 		mailer:   mailer,

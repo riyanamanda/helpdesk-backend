@@ -19,25 +19,25 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserService interface {
-	ListUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error)
-	CreateUser(ctx context.Context, req *UserCreateRequest) error
-	GetUser(ctx context.Context, id uuid.UUID) (*UserResponse, error)
-	UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error
-	UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePasswordRequest) error
-	ListAssignableUser(ctx context.Context) ([]UserBrief, error)
+type repository interface {
+	GetAll(ctx context.Context, params GetUserParams) ([]UserProjection, int64, error)
+	Create(ctx context.Context, tx database.Tx, user *User) (uuid.UUID, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*UserProjection, error)
+	UpdateByID(ctx context.Context, id uuid.UUID, user User) error
+	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
+	AssignableUser(ctx context.Context) ([]AssignableUserProjection, error)
 }
 
-type service struct {
-	repo          UserRepository
+type Service struct {
+	repo          repository
 	outboxRepo    outbox.Repository
-	txManager     *database.Manager
+	txManager     *database.TxManager
 	storageConfig config.Storage
 	cache         cache.Cache
 }
 
-func NewUserService(repo UserRepository, outboxRepo outbox.Repository, txManager *database.Manager, storageConfig config.Storage, cache cache.Cache) UserService {
-	return &service{
+func NewService(repo repository, outboxRepo outbox.Repository, txManager *database.TxManager, storageConfig config.Storage, cache cache.Cache) *Service {
+	return &Service{
 		repo:          repo,
 		outboxRepo:    outboxRepo,
 		txManager:     txManager,
@@ -46,7 +46,7 @@ func NewUserService(repo UserRepository, outboxRepo outbox.Repository, txManager
 	}
 }
 
-func (s *service) ListUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error) {
+func (s *Service) ListUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error) {
 	if params == nil {
 		params = &GetUserParams{}
 	}
@@ -60,7 +60,7 @@ func (s *service) ListUsers(ctx context.Context, params *GetUserParams) ([]UserR
 	return toUserResponses(users, s.storageConfig), total, nil
 }
 
-func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error {
+func (s *Service) CreateUser(ctx context.Context, req *UserCreateRequest) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ func (s *service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 	return nil
 }
 
-func (s *service) GetUser(ctx context.Context, id uuid.UUID) (*UserResponse, error) {
+func (s *Service) GetUser(ctx context.Context, id uuid.UUID) (*UserResponse, error) {
 	user, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
@@ -143,7 +143,7 @@ func (s *service) GetUser(ctx context.Context, id uuid.UUID) (*UserResponse, err
 	return &result, nil
 }
 
-func (s *service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error {
+func (s *Service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error {
 	user := User{
 		Name:       req.Name,
 		Email:      req.Email,
@@ -170,7 +170,7 @@ func (s *service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpd
 	return nil
 }
 
-func (s *service) UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePasswordRequest) error {
+func (s *Service) UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePasswordRequest) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -186,7 +186,7 @@ func (s *service) UpdatePassword(ctx context.Context, userID uuid.UUID, req *Use
 	return nil
 }
 
-func (s *service) ListAssignableUser(ctx context.Context) ([]UserBrief, error) {
+func (s *Service) ListAssignableUser(ctx context.Context) ([]UserBrief, error) {
 	cached, err := s.cache.Get(ctx, AssignableCacheKey)
 	if err == nil {
 		var users []UserBrief

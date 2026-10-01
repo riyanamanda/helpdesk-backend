@@ -5,8 +5,8 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
 )
 
-func Register(e *echo.Group, svc RBACService) {
-	handler := NewRBACHandler(svc)
+func Register(e *echo.Group, svc service) {
+	handler := NewHandler(svc)
 
 	e.GET("/roles", handler.ListRoles, middleware.RequirePermission(PermissionRBACView))
 	e.GET("/permissions", handler.ListPermissions, middleware.RequirePermission(PermissionRBACView))

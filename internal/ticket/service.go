@@ -24,16 +24,21 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
-type TicketService interface {
-	ListTickets(ctx context.Context, params *GetTicketParams) ([]TicketResponse, int64, error)
-	CreateTicket(ctx context.Context, req *TicketCreateRequest, file *storage.File) error
-	GetTicket(ctx context.Context, id int64) (*TicketDetailResponse, error)
-	UpdateTicket(ctx context.Context, ticketID int64, req TicketUpdateRequest) error
-	DeleteTicket(ctx context.Context, ticketID int64) error
-	AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error
-	SetPriority(ctx context.Context, ticketID int64, req TicketPriorityRequest) error
-	CreateResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file *storage.File) error
-	CloseTicket(ctx context.Context, ticketID int64) error
+type repository interface {
+	GetAll(ctx context.Context, params GetTicketParams) ([]TicketProjection, int64, error)
+	GetByID(ctx context.Context, id int64) (*TicketProjection, error)
+	GetAttachmentsByTicketID(ctx context.Context, ticketID int64) ([]TicketAttachmentProjection, error)
+	Assign(ctx context.Context, ticketID int64, assigneeID uuid.UUID, assignedBy uuid.UUID, note *string) error
+	UpdatePriority(ctx context.Context, ticketID int64, priority TicketPriority) error
+	Update(ctx context.Context, ticketID int64, ticket Ticket) error
+	CloseTicket(ctx context.Context, ticketID int64, userID uuid.UUID) error
+
+	// with db transaction
+	Create(ctx context.Context, tx database.Tx, ticket Ticket) (int64, error)
+	CreateAttachment(ctx context.Context, tx database.Tx, attachment TicketAttachment) error
+	UpdateResolution(ctx context.Context, tx database.Tx, ticketID int64, resolveBy uuid.UUID, resolution string) error
+	DeleteAttachmentsByTicketID(ctx context.Context, tx database.Tx, ticketID int64) error
+	Delete(ctx context.Context, tx database.Tx, ticketID int64) error
 }
 
 type categorySvc interface {
@@ -48,10 +53,10 @@ type userSvc interface {
 	GetUser(ctx context.Context, id uuid.UUID) (*user.UserResponse, error)
 }
 
-type service struct {
-	repo          TicketRepository
+type Service struct {
+	repo          repository
 	outboxRepo    outbox.Repository
-	txManager     *database.Manager
+	txManager     *database.TxManager
 	storage       storage.Storage
 	storageConfig config.Storage
 	cache         cache.Cache
@@ -60,18 +65,18 @@ type service struct {
 	userSvc       userSvc
 }
 
-func NewTicketService(
-	repo TicketRepository,
+func NewService(
+	repo repository,
 	outboxRepo outbox.Repository,
-	txManager *database.Manager,
+	txManager *database.TxManager,
 	store storage.Storage,
 	storageConfig config.Storage,
 	cache cache.Cache,
 	categorySvc categorySvc,
 	divisionSvc divisionSvc,
 	userSvc userSvc,
-) TicketService {
-	return &service{
+) *Service {
+	return &Service{
 		repo:          repo,
 		outboxRepo:    outboxRepo,
 		txManager:     txManager,
@@ -84,7 +89,7 @@ func NewTicketService(
 	}
 }
 
-func (s *service) ListTickets(ctx context.Context, params *GetTicketParams) ([]TicketResponse, int64, error) {
+func (s *Service) ListTickets(ctx context.Context, params *GetTicketParams) ([]TicketResponse, int64, error) {
 	if params == nil {
 		params = &GetTicketParams{}
 	}
@@ -98,7 +103,11 @@ func (s *service) ListTickets(ctx context.Context, params *GetTicketParams) ([]T
 	return toTicketResponses(tickets), total, nil
 }
 
-func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, file *storage.File) error {
+func (s *Service) CreateTicket(ctx context.Context, req *TicketCreateRequest, file *storage.File) error {
+	if req == nil {
+		return apperr.BadRequest("request body cannot be empty")
+	}
+
 	if _, err := s.categorySvc.GetCategory(ctx, req.CategoryID); err != nil {
 		return err
 	}
@@ -125,7 +134,6 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 		CreatedBy:   createdBy,
 	}
 
-	// Begin transaction
 	tx, err := s.txManager.Begin(ctx)
 	if err != nil {
 		return err
@@ -137,14 +145,14 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 		return err
 	}
 
-	event := event.TicketCreatedEvent{
+	eventData := event.TicketCreatedEvent{
 		TicketID:    ticketID,
 		SubmittedBy: getUser.Name,
 		Title:       req.Title,
 		Description: req.Description,
 	}
 
-	payload, err := json.Marshal(event)
+	payload, err := json.Marshal(eventData)
 	if err != nil {
 		return err
 	}
@@ -200,7 +208,7 @@ func (s *service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 	return nil
 }
 
-func (s *service) GetTicket(ctx context.Context, id int64) (*TicketDetailResponse, error) {
+func (s *Service) GetTicket(ctx context.Context, id int64) (*TicketDetailResponse, error) {
 	ticket, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
@@ -219,7 +227,11 @@ func (s *service) GetTicket(ctx context.Context, id int64) (*TicketDetailRespons
 	return &result, nil
 }
 
-func (s *service) UpdateTicket(ctx context.Context, ticketID int64, req TicketUpdateRequest) error {
+func (s *Service) UpdateTicket(ctx context.Context, ticketID int64, req *TicketUpdateRequest) error {
+	if req == nil {
+		return apperr.BadRequest("request body cannot be empty")
+	}
+
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
@@ -264,7 +276,7 @@ func (s *service) UpdateTicket(ctx context.Context, ticketID int64, req TicketUp
 	return nil
 }
 
-func (s *service) DeleteTicket(ctx context.Context, ticketID int64) error {
+func (s *Service) DeleteTicket(ctx context.Context, ticketID int64) error {
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
@@ -305,24 +317,25 @@ func (s *service) DeleteTicket(ctx context.Context, ticketID int64) error {
 
 	dashboard.InvalidateCache(ctx, s.cache)
 
-	if attachments != nil {
-		for _, a := range *attachments {
-			if delErr := s.storage.Delete(ctx, a.FileKey); delErr != nil {
-				slog.ErrorContext(ctx, "failed to delete attachment from storage", "key", a.FileKey, "error", delErr)
-			}
+	for _, a := range attachments {
+		if delErr := s.storage.Delete(ctx, a.FileKey); delErr != nil {
+			slog.ErrorContext(ctx, "failed to delete attachment from storage", "key", a.FileKey, "error", delErr)
 		}
 	}
 
 	return nil
 }
 
-func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAssignRequest) error {
+func (s *Service) AssignTicket(ctx context.Context, ticketID int64, req *TicketAssignRequest) error {
+	if req == nil {
+		return apperr.BadRequest("request body cannot be empty")
+	}
+
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperr.NotFound("ticket")
 		}
-
 		return err
 	}
 
@@ -339,7 +352,6 @@ func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAs
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperr.NotFound("ticket")
 		}
-
 		if errors.Is(err, user.ErrUserNotFound) {
 			return apperr.NotFound("user")
 		}
@@ -351,12 +363,15 @@ func (s *service) AssignTicket(ctx context.Context, ticketID int64, req TicketAs
 	return nil
 }
 
-func (s *service) SetPriority(ctx context.Context, ticketID int64, req TicketPriorityRequest) error {
+func (s *Service) SetPriority(ctx context.Context, ticketID int64, req *TicketPriorityRequest) error {
+	if req == nil {
+		return apperr.BadRequest("request body cannot be empty")
+	}
+
 	if err := s.repo.UpdatePriority(ctx, ticketID, req.Priority); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperr.NotFound("ticket")
 		}
-
 		return err
 	}
 
@@ -365,18 +380,26 @@ func (s *service) SetPriority(ctx context.Context, ticketID int64, req TicketPri
 	return nil
 }
 
-func (s *service) CreateResolution(ctx context.Context, ticketID int64, req TicketResolutionRequest, file *storage.File) error {
+func (s *Service) CreateResolution(ctx context.Context, ticketID int64, req *TicketResolutionRequest, file *storage.File) error {
+	if req == nil {
+		return apperr.BadRequest("request body cannot be empty")
+	}
+
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperr.NotFound("ticket")
 		}
-
 		return err
 	}
 
 	if existing.AssignedToID == nil {
 		return apperr.BadRequest("please assign the ticket before adding a resolution")
+	}
+
+	userID, ok := ctxkey.GetUserIDFromContext(ctx)
+	if !ok {
+		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
 	tx, err := s.txManager.Begin(ctx)
@@ -385,11 +408,6 @@ func (s *service) CreateResolution(ctx context.Context, ticketID int64, req Tick
 	}
 	defer tx.Rollback()
 
-	userID, ok := ctxkey.GetUserIDFromContext(ctx)
-	if !ok {
-		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
-	}
-
 	if err = s.repo.UpdateResolution(ctx, tx, ticketID, req.ResolvedBy, req.Resolution); err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperr.NotFound("ticket")
@@ -397,36 +415,48 @@ func (s *service) CreateResolution(ctx context.Context, ticketID int64, req Tick
 		return err
 	}
 
+	var objectKey string
+	var uploaded bool
+
+	defer func() {
+		if uploaded {
+			if err := s.storage.Delete(ctx, objectKey); err != nil {
+				slog.ErrorContext(ctx, "failed to cleanup resolution attachment", "object_key", objectKey, "error", err)
+			}
+		}
+	}()
+
 	if file != nil {
-		objectKey := httputil.GenerateObjectKey(fmt.Sprintf("tickets/%d/resolution", ticketID), file.Filename)
+		objectKey = httputil.GenerateObjectKey(fmt.Sprintf("tickets/%d/resolution", ticketID), file.Filename)
 
-		if uploadErr := s.storage.Upload(ctx, objectKey, file); uploadErr == nil {
-			attachment := TicketAttachment{
-				TicketID:       ticketID,
-				FileKey:        objectKey,
-				AttachmentType: string(Resolution),
-				UploadedBy:     userID,
-			}
+		if err := s.storage.Upload(ctx, objectKey, file); err != nil {
+			return err
+		}
+		uploaded = true
 
-			if attachErr := s.repo.CreateAttachment(ctx, tx, attachment); attachErr != nil {
-				_ = s.storage.Delete(ctx, objectKey)
-				slog.ErrorContext(ctx, "failed to create ticket attachment", "ticket_id", ticketID, "error", attachErr)
-			}
-		} else {
-			slog.ErrorContext(ctx, "failed to upload ticket attachment", "ticket_id", ticketID, "error", uploadErr)
+		attachment := TicketAttachment{
+			TicketID:       ticketID,
+			FileKey:        objectKey,
+			AttachmentType: string(Resolution),
+			UploadedBy:     userID,
+		}
+
+		if err := s.repo.CreateAttachment(ctx, tx, attachment); err != nil {
+			return err
 		}
 	}
 
-	if err = tx.Commit(); err != nil {
+	if err := tx.Commit(); err != nil {
 		return err
 	}
 
+	uploaded = false
 	dashboard.InvalidateCache(ctx, s.cache)
 
-	return err
+	return nil
 }
 
-func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
+func (s *Service) CloseTicket(ctx context.Context, ticketID int64) error {
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
@@ -448,7 +478,6 @@ func (s *service) CloseTicket(ctx context.Context, ticketID int64) error {
 		if errors.Is(err, ErrTicketNotFound) {
 			return apperr.NotFound("ticket")
 		}
-
 		return err
 	}
 

@@ -57,7 +57,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	txManager := database.NewManager(db)
+	txManager := database.NewTxManager(db)
 
 	// SIMGOS Database
 	var simgosDB *sqlx.DB
@@ -82,7 +82,7 @@ func main() {
 	// RustFS
 	slog.Info("connecting to object storage")
 
-	rustfsClient := rustfs.NewRustFSClient(cfg.Storage.Endpoint, cfg.Storage.AccessKey, cfg.Storage.SecretKey)
+	rustfsClient := rustfs.NewClient(cfg.Storage.Endpoint, cfg.Storage.AccessKey, cfg.Storage.SecretKey)
 
 	if err := rustfs.InitBucket(ctx, rustfsClient, cfg.Storage.Bucket); err != nil {
 		slog.Error("rustfs bucket initialization failed", "error", err)
@@ -104,7 +104,7 @@ func main() {
 	// Redis
 	slog.Info("connecting to Redis")
 
-	redisClient, err := redis.NewRedisClient(ctx, cfg.Redis)
+	redisClient, err := redis.NewClient(ctx, cfg.Redis)
 	if err != nil {
 		slog.Error("Redis connection failed", "error", err)
 		os.Exit(1)
@@ -117,33 +117,33 @@ func main() {
 	simgosClient := simgos.NewAntrolClient(cfg.Antrol.Domain, cfg.Antrol.Username, cfg.Antrol.Password)
 
 	// Repositories
-	categoryRepo := category.NewCategoryRepository(db)
-	divisionRepo := division.NewDivisionRepository(db)
-	userRepo := user.NewUserRepository(db)
-	ticketRepo := ticket.NewTicketRepository(db)
-	feedbackRepo := feedback.NewFeedbackRepository(db)
-	profileRepo := profile.NewProfileRepository(db)
-	rbacRepo := rbac.NewRBACRepository(db)
-	dashboardRepo := dashboard.NewDashboardRepository(db)
+	categoryRepo := category.NewRepository(db)
+	divisionRepo := division.NewRepository(db)
+	userRepo := user.NewRepository(db)
+	ticketRepo := ticket.NewRepository(db)
+	feedbackRepo := feedback.NewRepository(db)
+	profileRepo := profile.NewRepository(db)
+	rbacRepo := rbac.NewRepository(db)
+	dashboardRepo := dashboard.NewRepository(db)
 	outboxRepo := outbox.NewRepository(db)
 
-	ihsRepo := ihs.NewPatientRepository(simgosDB)
-	antrianRepo := antrian.NewAntrianRepository(simgosDB)
+	ihsRepo := ihs.NewRepository(simgosDB)
+	antrianRepo := antrian.NewRepository(simgosDB)
 
 	// Services
-	categoryService := category.NewCategoryService(categoryRepo, cacheStore)
-	divisionService := division.NewDivisionService(divisionRepo, cacheStore)
-	userService := user.NewUserService(userRepo, outboxRepo, txManager, cfg.Storage, cacheStore)
-	ticketService := ticket.NewTicketService(ticketRepo, outboxRepo, txManager, storageService, cfg.Storage, cacheStore, categoryService, divisionService, userService)
-	feedbackService := feedback.NewFeedbackService(feedbackRepo)
-	profileService := profile.NewProfileService(profileRepo, storageService, cfg.Storage, cfg.Auth)
-	rbacService := rbac.NewRBACService(rbacRepo, cacheStore)
+	categoryService := category.NewService(categoryRepo, cacheStore)
+	divisionService := division.NewService(divisionRepo, cacheStore)
+	userService := user.NewService(userRepo, outboxRepo, txManager, cfg.Storage, cacheStore)
+	ticketService := ticket.NewService(ticketRepo, outboxRepo, txManager, storageService, cfg.Storage, cacheStore, categoryService, divisionService, userService)
+	feedbackService := feedback.NewService(feedbackRepo)
+	profileService := profile.NewService(profileRepo, storageService, cfg.Storage, cfg.Auth)
+	rbacService := rbac.NewService(rbacRepo, cacheStore)
 	permissionService := rbac.NewPermissionService(rbacRepo, cacheStore)
-	dashboardService := dashboard.NewDashboardService(dashboardRepo, cacheStore)
+	dashboardService := dashboard.NewService(dashboardRepo, cacheStore)
 
-	ihsService := ihs.NewPatientService(ihsRepo)
-	antrianService := antrian.NewAntrianService(antrianRepo, simgosClient)
-	authService := auth.NewAuthService(userRepo, cfg.Auth, cfg.Storage, cfg.App, cacheStore, permissionService, *rabbitmqClient)
+	ihsService := ihs.NewService(ihsRepo)
+	antrianService := antrian.NewService(antrianRepo, simgosClient)
+	authService := auth.NewService(userRepo, cfg.Auth, cfg.Storage, cfg.App, cacheStore, permissionService, *rabbitmqClient)
 
 	// HTTP
 	e := echo.New()

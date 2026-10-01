@@ -1,6 +1,8 @@
 package user
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 
@@ -9,11 +11,20 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
-type Handler struct {
-	svc UserService
+type service interface {
+	ListUsers(ctx context.Context, params *GetUserParams) ([]UserResponse, int64, error)
+	CreateUser(ctx context.Context, req *UserCreateRequest) error
+	GetUser(ctx context.Context, id uuid.UUID) (*UserResponse, error)
+	UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error
+	UpdatePassword(ctx context.Context, userID uuid.UUID, req *UserUpdatePasswordRequest) error
+	ListAssignableUser(ctx context.Context) ([]UserBrief, error)
 }
 
-func NewUserHandler(svc UserService) *Handler {
+type Handler struct {
+	svc service
+}
+
+func NewHandler(svc service) *Handler {
 	return &Handler{
 		svc: svc,
 	}

@@ -104,11 +104,11 @@ func toTicketResponses(tickets []TicketProjection) []TicketResponse {
 	return result
 }
 
-func toTicketDetailResponse(ticket TicketProjection, attachments *[]TicketAttachmentProjection, storageConfig config.Storage) TicketDetailResponse {
-	var attachmentResponses *[]TicketAttachmentResponse
+func toTicketDetailResponse(ticket TicketProjection, attachments []TicketAttachmentProjection, storageConfig config.Storage) TicketDetailResponse {
+	var attachmentResponses []TicketAttachmentResponse
 	if attachments != nil {
-		mappedAttachment := toTicketAttachmentResponses(*attachments, storageConfig)
-		attachmentResponses = &mappedAttachment
+		mappedAttachment := toTicketAttachmentResponses(attachments, storageConfig)
+		attachmentResponses = mappedAttachment
 	}
 	return TicketDetailResponse{
 		TicketResponse: toTicketResponse(ticket),

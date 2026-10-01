@@ -6,7 +6,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-func Register(e *echo.Group, svc AntrianService) {
+func Register(e *echo.Group, svc service) {
 	handler := NewAntrianHandler(svc)
 
 	e.GET("/antrian", handler.ListAntrian, middleware.RequirePermission(rbac.PermissionAntrianView))

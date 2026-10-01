@@ -4,8 +4,8 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
-func Register(e *echo.Group, svc ProfileService) {
-	handler := NewProfileHandler(svc)
+func Register(e *echo.Group, svc service) {
+	handler := NewHandler(svc)
 
 	profileGroup := e.Group("/profile")
 

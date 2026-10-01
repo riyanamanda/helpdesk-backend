@@ -1,6 +1,8 @@
 package feedback
 
 import (
+	"context"
+
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
@@ -8,11 +10,19 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
-type Handler struct {
-	svc FeedbackService
+type service interface {
+	ListFeedbacks(ctx context.Context, params *GetFeedbackParams) ([]FeedbackResponse, int64, error)
+	CreateFeedback(ctx context.Context, req *CreateFeedbackRequest) error
+	GetFeedback(ctx context.Context, id int64) (*FeedbackResponse, error)
+	UpdateFeedbackStatus(ctx context.Context, id int64, req UpdateFeedbackStatusRequest) error
+	DeleteFeedback(ctx context.Context, id int64) error
 }
 
-func NewFeedbackHandler(svc FeedbackService) *Handler {
+type Handler struct {
+	svc service
+}
+
+func NewHandler(svc service) *Handler {
 	return &Handler{svc: svc}
 }
 

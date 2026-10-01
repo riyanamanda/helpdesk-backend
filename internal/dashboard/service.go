@@ -9,26 +9,26 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 )
 
-type DashboardService interface {
-	GetSummary(ctx context.Context) (*SummaryResponse, error)
-	GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendResponse, error)
-	GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsResponse, error)
-	GetAgentWorkload(ctx context.Context) ([]AgentWorkloadResponse, error)
+type repository interface {
+	GetSummary(ctx context.Context) (SummaryProjection, error)
+	GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendProjection, error)
+	GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsProjection, error)
+	GetAgentWorkload(ctx context.Context) ([]AgentWorkloadProjection, error)
 }
 
-type service struct {
-	repo  DashboardRepository
+type Service struct {
+	repo  repository
 	cache cache.Cache
 }
 
-func NewDashboardService(repo DashboardRepository, cache cache.Cache) DashboardService {
-	return &service{
+func NewService(repo repository, cache cache.Cache) *Service {
+	return &Service{
 		repo:  repo,
 		cache: cache,
 	}
 }
 
-func (s *service) GetSummary(ctx context.Context) (*SummaryResponse, error) {
+func (s *Service) GetSummary(ctx context.Context) (*SummaryResponse, error) {
 	cached, err := s.cache.Get(ctx, SummaryCacheKey)
 	if err == nil {
 		var summary SummaryResponse
@@ -51,7 +51,7 @@ func (s *service) GetSummary(ctx context.Context) (*SummaryResponse, error) {
 	return &summary, nil
 }
 
-func (s *service) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendResponse, error) {
+func (s *Service) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendResponse, error) {
 	cacheKey := fmt.Sprintf(MonthlyTrendCacheKey, year)
 
 	cached, err := s.cache.Get(ctx, cacheKey)
@@ -76,7 +76,7 @@ func (s *service) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrend
 	return trend, nil
 }
 
-func (s *service) GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsResponse, error) {
+func (s *Service) GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsResponse, error) {
 	cached, err := s.cache.Get(ctx, CategoryTicketsCacheKey)
 	if err == nil {
 		var categories []CategoryTicketsResponse
@@ -99,7 +99,7 @@ func (s *service) GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsRe
 	return categories, nil
 }
 
-func (s *service) GetAgentWorkload(ctx context.Context) ([]AgentWorkloadResponse, error) {
+func (s *Service) GetAgentWorkload(ctx context.Context) ([]AgentWorkloadResponse, error) {
 	cached, err := s.cache.Get(ctx, AgentWorkloadCacheKey)
 	if err == nil {
 		var workload []AgentWorkloadResponse

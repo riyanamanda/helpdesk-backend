@@ -4,27 +4,28 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 )
 
-type FeedbackService interface {
-	ListFeedbacks(ctx context.Context, params *GetFeedbackParams) ([]FeedbackResponse, int64, error)
-	CreateFeedback(ctx context.Context, req *CreateFeedbackRequest) error
-	GetFeedback(ctx context.Context, id int64) (*FeedbackResponse, error)
-	UpdateFeedbackStatus(ctx context.Context, id int64, req UpdateFeedbackStatusRequest) error
-	DeleteFeedback(ctx context.Context, id int64) error
+type repository interface {
+	GetAll(ctx context.Context, params GetFeedbackParams) ([]FeedbackProjection, int64, error)
+	GetByID(ctx context.Context, id int64) (*FeedbackProjection, error)
+	Create(ctx context.Context, feedback Feedback) error
+	UpdateStatus(ctx context.Context, id int64, reviewerID uuid.UUID, status FeedbackStatus) error
+	Delete(ctx context.Context, id int64) error
 }
 
-type service struct {
-	repo FeedbackRepository
+type Service struct {
+	repo repository
 }
 
-func NewFeedbackService(repo FeedbackRepository) FeedbackService {
-	return &service{repo: repo}
+func NewService(repo repository) *Service {
+	return &Service{repo: repo}
 }
 
-func (s *service) ListFeedbacks(ctx context.Context, params *GetFeedbackParams) ([]FeedbackResponse, int64, error) {
+func (s *Service) ListFeedbacks(ctx context.Context, params *GetFeedbackParams) ([]FeedbackResponse, int64, error) {
 	if params == nil {
 		params = &GetFeedbackParams{}
 	}
@@ -38,7 +39,7 @@ func (s *service) ListFeedbacks(ctx context.Context, params *GetFeedbackParams) 
 	return toFeedbackResponses(feedbacks), total, nil
 }
 
-func (s *service) CreateFeedback(ctx context.Context, req *CreateFeedbackRequest) error {
+func (s *Service) CreateFeedback(ctx context.Context, req *CreateFeedbackRequest) error {
 	createdBy, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
@@ -54,7 +55,7 @@ func (s *service) CreateFeedback(ctx context.Context, req *CreateFeedbackRequest
 	return s.repo.Create(ctx, feedback)
 }
 
-func (s *service) GetFeedback(ctx context.Context, id int64) (*FeedbackResponse, error) {
+func (s *Service) GetFeedback(ctx context.Context, id int64) (*FeedbackResponse, error) {
 	feedback, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrFeedbackNotFound) {
@@ -67,7 +68,7 @@ func (s *service) GetFeedback(ctx context.Context, id int64) (*FeedbackResponse,
 	return &result, nil
 }
 
-func (s *service) UpdateFeedbackStatus(ctx context.Context, id int64, req UpdateFeedbackStatusRequest) error {
+func (s *Service) UpdateFeedbackStatus(ctx context.Context, id int64, req UpdateFeedbackStatusRequest) error {
 	reviewerID, ok := ctxkey.GetUserIDFromContext(ctx)
 	if !ok {
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
@@ -95,7 +96,7 @@ func (s *service) UpdateFeedbackStatus(ctx context.Context, id int64, req Update
 	return nil
 }
 
-func (s *service) DeleteFeedback(ctx context.Context, id int64) error {
+func (s *Service) DeleteFeedback(ctx context.Context, id int64) error {
 	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrFeedbackNotFound) {

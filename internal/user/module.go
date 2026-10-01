@@ -6,8 +6,8 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-func Register(e *echo.Group, svc UserService) {
-	handler := NewUserHandler(svc)
+func Register(e *echo.Group, svc service) {
+	handler := NewHandler(svc)
 
 	e.GET("/users", handler.ListUsers, middleware.RequirePermission(rbac.PermissionUserView))
 	e.POST("/users", handler.CreateUser, middleware.RequirePermission(rbac.PermissionUserCreate))

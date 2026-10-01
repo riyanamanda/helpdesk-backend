@@ -10,28 +10,28 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 )
 
-type DivisionService interface {
-	ListDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int64, error)
-	ListOptions(ctx context.Context) ([]DivisionOptionResponse, error)
-	CreateDivision(ctx context.Context, req *DivisionCreateRequest) error
-	GetDivision(ctx context.Context, id int64) (*DivisionResponse, error)
-	UpdateDivision(ctx context.Context, id int64, req *DivisionUpdateRequest) error
-	DeleteDivision(ctx context.Context, id int64) error
+type repository interface {
+	GetAll(ctx context.Context, params GetDivisionParams) ([]Division, int64, error)
+	GetOptions(ctx context.Context) ([]DivisionOptionProjection, error)
+	Create(ctx context.Context, division *Division) error
+	GetByID(ctx context.Context, id int64) (*Division, error)
+	Update(ctx context.Context, id int64, division *Division) error
+	Delete(ctx context.Context, id int64) error
 }
 
-type service struct {
-	repo  DivisionRepository
+type Service struct {
+	repo  repository
 	cache cache.Cache
 }
 
-func NewDivisionService(repo DivisionRepository, cache cache.Cache) DivisionService {
-	return &service{
+func NewService(repo repository, cache cache.Cache) *Service {
+	return &Service{
 		repo:  repo,
 		cache: cache,
 	}
 }
 
-func (s *service) ListDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int64, error) {
+func (s *Service) ListDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int64, error) {
 	if params == nil {
 		params = &GetDivisionParams{}
 	}
@@ -45,7 +45,7 @@ func (s *service) ListDivisions(ctx context.Context, params *GetDivisionParams) 
 	return toDivisionResponses(divisions), total, nil
 }
 
-func (s *service) ListOptions(ctx context.Context) ([]DivisionOptionResponse, error) {
+func (s *Service) ListOptions(ctx context.Context) ([]DivisionOptionResponse, error) {
 	cached, err := s.cache.Get(ctx, DivisionOptionsCacheKey)
 	if err == nil {
 		var divisions []DivisionOptionResponse
@@ -72,7 +72,7 @@ func (s *service) ListOptions(ctx context.Context) ([]DivisionOptionResponse, er
 	return divisions, nil
 }
 
-func (s *service) CreateDivision(ctx context.Context, req *DivisionCreateRequest) error {
+func (s *Service) CreateDivision(ctx context.Context, req *DivisionCreateRequest) error {
 	division := Division{
 		Name: req.Name,
 	}
@@ -89,7 +89,7 @@ func (s *service) CreateDivision(ctx context.Context, req *DivisionCreateRequest
 	return nil
 }
 
-func (s *service) GetDivision(ctx context.Context, id int64) (*DivisionResponse, error) {
+func (s *Service) GetDivision(ctx context.Context, id int64) (*DivisionResponse, error) {
 	division, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {
@@ -103,7 +103,7 @@ func (s *service) GetDivision(ctx context.Context, id int64) (*DivisionResponse,
 	return &result, nil
 }
 
-func (s *service) UpdateDivision(ctx context.Context, id int64, req *DivisionUpdateRequest) error {
+func (s *Service) UpdateDivision(ctx context.Context, id int64, req *DivisionUpdateRequest) error {
 	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {
@@ -137,7 +137,7 @@ func (s *service) UpdateDivision(ctx context.Context, id int64, req *DivisionUpd
 	return nil
 }
 
-func (s *service) DeleteDivision(ctx context.Context, id int64) error {
+func (s *Service) DeleteDivision(ctx context.Context, id int64) error {
 	if err := s.repo.Delete(ctx, id); err != nil {
 		if errors.Is(err, ErrDivisionNotFound) {
 			return apperr.NotFound("division")

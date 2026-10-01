@@ -1,6 +1,8 @@
 package category
 
 import (
+	"context"
+
 	"github.com/labstack/echo/v5"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
@@ -8,11 +10,20 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
-type Handler struct {
-	svc CategoryService
+type service interface {
+	ListCategories(ctx context.Context, params *GetCategoryParams) ([]CategoryResponse, int64, error)
+	ListOptions(ctx context.Context) ([]CategoryOptionResponse, error)
+	CreateCategory(ctx context.Context, req *CategoryCreateRequest) error
+	GetCategory(ctx context.Context, id int64) (*CategoryResponse, error)
+	UpdateCategory(ctx context.Context, id int64, req *CategoryUpdateRequest) error
+	DeleteCategory(ctx context.Context, id int64) error
 }
 
-func NewCategoryHandler(svc CategoryService) *Handler {
+type Handler struct {
+	svc service
+}
+
+func NewHandler(svc service) *Handler {
 	return &Handler{
 		svc: svc,
 	}

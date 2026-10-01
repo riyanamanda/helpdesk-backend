@@ -1,6 +1,8 @@
 package ihs
 
 import (
+	"context"
+
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
@@ -9,11 +11,17 @@ import (
 
 const maxNormLength = 32
 
-type Handler struct {
-	svc PatientService
+type service interface {
+	ListPatients(ctx context.Context, params *GetPatientParams) ([]PatientResponse, int64, error)
+	GetPatientByNORM(ctx context.Context, NORM string) (*PatientDetailResponse, error)
+	UpdatePatientMethodByNORM(ctx context.Context, NORM string) error
 }
 
-func NewPatientHandler(svc PatientService) *Handler {
+type Handler struct {
+	svc service
+}
+
+func NewPatientHandler(svc service) *Handler {
 	return &Handler{svc: svc}
 }
 

@@ -6,8 +6,8 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-func Register(e *echo.Group, svc TicketService) {
-	handler := NewTicketHandler(svc)
+func Register(e *echo.Group, svc service) {
+	handler := NewHandler(svc)
 
 	e.GET("/tickets", handler.ListTickets, middleware.RequirePermission(rbac.PermissionTicketView))
 	e.POST("/tickets", handler.CreateTicket, middleware.RequirePermission(rbac.PermissionTicketCreate))

@@ -6,8 +6,8 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-func Register(e *echo.Group, svc FeedbackService) {
-	handler := NewFeedbackHandler(svc)
+func Register(e *echo.Group, svc service) {
+	handler := NewHandler(svc)
 
 	admin := e.Group("/admin")
 	admin.GET("/feedbacks", handler.ListAllFeedbacks, middleware.RequirePermission(rbac.PermissionFeedbackView))

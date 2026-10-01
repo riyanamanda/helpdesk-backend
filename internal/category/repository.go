@@ -11,26 +11,17 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 )
 
-type CategoryRepository interface {
-	GetAll(ctx context.Context, params GetCategoryParams) ([]Category, int64, error)
-	GetOptions(ctx context.Context) ([]CategoryOptionProjection, error)
-	Create(ctx context.Context, category *Category) error
-	GetByID(ctx context.Context, id int64) (*Category, error)
-	Update(ctx context.Context, id int64, category *Category) error
-	Delete(ctx context.Context, id int64) error
-}
-
-type repository struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func NewCategoryRepository(db *sqlx.DB) CategoryRepository {
-	return &repository{
+func NewRepository(db *sqlx.DB) *Repository {
+	return &Repository{
 		db: db,
 	}
 }
 
-func (r *repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Category, int64, error) {
+func (r *Repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Category, int64, error) {
 	var (
 		categories []Category
 		total      int64
@@ -61,7 +52,7 @@ func (r *repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Ca
 	return categories, total, nil
 }
 
-func (r *repository) GetOptions(ctx context.Context) ([]CategoryOptionProjection, error) {
+func (r *Repository) GetOptions(ctx context.Context) ([]CategoryOptionProjection, error) {
 	var categories []CategoryOptionProjection
 
 	const query = `
@@ -80,7 +71,7 @@ func (r *repository) GetOptions(ctx context.Context) ([]CategoryOptionProjection
 	return categories, nil
 }
 
-func (r *repository) Create(ctx context.Context, category *Category) error {
+func (r *Repository) Create(ctx context.Context, category *Category) error {
 	const query = `
 		INSERT INTO categories (name)
 		VALUES ($1)
@@ -97,7 +88,7 @@ func (r *repository) Create(ctx context.Context, category *Category) error {
 	return nil
 }
 
-func (r *repository) GetByID(ctx context.Context, id int64) (*Category, error) {
+func (r *Repository) GetByID(ctx context.Context, id int64) (*Category, error) {
 	var category Category
 
 	const query = categorySelectBase + `WHERE id = $1`
@@ -112,7 +103,7 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*Category, error) {
 	return &category, nil
 }
 
-func (r *repository) Update(ctx context.Context, id int64, category *Category) error {
+func (r *Repository) Update(ctx context.Context, id int64, category *Category) error {
 	const query = `
 		UPDATE categories
 		SET name = $2,
@@ -132,7 +123,7 @@ func (r *repository) Update(ctx context.Context, id int64, category *Category) e
 	return database.CheckRowsAffected(result, ErrCategoryNotFound)
 }
 
-func (r *repository) Delete(ctx context.Context, id int64) error {
+func (r *Repository) Delete(ctx context.Context, id int64) error {
 	const query = `
 		DELETE FROM categories
 		WHERE id = $1

@@ -12,19 +12,25 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 )
 
-type permissionService struct {
-	repo  RBACRepository
+type permissionRepository interface {
+	GetPermissions(ctx context.Context) ([]Permission, error)
+	GetPermissionsByUserID(ctx context.Context, userID uuid.UUID) ([]Permission, error)
+	GetUserRoleCode(ctx context.Context, userID uuid.UUID) (string, error)
+}
+
+type PermissionService struct {
+	repo  permissionRepository
 	cache cache.Cache
 }
 
-func NewPermissionService(repo RBACRepository, cache cache.Cache) ctxkey.PermissionService {
-	return &permissionService{
+func NewPermissionService(repo permissionRepository, cache cache.Cache) *PermissionService {
+	return &PermissionService{
 		repo:  repo,
 		cache: cache,
 	}
 }
 
-func (s *permissionService) GetUserPermissions(ctx context.Context, userID uuid.UUID) (ctxkey.PermissionSet, error) {
+func (s *PermissionService) GetUserPermissions(ctx context.Context, userID uuid.UUID) (ctxkey.PermissionSet, error) {
 	cacheKey := BuildUserPermissionsCacheKey(userID)
 
 	cached, err := s.cache.Get(ctx, cacheKey)
@@ -72,7 +78,7 @@ func (s *permissionService) GetUserPermissions(ctx context.Context, userID uuid.
 	return result, nil
 }
 
-func (s *permissionService) getUserRoleCode(ctx context.Context, userID uuid.UUID) (string, error) {
+func (s *PermissionService) getUserRoleCode(ctx context.Context, userID uuid.UUID) (string, error) {
 	cacheKey := BuildUserRoleCacheKey(userID)
 
 	if cached, err := s.cache.Get(ctx, cacheKey); err == nil {

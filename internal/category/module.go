@@ -6,8 +6,8 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-func Register(e *echo.Group, svc CategoryService) {
-	handler := NewCategoryHandler(svc)
+func Register(e *echo.Group, svc service) {
+	handler := NewHandler(svc)
 
 	e.GET("/categories", handler.ListCategories, middleware.RequirePermission(rbac.PermissionCategoryView))
 	e.GET("/categories/options", handler.ListCategoryOptions)

@@ -7,23 +7,23 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 )
 
-type PatientService interface {
-	ListPatients(ctx context.Context, params *GetPatientParams) ([]PatientResponse, int64, error)
-	GetPatientByNORM(ctx context.Context, NORM string) (*PatientDetailResponse, error)
-	UpdatePatientMethodByNORM(ctx context.Context, NORM string) error
+type repository interface {
+	GetPatients(ctx context.Context, params GetPatientParams) ([]PatientProjection, int64, error)
+	GetPatientDetail(ctx context.Context, NORM string) (*PatientDetailProjection, error)
+	UpdatePatientMethod(ctx context.Context, NORM string) error
 }
 
-type service struct {
-	repo PatientRepository
+type Service struct {
+	repo repository
 }
 
-func NewPatientService(repo PatientRepository) PatientService {
-	return &service{
+func NewService(repo repository) *Service {
+	return &Service{
 		repo: repo,
 	}
 }
 
-func (s *service) ListPatients(ctx context.Context, params *GetPatientParams) ([]PatientResponse, int64, error) {
+func (s *Service) ListPatients(ctx context.Context, params *GetPatientParams) ([]PatientResponse, int64, error) {
 	if params == nil {
 		params = &GetPatientParams{}
 	}
@@ -37,7 +37,7 @@ func (s *service) ListPatients(ctx context.Context, params *GetPatientParams) ([
 	return toPatientResponses(patients), total, nil
 }
 
-func (s *service) GetPatientByNORM(ctx context.Context, NORM string) (*PatientDetailResponse, error) {
+func (s *Service) GetPatientByNORM(ctx context.Context, NORM string) (*PatientDetailResponse, error) {
 	patient, err := s.repo.GetPatientDetail(ctx, NORM)
 	if err != nil {
 		if errors.Is(err, ErrPatientNotFound) {
@@ -50,7 +50,7 @@ func (s *service) GetPatientByNORM(ctx context.Context, NORM string) (*PatientDe
 	return &result, nil
 }
 
-func (s *service) UpdatePatientMethodByNORM(ctx context.Context, NORM string) error {
+func (s *Service) UpdatePatientMethodByNORM(ctx context.Context, NORM string) error {
 	if err := s.repo.UpdatePatientMethod(ctx, NORM); err != nil {
 		if errors.Is(err, ErrPatientNotFound) {
 			return apperr.NotFound("patient")

@@ -4,7 +4,7 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
-func Register(e *echo.Group, svc DashboardService) {
+func Register(e *echo.Group, svc service) {
 	handler := NewDashboardHandler(svc)
 
 	e.GET("/dashboard/summary", handler.GetSummary)

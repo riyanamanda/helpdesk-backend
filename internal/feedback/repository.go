@@ -11,23 +11,15 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 )
 
-type FeedbackRepository interface {
-	GetAll(ctx context.Context, params GetFeedbackParams) ([]FeedbackProjection, int64, error)
-	GetByID(ctx context.Context, id int64) (*FeedbackProjection, error)
-	Create(ctx context.Context, feedback Feedback) error
-	UpdateStatus(ctx context.Context, id int64, reviewerID uuid.UUID, status FeedbackStatus) error
-	Delete(ctx context.Context, id int64) error
-}
-
-type repository struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func NewFeedbackRepository(db *sqlx.DB) FeedbackRepository {
-	return &repository{db: db}
+func NewRepository(db *sqlx.DB) *Repository {
+	return &Repository{db: db}
 }
 
-func (r *repository) GetAll(ctx context.Context, params GetFeedbackParams) ([]FeedbackProjection, int64, error) {
+func (r *Repository) GetAll(ctx context.Context, params GetFeedbackParams) ([]FeedbackProjection, int64, error) {
 	var (
 		feedbacks []FeedbackProjection
 		total     int64
@@ -58,7 +50,7 @@ func (r *repository) GetAll(ctx context.Context, params GetFeedbackParams) ([]Fe
 	return feedbacks, total, nil
 }
 
-func (r *repository) GetByID(ctx context.Context, id int64) (*FeedbackProjection, error) {
+func (r *Repository) GetByID(ctx context.Context, id int64) (*FeedbackProjection, error) {
 	var feedback FeedbackProjection
 
 	const query = feedbackSelectBase + `WHERE f.id = $1`
@@ -73,7 +65,7 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*FeedbackProjection
 	return &feedback, nil
 }
 
-func (r *repository) Create(ctx context.Context, feedback Feedback) error {
+func (r *Repository) Create(ctx context.Context, feedback Feedback) error {
 	const query = `
 		INSERT INTO feedbacks (title, description, type, created_by)
 		VALUES ($1, $2, $3, $4)
@@ -83,7 +75,7 @@ func (r *repository) Create(ctx context.Context, feedback Feedback) error {
 	return err
 }
 
-func (r *repository) UpdateStatus(ctx context.Context, id int64, reviewerID uuid.UUID, status FeedbackStatus) error {
+func (r *Repository) UpdateStatus(ctx context.Context, id int64, reviewerID uuid.UUID, status FeedbackStatus) error {
 	const query = `
 		UPDATE feedbacks
 		SET status      = $3,
@@ -101,7 +93,7 @@ func (r *repository) UpdateStatus(ctx context.Context, id int64, reviewerID uuid
 	return database.CheckRowsAffected(result, ErrFeedbackNotFound)
 }
 
-func (r *repository) Delete(ctx context.Context, id int64) error {
+func (r *Repository) Delete(ctx context.Context, id int64) error {
 	const query = `
 		DELETE FROM feedbacks
 		WHERE id = $1

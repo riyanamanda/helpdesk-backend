@@ -1,18 +1,27 @@
 package rbac
 
 import (
+	"context"
+
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
-type Handler struct {
-	svc RBACService
+type service interface {
+	ListRoles(ctx context.Context) ([]RoleResponse, error)
+	ListPermissions(ctx context.Context) ([]PermissionResponse, error)
+	GetRolePermissions(ctx context.Context, roleID int64) ([]PermissionResponse, error)
+	SetRolePermissions(ctx context.Context, roleID int64, permissionIDs []int64) error
 }
 
-func NewRBACHandler(svc RBACService) Handler {
-	return Handler{
+type Handler struct {
+	svc service
+}
+
+func NewHandler(svc service) *Handler {
+	return &Handler{
 		svc: svc,
 	}
 }

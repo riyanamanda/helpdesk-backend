@@ -1,6 +1,8 @@
 package division
 
 import (
+	"context"
+
 	"github.com/labstack/echo/v5"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
@@ -8,11 +10,20 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
-type Handler struct {
-	svc DivisionService
+type service interface {
+	ListDivisions(ctx context.Context, params *GetDivisionParams) ([]DivisionResponse, int64, error)
+	ListOptions(ctx context.Context) ([]DivisionOptionResponse, error)
+	CreateDivision(ctx context.Context, req *DivisionCreateRequest) error
+	GetDivision(ctx context.Context, id int64) (*DivisionResponse, error)
+	UpdateDivision(ctx context.Context, id int64, req *DivisionUpdateRequest) error
+	DeleteDivision(ctx context.Context, id int64) error
 }
 
-func NewDivisionHandler(svc DivisionService) *Handler {
+type Handler struct {
+	svc service
+}
+
+func NewHandler(svc service) *Handler {
 	return &Handler{
 		svc: svc,
 	}

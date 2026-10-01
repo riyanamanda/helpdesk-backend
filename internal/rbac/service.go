@@ -4,30 +4,32 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 )
 
-type RBACService interface {
-	ListRoles(ctx context.Context) ([]RoleResponse, error)
-	ListPermissions(ctx context.Context) ([]PermissionResponse, error)
-	GetRolePermissions(ctx context.Context, roleID int64) ([]PermissionResponse, error)
+type repository interface {
+	GetRoles(ctx context.Context) ([]Role, error)
+	GetPermissions(ctx context.Context) ([]Permission, error)
+	GetPermissionsByRoleID(ctx context.Context, roleID int64) ([]Permission, error)
 	SetRolePermissions(ctx context.Context, roleID int64, permissionIDs []int64) error
+	GetUserIDsByRoleID(ctx context.Context, roleID int64) ([]uuid.UUID, error)
 }
 
-type service struct {
-	repo  RBACRepository
+type Service struct {
+	repo  repository
 	cache cache.Cache
 }
 
-func NewRBACService(repo RBACRepository, cache cache.Cache) RBACService {
-	return &service{
+func NewService(repo repository, cache cache.Cache) *Service {
+	return &Service{
 		repo:  repo,
 		cache: cache,
 	}
 }
 
-func (s *service) ListRoles(ctx context.Context) ([]RoleResponse, error) {
+func (s *Service) ListRoles(ctx context.Context) ([]RoleResponse, error) {
 	roles, err := s.repo.GetRoles(ctx)
 	if err != nil {
 		return nil, err
@@ -36,7 +38,7 @@ func (s *service) ListRoles(ctx context.Context) ([]RoleResponse, error) {
 	return toRoleResponses(roles), nil
 }
 
-func (s *service) ListPermissions(ctx context.Context) ([]PermissionResponse, error) {
+func (s *Service) ListPermissions(ctx context.Context) ([]PermissionResponse, error) {
 	permissions, err := s.repo.GetPermissions(ctx)
 	if err != nil {
 		return nil, err
@@ -45,7 +47,7 @@ func (s *service) ListPermissions(ctx context.Context) ([]PermissionResponse, er
 	return toPermissionResponses(permissions), nil
 }
 
-func (s *service) GetRolePermissions(ctx context.Context, roleID int64) ([]PermissionResponse, error) {
+func (s *Service) GetRolePermissions(ctx context.Context, roleID int64) ([]PermissionResponse, error) {
 	permissions, err := s.repo.GetPermissionsByRoleID(ctx, roleID)
 	if err != nil {
 		return nil, err
@@ -54,7 +56,7 @@ func (s *service) GetRolePermissions(ctx context.Context, roleID int64) ([]Permi
 	return toPermissionResponses(permissions), nil
 }
 
-func (s *service) SetRolePermissions(ctx context.Context, roleID int64, permissionIDs []int64) error {
+func (s *Service) SetRolePermissions(ctx context.Context, roleID int64, permissionIDs []int64) error {
 	if err := s.repo.SetRolePermissions(ctx, roleID, permissionIDs); err != nil {
 		if errors.Is(err, ErrPermissionNotFound) {
 			return apperr.BadRequest("one or more permission IDs are invalid")

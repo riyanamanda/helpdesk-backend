@@ -1,6 +1,7 @@
 package antrian
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/labstack/echo/v5"
@@ -8,11 +9,16 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
-type Handler struct {
-	svc AntrianService
+type service interface {
+	ListAntrian(ctx context.Context, params *GetAntrianParams) ([]AntrianResponse, int64, error)
+	CheckIn(ctx context.Context, kodeBooking int64) error
 }
 
-func NewAntrianHandler(svc AntrianService) *Handler {
+type Handler struct {
+	svc service
+}
+
+func NewAntrianHandler(svc service) *Handler {
 	return &Handler{svc: svc}
 }
 

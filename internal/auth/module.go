@@ -4,8 +4,8 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
-func Register(e *echo.Group, svc AuthService, authMiddleware echo.MiddlewareFunc) {
-	handler := NewAuthHandler(svc)
+func Register(e *echo.Group, svc service, authMiddleware echo.MiddlewareFunc) {
+	handler := NewHandler(svc)
 
 	e.POST("/auth/login", handler.Login)
 	e.POST("/auth/google", handler.LoginWithGoogle)

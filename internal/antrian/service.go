@@ -6,24 +6,23 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/simgos"
 )
 
-type AntrianService interface {
-	ListAntrian(ctx context.Context, params *GetAntrianParams) ([]AntrianResponse, int64, error)
-	CheckIn(ctx context.Context, kodeBooking int64) error
+type repository interface {
+	GetAntrian(ctx context.Context, params GetAntrianParams) ([]Antrian, int64, error)
 }
 
-type service struct {
-	repo   AntrianRepository
+type Service struct {
+	repo   repository
 	simgos *simgos.AntrolClient
 }
 
-func NewAntrianService(repo AntrianRepository, simgos *simgos.AntrolClient) AntrianService {
-	return &service{
+func NewService(repo repository, simgos *simgos.AntrolClient) *Service {
+	return &Service{
 		repo:   repo,
 		simgos: simgos,
 	}
 }
 
-func (s *service) ListAntrian(ctx context.Context, params *GetAntrianParams) ([]AntrianResponse, int64, error) {
+func (s *Service) ListAntrian(ctx context.Context, params *GetAntrianParams) ([]AntrianResponse, int64, error) {
 	if params == nil {
 		params = &GetAntrianParams{}
 	}
@@ -37,6 +36,6 @@ func (s *service) ListAntrian(ctx context.Context, params *GetAntrianParams) ([]
 	return toAntrianResponses(antrian), total, nil
 }
 
-func (s *service) CheckIn(ctx context.Context, kodeBooking int64) error {
+func (s *Service) CheckIn(ctx context.Context, kodeBooking int64) error {
 	return s.simgos.CheckIn(ctx, kodeBooking)
 }

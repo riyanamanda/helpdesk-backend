@@ -6,22 +6,15 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type DashboardRepository interface {
-	GetSummary(ctx context.Context) (SummaryProjection, error)
-	GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendProjection, error)
-	GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsProjection, error)
-	GetAgentWorkload(ctx context.Context) ([]AgentWorkloadProjection, error)
-}
-
-type repository struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func NewDashboardRepository(db *sqlx.DB) DashboardRepository {
-	return &repository{db: db}
+func NewRepository(db *sqlx.DB) *Repository {
+	return &Repository{db: db}
 }
 
-func (r *repository) GetSummary(ctx context.Context) (SummaryProjection, error) {
+func (r *Repository) GetSummary(ctx context.Context) (SummaryProjection, error) {
 	var (
 		statusRow   StatusStatsProjection
 		priorityRow PriorityStatsProjection
@@ -61,7 +54,7 @@ func (r *repository) GetSummary(ctx context.Context) (SummaryProjection, error) 
 	}, nil
 }
 
-func (r *repository) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendProjection, error) {
+func (r *Repository) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendProjection, error) {
 	var rows []MonthlyTrendProjection
 
 	const query = `
@@ -83,7 +76,7 @@ func (r *repository) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTr
 	return rows, nil
 }
 
-func (r *repository) GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsProjection, error) {
+func (r *Repository) GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsProjection, error) {
 	var rows []CategoryTicketsProjection
 
 	const query = `
@@ -106,7 +99,7 @@ func (r *repository) GetTicketsByCategory(ctx context.Context) ([]CategoryTicket
 	return rows, nil
 }
 
-func (r *repository) GetAgentWorkload(ctx context.Context) ([]AgentWorkloadProjection, error) {
+func (r *Repository) GetAgentWorkload(ctx context.Context) ([]AgentWorkloadProjection, error) {
 	var rows []AgentWorkloadProjection
 
 	const query = `

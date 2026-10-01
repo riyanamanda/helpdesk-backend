@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-func NewRustFSClient(endpoint string, accessKey string, secretKey string) *s3.Client {
+func NewClient(endpoint string, accessKey string, secretKey string) *s3.Client {
 	cfg := aws.Config{
 		Region:      "us-east-1",
 		Credentials: aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),

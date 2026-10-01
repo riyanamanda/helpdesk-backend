@@ -6,7 +6,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 )
 
-func Register(e *echo.Group, svc PatientService) {
+func Register(e *echo.Group, svc service) {
 	handler := NewPatientHandler(svc)
 
 	e.GET("/patients", handler.ListPatients, middleware.RequirePermission(rbac.PermissionIHSView))

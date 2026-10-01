@@ -1,17 +1,28 @@
 package auth
 
 import (
+	"context"
+
 	"github.com/labstack/echo/v5"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/httputil"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
-type Handler struct {
-	svc AuthService
+type service interface {
+	Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error)
+	LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (*LoginResponse, error)
+	Logout(ctx context.Context) error
+	Me(ctx context.Context) (*CurrentUserResponse, error)
+	ForgotPassword(ctx context.Context, req ForgotPasswordRequest) error
+	ResetPassword(ctx context.Context, req ResetPasswordRequest) error
 }
 
-func NewAuthHandler(svc AuthService) *Handler {
+type Handler struct {
+	svc service
+}
+
+func NewHandler(svc service) *Handler {
 	return &Handler{
 		svc: svc,
 	}

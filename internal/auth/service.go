@@ -25,17 +25,14 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
-type AuthService interface {
-	Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error)
-	LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (*LoginResponse, error)
-	Logout(ctx context.Context) error
-	Me(ctx context.Context) (*CurrentUserResponse, error)
-	ForgotPassword(ctx context.Context, req ForgotPasswordRequest) error
-	ResetPassword(ctx context.Context, req ResetPasswordRequest) error
+type repository interface {
+	GetByEmail(ctx context.Context, email string) (*user.UserProjection, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*user.UserProjection, error)
+	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 }
 
-type service struct {
-	userRepo          user.UserRepository
+type Service struct {
+	userRepo          repository
 	authConfig        config.Auth
 	storageConfig     config.Storage
 	appConfig         config.App
@@ -44,16 +41,16 @@ type service struct {
 	rabbitmq          rabbitmq.Client
 }
 
-func NewAuthService(
-	repo user.UserRepository,
+func NewService(
+	repo repository,
 	authConfig config.Auth,
 	storageConfig config.Storage,
 	appConfig config.App,
 	redis cache.Cache,
 	permissionService ctxkey.PermissionService,
 	rabbitmq rabbitmq.Client,
-) AuthService {
-	return &service{
+) *Service {
+	return &Service{
 		userRepo:          repo,
 		authConfig:        authConfig,
 		storageConfig:     storageConfig,
@@ -64,7 +61,7 @@ func NewAuthService(
 	}
 }
 
-func (s *service) issueSession(ctx context.Context, user user.UserProjection) (string, error) {
+func (s *Service) issueSession(ctx context.Context, user user.UserProjection) (string, error) {
 	if !user.IsActive {
 		return "", apperr.Forbidden("user is inactive")
 	}
@@ -81,7 +78,7 @@ func (s *service) issueSession(ctx context.Context, user user.UserProjection) (s
 	return token, nil
 }
 
-func (s *service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
+func (s *Service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
 	currentUser, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		if errors.Is(err, user.ErrUserNotFound) {
@@ -107,7 +104,7 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse,
 	return toLoginResponse(token, *currentUser, s.storageConfig, permissions.ToSlice()), nil
 }
 
-func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (*LoginResponse, error) {
+func (s *Service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (*LoginResponse, error) {
 	firebaseClaims, err := firebase.VerifyIDToken(req.IDToken, s.authConfig.FirebaseProjectID)
 	if err != nil {
 		return nil, apperr.Unauthorized(apperr.CodeUnauthorized, "invalid google token")
@@ -138,7 +135,7 @@ func (s *service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) 
 	return toLoginResponse(token, *currentUser, s.storageConfig, permissions.ToSlice()), nil
 }
 
-func (s *service) Logout(ctx context.Context) error {
+func (s *Service) Logout(ctx context.Context) error {
 	jti, ok := ctxkey.GetJTIFromContext(ctx)
 	if !ok || jti == "" {
 		return apperr.Unauthorized(apperr.CodeInvalidToken, "invalid token")
@@ -147,7 +144,7 @@ func (s *service) Logout(ctx context.Context) error {
 	return s.redis.Delete(ctx, jwtutil.TokenKeyPrefix+jti)
 }
 
-func (s *service) Me(ctx context.Context) (*CurrentUserResponse, error) {
+func (s *Service) Me(ctx context.Context) (*CurrentUserResponse, error) {
 	authUser, ok := ctxkey.GetAuthUserFromContext(ctx)
 	if !ok || authUser == nil {
 		return nil, apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
@@ -161,7 +158,7 @@ func (s *service) Me(ctx context.Context) (*CurrentUserResponse, error) {
 	return toCurrentUserResponse(*u, s.storageConfig, authUser.Permissions.ToSlice()), nil
 }
 
-func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest) error {
+func (s *Service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest) error {
 	userValue, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		if errors.Is(err, user.ErrUserNotFound) {
@@ -253,7 +250,7 @@ func (s *service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 	return nil
 }
 
-func (s *service) ResetPassword(ctx context.Context, req ResetPasswordRequest) error {
+func (s *Service) ResetPassword(ctx context.Context, req ResetPasswordRequest) error {
 	userID, err := s.redis.Get(ctx, buildPasswordResetTokenCache(req.Token))
 	if err != nil {
 		if errors.Is(err, redis.Nil) {

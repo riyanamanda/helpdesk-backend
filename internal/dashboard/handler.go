@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"time"
@@ -10,11 +11,18 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
-type Handler struct {
-	svc DashboardService
+type service interface {
+	GetSummary(ctx context.Context) (*SummaryResponse, error)
+	GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTrendResponse, error)
+	GetTicketsByCategory(ctx context.Context) ([]CategoryTicketsResponse, error)
+	GetAgentWorkload(ctx context.Context) ([]AgentWorkloadResponse, error)
 }
 
-func NewDashboardHandler(svc DashboardService) *Handler {
+type Handler struct {
+	svc service
+}
+
+func NewDashboardHandler(svc service) *Handler {
 	return &Handler{
 		svc: svc,
 	}

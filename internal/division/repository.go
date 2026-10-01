@@ -10,26 +10,17 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 )
 
-type DivisionRepository interface {
-	GetAll(ctx context.Context, params GetDivisionParams) ([]Division, int64, error)
-	GetOptions(ctx context.Context) ([]DivisionOptionProjection, error)
-	Create(ctx context.Context, division *Division) error
-	GetByID(ctx context.Context, id int64) (*Division, error)
-	Update(ctx context.Context, id int64, division *Division) error
-	Delete(ctx context.Context, id int64) error
-}
-
-type repository struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func NewDivisionRepository(db *sqlx.DB) DivisionRepository {
-	return &repository{
+func NewRepository(db *sqlx.DB) *Repository {
+	return &Repository{
 		db: db,
 	}
 }
 
-func (r *repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Division, int64, error) {
+func (r *Repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Division, int64, error) {
 	var (
 		divisions []Division
 		total     int64
@@ -60,7 +51,7 @@ func (r *repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Di
 	return divisions, total, nil
 }
 
-func (r *repository) GetOptions(ctx context.Context) ([]DivisionOptionProjection, error) {
+func (r *Repository) GetOptions(ctx context.Context) ([]DivisionOptionProjection, error) {
 	var divisions []DivisionOptionProjection
 
 	const query = `
@@ -79,7 +70,7 @@ func (r *repository) GetOptions(ctx context.Context) ([]DivisionOptionProjection
 	return divisions, nil
 }
 
-func (r *repository) Create(ctx context.Context, division *Division) error {
+func (r *Repository) Create(ctx context.Context, division *Division) error {
 	const query = `
 		INSERT INTO divisions (name)
 		VALUES ($1)
@@ -96,7 +87,7 @@ func (r *repository) Create(ctx context.Context, division *Division) error {
 	return nil
 }
 
-func (r *repository) GetByID(ctx context.Context, id int64) (*Division, error) {
+func (r *Repository) GetByID(ctx context.Context, id int64) (*Division, error) {
 	var division Division
 
 	const query = divisionSelectBase + `WHERE id = $1`
@@ -111,7 +102,7 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*Division, error) {
 	return &division, nil
 }
 
-func (r *repository) Update(ctx context.Context, id int64, division *Division) error {
+func (r *Repository) Update(ctx context.Context, id int64, division *Division) error {
 	const query = `
 		UPDATE divisions
 		SET name = $2,
@@ -131,7 +122,7 @@ func (r *repository) Update(ctx context.Context, id int64, division *Division) e
 	return database.CheckRowsAffected(result, ErrDivisionNotFound)
 }
 
-func (r *repository) Delete(ctx context.Context, id int64) error {
+func (r *Repository) Delete(ctx context.Context, id int64) error {
 	const query = `
 		DELETE FROM divisions
 		WHERE id = $1
