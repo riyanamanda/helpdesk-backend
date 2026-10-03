@@ -15,6 +15,7 @@ import (
 
 	"github.com/riyanamanda/helpdesk-backend/internal/antrian"
 	"github.com/riyanamanda/helpdesk-backend/internal/auth"
+	"github.com/riyanamanda/helpdesk-backend/internal/bpjs"
 	"github.com/riyanamanda/helpdesk-backend/internal/category"
 	"github.com/riyanamanda/helpdesk-backend/internal/dashboard"
 	"github.com/riyanamanda/helpdesk-backend/internal/division"
@@ -116,6 +117,9 @@ func main() {
 	// simgos
 	simgosClient := simgos.NewAntrolClient(cfg.Antrol.Domain, cfg.Antrol.Username, cfg.Antrol.Password)
 
+	// BPJS
+	bpjsClient := bpjs.NewClient(cfg.BPJS.VClaimURL, cfg.BPJS.ConsID, cfg.BPJS.ConsSecret, cfg.BPJS.VClaimKey)
+
 	// Repositories
 	categoryRepo := category.NewRepository(db)
 	divisionRepo := division.NewRepository(db)
@@ -144,6 +148,7 @@ func main() {
 	ihsService := ihs.NewService(ihsRepo)
 	antrianService := antrian.NewService(antrianRepo, simgosClient)
 	authService := auth.NewService(userRepo, cfg.Auth, cfg.Storage, cfg.App, cacheStore, permissionService, *rabbitmqClient)
+	bpjsService := bpjs.NewService(bpjsClient)
 
 	// HTTP
 	e := echo.New()
@@ -175,9 +180,10 @@ func main() {
 	profile.Register(protected, profileService)
 	rbac.Register(protected, rbacService)
 	dashboard.Register(protected, dashboardService)
+	bpjs.Register(protected, bpjsService)
 
+	ihs.Register(protected, ihsService)
 	if simgosDB != nil {
-		ihs.Register(protected, ihsService)
 		antrian.Register(protected, antrianService)
 	}
 

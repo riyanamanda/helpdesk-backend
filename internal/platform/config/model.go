@@ -15,6 +15,7 @@ type Config struct {
 	Email       Email
 	Antrol      Antrol
 	RabbitMQ    RabbitMQ
+	BPJS        BPJS
 }
 
 type Antrol struct {
@@ -74,6 +75,13 @@ type Email struct {
 	Password string
 	From     string
 	UseSSL   bool
+}
+
+type BPJS struct {
+	ConsID     string
+	ConsSecret string
+	VClaimURL  string
+	VClaimKey  string
 }
 
 func (d Database) ConnString() string {

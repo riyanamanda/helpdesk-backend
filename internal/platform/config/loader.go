@@ -74,6 +74,12 @@ func Load() *Config {
 			Username: getEnv("ANTROL_USERNAME", ""),
 			Password: getEnv("ANTROL_PASSWORD", ""),
 		},
+		BPJS: BPJS{
+			ConsID:     getEnv("CONS_ID", ""),
+			ConsSecret: getEnv("CONS_SECRET", ""),
+			VClaimURL:  getEnv("VCLAIM_URL", ""),
+			VClaimKey:  getEnv("VCLAIM_KEY", ""),
+		},
 	}
 }
 
