@@ -24,5 +24,9 @@ func (s *Service) GetPesertaByNIK(ctx context.Context, nik string) (*PesertaResp
 		return nil, err
 	}
 
+	if patient.Peserta.NoKartu == "" && patient.Peserta.NIK == "" {
+		return nil, nil
+	}
+
 	return toPesertaResponse(patient), nil
 }

@@ -2,6 +2,7 @@ package bpjs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -55,13 +56,12 @@ func (c *Client) GetPeserta(ctx context.Context, nik string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	if resp.IsStatusFailure() {
-		return nil, err
+		return nil, errors.New("HTTP status failure dari BPJS")
 	}
 
 	if result.MetaData.Code != "200" {
-		return nil, err
+		return []byte("{}"), nil
 	}
 
 	decryptKey := c.consumerID + c.consumerSecret + timestamp
