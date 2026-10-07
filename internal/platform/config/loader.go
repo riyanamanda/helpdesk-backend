@@ -39,10 +39,9 @@ func Load() *Config {
 			Password: getEnv("IHS_DB_PASSWORD", ""),
 		},
 		Auth: Auth{
-			JWTSecret:               getEnv("JWT_SECRET", "this-is-the-secret"),
-			JWTExp:                  getDurationEnv("JWT_EXP", 24*time.Hour),
-			FirebaseProjectID:       getEnv("FIREBASE_PROJECT_ID", ""),
-			FirebaseCredentialsFile: getEnv("FIREBASE_CREDENTIALS_FILE", ""),
+			JWTSecret:         getEnv("JWT_SECRET", "this-is-the-secret"),
+			JWTExp:            getDurationEnv("JWT_EXP", 24*time.Hour),
+			FirebaseProjectID: getEnv("FIREBASE_PROJECT_ID", ""),
 		},
 		Storage: Storage{
 			Endpoint:  getEnv("RUSTFS_ENDPOINT", "localhost:9000"),

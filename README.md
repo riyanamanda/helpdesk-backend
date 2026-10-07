@@ -12,12 +12,13 @@ A REST API for IT Helpdesk management built with Go and Echo v5, following Clean
 | Language | Go 1.26+ |
 | Web framework | Echo v5 |
 | Database | PostgreSQL + sqlx |
+| Secondary database | MySQL (SIMGOS) |
 | Migrations | Goose |
 | Cache | Redis |
-| Object storage | MinIO |
+| Object storage | RustFS (S3-compatible, AWS SDK v2) |
 | Message queue | RabbitMQ |
-| Push notifications | Firebase (FCM) |
-| Auth | JWT + Google OAuth |
+| Auth | JWT + Firebase Google Sign-In + RBAC |
+| External integrations | BPJS VClaim, SIMGOS Antrol |
 | Logging | slog |
 | Hot reload | Air |
 
@@ -26,8 +27,9 @@ A REST API for IT Helpdesk management built with Go and Echo v5, following Clean
 - Go 1.26+
 - PostgreSQL
 - Redis
-- MinIO
+- RustFS
 - RabbitMQ
+- MySQL — only if SIMGOS/Antrol integration is needed, otherwise those routes are disabled
 - [Air](https://github.com/air-verse/air) — `go install github.com/air-verse/air@latest`
 - [Goose](https://github.com/pressly/goose) — `go install github.com/pressly/goose/v3/cmd/goose@latest`
 - [goimports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports) — `go install golang.org/x/tools/cmd/goimports@latest`
@@ -66,9 +68,10 @@ This starts both the HTTP server and the background worker with hot reload via A
 
 ```env
 # App
-APP_NAME="Helpdesk App"
+APP_NAME="IT Helpdesk"
 APP_HOST=localhost
 APP_PORT=8080
+APP_URL=http://localhost:3000
 CORS_ORIGINS=http://localhost:3000
 
 # Database
@@ -84,17 +87,30 @@ GOOSE_DRIVER=postgres
 GOOSE_DBSTRING=postgres://postgres:postgres@localhost:5432/helpdesk_db
 GOOSE_MIGRATION_DIR=./migrations
 
+# SIMGOS database (MySQL) — leave IHS_DB_HOST empty to disable
+IHS_DB_HOST=
+IHS_DB_PORT=3306
+IHS_DB_NAME=dbname
+IHS_DB_USERNAME=user
+IHS_DB_PASSWORD=password
+
 # Auth
 JWT_SECRET=your-secret
 JWT_EXP=24h
+
+# Firebase — used to verify Google Sign-In ID tokens
 FIREBASE_PROJECT_ID=your-firebase-project-id
 
-# MinIO (object storage)
-MINIO_ENDPOINT=localhost:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET=helpdesk-dev
-MINIO_USE_SSL=false
+# RustFS (object storage)
+RUSTFS_ENDPOINT=http://localhost:9000
+RUSTFS_ACCESS_KEY=rustfsadmin
+RUSTFS_SECRET_KEY=rustfsadmin
+RUSTFS_BUCKET=helpdesk-dev
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
 
 # Mail
 MAIL_HOST=sandbox.smtp.mailtrap.io
@@ -107,8 +123,19 @@ MAIL_SSL=false
 # RabbitMQ
 RABBITMQ_HOST=localhost
 RABBITMQ_PORT=5672
-RABBITMQ_USER=guest
+RABBITMQ_USERNAME=guest
 RABBITMQ_PASSWORD=guest
+
+# Antrol (SIMGOS queue integration)
+ANTROL_DOMAIN=
+ANTROL_USERNAME=
+ANTROL_PASSWORD=
+
+# BPJS VClaim
+CONS_ID=
+CONS_SECRET=
+VCLAIM_URL=
+VCLAIM_KEY=
 ```
 
 ## Make Commands
@@ -135,19 +162,26 @@ RABBITMQ_PASSWORD=guest
 │   ├── seed/       # Database seeder
 │   └── worker/     # Background job worker entry point
 ├── internal/
-│   ├── platform/   # Infrastructure (DB, cache, storage, middleware, etc.)
+│   ├── platform/   # Infrastructure (database, cache, storage, middleware, etc.)
 │   ├── shared/     # Cross-domain utilities (errors, response, validation, etc.)
+│   ├── antrian/    # Queue registration via SIMGOS Antrol
 │   ├── auth/
+│   ├── bpjs/       # BPJS VClaim integration
 │   ├── category/
 │   ├── dashboard/
 │   ├── division/
+│   ├── event/      # Domain event definitions
 │   ├── feedback/
+│   ├── ihs/        # SIMGOS (IHS) read-only queries
 │   ├── mailer/
-│   ├── notification/
+│   ├── outbox/     # Transactional outbox events
 │   ├── profile/
+│   ├── rbac/       # Roles and permissions
+│   ├── seed/
+│   ├── simgos/     # SIMGOS/Antrol API client
 │   ├── ticket/
 │   ├── user/
-│   └── user_device/
+│   └── worker/     # Outbox publisher + queue consumers
 └── migrations/     # SQL migration files
 ```
 
@@ -171,14 +205,16 @@ subgraph group_domains["Helpdesk domains"]
   node_profile["User profiles<br/>[service.go]"]
   node_dashboard["Dashboard<br/>[service.go]"]
   node_rbac["Access control"]
-  node_integrations["Queue and SIMGOS"]
+  node_integrations["SIMGOS queries<br/>[service.go]"]
+  node_antrian["Queue registration<br/>[service.go]"]
+  node_bpjs["BPJS VClaim<br/>[service.go]"]
 end
 
 subgraph group_infra["Infrastructure"]
   node_postgres[("PostgreSQL<br/>[postgres.go]")]
   node_simgosdb[("SIMGOS database")]
   node_redis[("Redis cache<br/>[client.go]")]
-  node_storage["Object storage<br/>[storage.go]"]
+  node_storage["RustFS object storage<br/>[storage.go]"]
 end
 
 subgraph group_async["Event processing"]
@@ -190,6 +226,8 @@ subgraph group_async["Event processing"]
 end
 
 node_employee(("API user"))
+node_extapi(("External APIs"))
+node_firebase(("Firebase<br/>Google Sign-In"))
 
 node_employee -->|"sends requests"| node_api
 node_api -->|"registers routes"| node_auth
@@ -201,6 +239,8 @@ node_api -->|"registers routes"| node_feedback
 node_api -->|"registers routes"| node_profile
 node_api -->|"registers routes"| node_rbac
 node_api -->|"registers routes"| node_integrations
+node_api -->|"registers routes"| node_bpjs
+node_api -->|"registers routes"| node_antrian
 node_api -.->|"registers routes"| node_dashboard
 node_api -->|"connects"| node_postgres
 node_api -->|"optionally connects"| node_simgosdb
@@ -211,6 +251,7 @@ node_ticket -->|"looks up categories"| node_category
 node_ticket -->|"looks up divisions"| node_division
 node_ticket -->|"looks up users"| node_users
 node_auth -->|"gets permissions"| node_rbac
+node_auth -->|"verifies ID token"| node_firebase
 node_auth -->|"stores sessions"| node_redis
 node_auth -->|"publishes reset event"| node_rabbit
 node_users -->|"records events"| node_outbox
@@ -224,6 +265,10 @@ node_worker -->|"delivers email"| node_mailer
 node_api -->|"initializes repository"| node_outbox
 node_api -.->|"wires service"| node_dashboard
 node_api -->|"wires SIMGOS services"| node_integrations
+node_integrations -->|"reads from"| node_simgosdb
+node_antrian -->|"reads from"| node_simgosdb
+node_antrian -->|"calls Antrol"| node_extapi
+node_bpjs -->|"calls VClaim"| node_extapi
 
 click node_api "https://github.com/riyanamanda/helpdesk-backend/blob/main/cmd/api/main.go"
 click node_auth "https://github.com/riyanamanda/helpdesk-backend/blob/main/internal/auth/service.go"
@@ -236,6 +281,8 @@ click node_profile "https://github.com/riyanamanda/helpdesk-backend/blob/main/in
 click node_dashboard "https://github.com/riyanamanda/helpdesk-backend/blob/main/internal/dashboard/service.go"
 click node_rbac "https://github.com/riyanamanda/helpdesk-backend/blob/main/internal/rbac/permission_service.go"
 click node_integrations "https://github.com/riyanamanda/helpdesk-backend/tree/main/internal/ihs"
+click node_antrian "https://github.com/riyanamanda/helpdesk-backend/blob/main/internal/antrian/service.go"
+click node_bpjs "https://github.com/riyanamanda/helpdesk-backend/blob/main/internal/bpjs/service.go"
 click node_postgres "https://github.com/riyanamanda/helpdesk-backend/blob/main/internal/platform/database/postgres.go"
 click node_redis "https://github.com/riyanamanda/helpdesk-backend/blob/main/internal/platform/redis/client.go"
 click node_storage "https://github.com/riyanamanda/helpdesk-backend/blob/main/internal/platform/storage/storage.go"
@@ -253,7 +300,8 @@ classDef toneRose fill:#ffe4e6,stroke:#e11d48,stroke-width:1.5px,color:#881337
 classDef toneIndigo fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.5px,color:#312e81
 classDef toneTeal fill:#ccfbf1,stroke:#0f766e,stroke-width:1.5px,color:#134e4a
 class node_api,node_employee toneBlue
-class node_auth,node_ticket,node_users,node_category,node_division,node_feedback,node_profile,node_dashboard,node_rbac,node_integrations toneAmber
+class node_auth,node_ticket,node_users,node_category,node_division,node_feedback,node_profile,node_dashboard,node_rbac,node_integrations,node_antrian,node_bpjs toneAmber
 class node_postgres,node_simgosdb,node_redis,node_storage toneMint
 class node_outbox,node_rabbit,node_worker,node_publisher,node_mailer toneRose
+class node_extapi,node_firebase toneTeal
 ```
