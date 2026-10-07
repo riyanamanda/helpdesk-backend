@@ -11,4 +11,8 @@ type Cache interface {
 	Delete(ctx context.Context, key string) error
 	DeleteMany(ctx context.Context, keys ...string) error
 	TTL(ctx context.Context, key string) (time.Duration, error)
+	SAdd(ctx context.Context, key string, members ...string) error
+	SRem(ctx context.Context, key string, members ...string) error
+	SMembers(ctx context.Context, key string) ([]string, error)
+	Expire(ctx context.Context, key string, ttl time.Duration) error
 }

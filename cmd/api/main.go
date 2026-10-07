@@ -140,7 +140,7 @@ func main() {
 	userService := user.NewService(userRepo, outboxRepo, txManager, cfg.Storage, cacheStore)
 	ticketService := ticket.NewService(ticketRepo, outboxRepo, txManager, storageService, cfg.Storage, cacheStore, categoryService, divisionService, userService)
 	feedbackService := feedback.NewService(feedbackRepo)
-	profileService := profile.NewService(profileRepo, storageService, cfg.Storage, cfg.Auth)
+	profileService := profile.NewService(profileRepo, storageService, cfg.Storage, cfg.Auth, cacheStore)
 	rbacService := rbac.NewService(rbacRepo, cacheStore)
 	permissionService := rbac.NewPermissionService(rbacRepo, cacheStore)
 	dashboardService := dashboard.NewService(dashboardRepo, cacheStore)

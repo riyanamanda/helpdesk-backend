@@ -7,11 +7,13 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/jwtutil"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -30,14 +32,16 @@ type Service struct {
 	storage       storage.Storage
 	storageConfig config.Storage
 	authConfig    config.Auth
+	cache         cache.Cache
 }
 
-func NewService(repo repository, store storage.Storage, storageConfig config.Storage, authConfig config.Auth) *Service {
+func NewService(repo repository, store storage.Storage, storageConfig config.Storage, authConfig config.Auth, cache cache.Cache) *Service {
 	return &Service{
 		repo:          repo,
 		storage:       store,
 		storageConfig: storageConfig,
 		authConfig:    authConfig,
+		cache:         cache,
 	}
 }
 
@@ -84,6 +88,8 @@ func (s *Service) UpdateProfile(ctx context.Context, req *UpdateProfileRequest) 
 		return err
 	}
 
+	user.InvalidateCache(ctx, s.cache)
+
 	return nil
 }
 
@@ -98,7 +104,13 @@ func (s *Service) UpdateAvatar(ctx context.Context, file *storage.File) error {
 		return err
 	}
 
-	return s.repo.UpdateAvatar(ctx, userID, objectKey)
+	if err := s.repo.UpdateAvatar(ctx, userID, objectKey); err != nil {
+		return err
+	}
+
+	user.InvalidateCache(ctx, s.cache)
+
+	return nil
 }
 
 func (s *Service) SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error {
@@ -169,5 +181,9 @@ func (s *Service) UpdatePassword(ctx context.Context, req UpdatePasswordRequest)
 		return err
 	}
 
-	return s.repo.UpdatePassword(ctx, userID, string(hashedPassword))
+	if err := s.repo.UpdatePassword(ctx, userID, string(hashedPassword)); err != nil {
+		return err
+	}
+
+	return jwtutil.RevokeUserSessions(ctx, s.cache, userID)
 }

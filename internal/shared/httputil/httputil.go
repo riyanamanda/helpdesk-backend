@@ -54,11 +54,19 @@ func GenerateObjectKey(prefix, filename string) string {
 }
 
 func BuildPublicURL(bucket, key string) string {
+	return BuildVersionedPublicURL(bucket, key, 0)
+}
+
+func BuildVersionedPublicURL(bucket, key string, version int64) string {
 	if key == "" {
 		return ""
 	}
 
-	return fmt.Sprintf("/storage/%s/%s", bucket, key)
+	if version == 0 {
+		return fmt.Sprintf("/storage/%s/%s", bucket, key)
+	}
+
+	return fmt.Sprintf("/storage/%s/%s?v=%d", bucket, key, version)
 }
 
 func BindAndValidate[T any](c *echo.Context) (*T, error) {

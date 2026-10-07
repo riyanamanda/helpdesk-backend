@@ -10,7 +10,7 @@ func toUserResponse(u UserProjection, storageConfig config.Storage) UserResponse
 	var createdBy *UserBrief
 
 	if u.AvatarKey != nil {
-		url := httputil.BuildPublicURL(storageConfig.Bucket, *u.AvatarKey)
+		url := httputil.BuildVersionedPublicURL(storageConfig.Bucket, *u.AvatarKey, u.UpdatedAt.Unix())
 		avatarURL = &url
 	}
 

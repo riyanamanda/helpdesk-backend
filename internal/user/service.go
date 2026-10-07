@@ -16,6 +16,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/jwtutil"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -183,7 +184,7 @@ func (s *Service) UpdatePassword(ctx context.Context, userID uuid.UUID, req *Use
 		return err
 	}
 
-	return nil
+	return jwtutil.RevokeUserSessions(ctx, s.cache, userID)
 }
 
 func (s *Service) ListAssignableUser(ctx context.Context) ([]UserBrief, error) {

@@ -11,7 +11,7 @@ func toProfileResponse(p user.UserProjection, storageConfig config.Storage) Prof
 	var createdBy *user.UserBrief
 
 	if p.AvatarKey != nil {
-		url := httputil.BuildPublicURL(storageConfig.Bucket, *p.AvatarKey)
+		url := httputil.BuildVersionedPublicURL(storageConfig.Bucket, *p.AvatarKey, p.UpdatedAt.Unix())
 		avatarURL = &url
 	}
 

@@ -75,6 +75,11 @@ func (s *Service) issueSession(ctx context.Context, user user.UserProjection) (s
 		return "", err
 	}
 
+	if err := jwtutil.TrackSession(ctx, s.redis, user.ID, jti, s.authConfig.JWTExp); err != nil {
+		_ = s.redis.Delete(ctx, jwtutil.TokenKeyPrefix+jti)
+		return "", err
+	}
+
 	return token, nil
 }
 
@@ -141,7 +146,16 @@ func (s *Service) Logout(ctx context.Context) error {
 		return apperr.Unauthorized(apperr.CodeInvalidToken, "invalid token")
 	}
 
-	return s.redis.Delete(ctx, jwtutil.TokenKeyPrefix+jti)
+	userID, ok := ctxkey.GetUserIDFromContext(ctx)
+	if !ok {
+		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
+	}
+
+	if err := s.redis.Delete(ctx, jwtutil.TokenKeyPrefix+jti); err != nil {
+		return err
+	}
+
+	return jwtutil.UntrackSession(ctx, s.redis, userID, jti)
 }
 
 func (s *Service) Me(ctx context.Context) (*CurrentUserResponse, error) {
@@ -271,6 +285,10 @@ func (s *Service) ResetPassword(ctx context.Context, req ResetPasswordRequest) e
 	}
 
 	if err := s.userRepo.UpdatePassword(ctx, id, string(hashedPassword)); err != nil {
+		return err
+	}
+
+	if err := jwtutil.RevokeUserSessions(ctx, s.redis, id); err != nil {
 		return err
 	}
 
