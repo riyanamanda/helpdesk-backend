@@ -9,30 +9,38 @@ var allowedSortColumns = map[string]string{
 }
 
 const patientFromBase = `
-	FROM ` + "`kemkes-ihs`" + `.patient ip
-	JOIN master.pasien p
-		ON ip.refId = p.NORM
-	LEFT JOIN (
-		SELECT
-			pen.NORM,
-			pen.TANGGAL,
-			ru.DESKRIPSI AS nama_ruangan,
-			ROW_NUMBER() OVER (
-				PARTITION BY pen.NORM
-				ORDER BY pen.TANGGAL DESC, pen.NOMOR DESC
-			) AS rn
-		FROM pendaftaran.pendaftaran pen
-		JOIN pendaftaran.kunjungan kun
-			ON kun.NOPEN = pen.NOMOR
-		LEFT JOIN pendaftaran.tujuan_pasien tu
-			ON tu.NOPEN = kun.NOPEN
-		LEFT JOIN master.ruangan ru
-			ON ru.ID = tu.RUANGAN
-		WHERE pen.STATUS IN (1,2)
-		AND kun.STATUS IN (1,2)
-	) pen_last
-		ON pen_last.NORM = ip.refId
-	AND pen_last.rn = 1
+    FROM ` + "`kemkes-ihs`" + `.patient ip
+    JOIN master.pasien p
+        ON ip.refId = p.NORM
+    LEFT JOIN (
+        SELECT
+            pen.NORM,
+            MAX(pen.TANGGAL) AS TANGGAL,
+            MAX(ru.DESKRIPSI) AS nama_ruangan
+        FROM pendaftaran.pendaftaran pen
+        JOIN (
+            SELECT pmax.NORM, MAX(pmax.NOMOR) AS max_nomor
+            FROM pendaftaran.pendaftaran pmax
+            WHERE pmax.STATUS IN (1, 2)
+              AND pmax.NORM IN (
+                  SELECT ip_sub.refId 
+                  FROM ` + "`kemkes-ihs`" + `.patient ip_sub 
+                  WHERE ip_sub.id IS NULL AND ip_sub.statusRequest = 0
+              )
+            GROUP BY pmax.NORM
+        ) latest
+            ON pen.NORM = latest.NORM 
+            AND pen.NOMOR = latest.max_nomor
+        JOIN pendaftaran.kunjungan kun
+            ON kun.NOPEN = pen.NOMOR
+        LEFT JOIN pendaftaran.tujuan_pasien tu
+            ON tu.NOPEN = kun.NOPEN
+        LEFT JOIN master.ruangan ru
+            ON ru.ID = tu.RUANGAN
+        WHERE kun.STATUS IN (1, 2)
+        GROUP BY pen.NORM
+    ) pen_last
+        ON pen_last.NORM = ip.refId
 `
 
 const patientSelectBase = `
@@ -57,8 +65,13 @@ func buildPatientWhere(params GetPatientParams) (string, []any) {
 		where += " AND (ip.refId LIKE ? OR ip.nik LIKE ?)"
 	}
 
-	if params.HttpMethod != "" {
-		args = append(args, params.HttpMethod)
+	httpMethod := params.HttpMethod
+	if httpMethod == "" {
+		httpMethod = "GET"
+	}
+
+	if httpMethod != "ALL" {
+		args = append(args, httpMethod)
 		where += " AND ip.httpRequest = ?"
 	}
 
