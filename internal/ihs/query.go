@@ -66,8 +66,15 @@ func buildPatientWhere(params GetPatientParams) (string, []any) {
 	}
 
 	httpMethod := params.HttpMethod
-	if httpMethod == "" {
-		httpMethod = "GET"
+
+	if params.Search != "" {
+		if httpMethod == "" || httpMethod == "GET" {
+			httpMethod = "ALL"
+		}
+	} else {
+		if httpMethod == "" {
+			httpMethod = "GET"
+		}
 	}
 
 	if httpMethod != "ALL" {
