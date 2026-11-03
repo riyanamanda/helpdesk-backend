@@ -9,6 +9,7 @@ type PatientProjection struct {
 	HttpRequest      string     `db:"http_request"`
 	LastRegistration *time.Time `db:"last_registration"`
 	Poly             *string    `db:"poly"`
+	Registrant       *string    `db:"registrant"`
 }
 
 type PatientDetailProjection struct {

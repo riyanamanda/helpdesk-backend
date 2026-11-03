@@ -8,6 +8,7 @@ func toPatientResponse(p PatientProjection) PatientResponse {
 		HttpMethod:       p.HttpRequest,
 		LastRegistration: p.LastRegistration,
 		Poly:             p.Poly,
+		Registrant:       p.Registrant,
 	}
 }
 

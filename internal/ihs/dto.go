@@ -13,6 +13,7 @@ type PatientResponse struct {
 	HttpMethod       string     `json:"http_method"`
 	LastRegistration *time.Time `json:"last_registration"`
 	Poly             *string    `json:"poly"`
+	Registrant       *string    `json:"registrant"`
 }
 
 type PatientDetailResponse struct {

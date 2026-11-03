@@ -6,6 +6,7 @@ var allowedSortColumns = map[string]string{
 	"http_method":       "ip.httpRequest",
 	"get_date":          "ip.getDate",
 	"last_registration": "pen_last.TANGGAL",
+	"registrant":        "pen_last.user",
 }
 
 const patientFromBase = `
@@ -16,7 +17,8 @@ const patientFromBase = `
         SELECT
             pen.NORM,
             MAX(pen.TANGGAL) AS TANGGAL,
-            MAX(ru.DESKRIPSI) AS nama_ruangan
+            MAX(ru.DESKRIPSI) AS nama_ruangan,
+            peng.NAMA             AS user
         FROM pendaftaran.pendaftaran pen
         JOIN (
             SELECT pmax.NORM, MAX(pmax.NOMOR) AS max_nomor
@@ -37,6 +39,8 @@ const patientFromBase = `
             ON tu.NOPEN = kun.NOPEN
         LEFT JOIN master.ruangan ru
             ON ru.ID = tu.RUANGAN
+        LEFT JOIN aplikasi.pengguna peng
+            ON peng.ID = pen.OLEH
         WHERE kun.STATUS IN (1, 2)
         GROUP BY pen.NORM
     ) pen_last
@@ -44,13 +48,14 @@ const patientFromBase = `
 `
 
 const patientSelectBase = `
-	SELECT
-		ip.refId				AS norm,
-		p.NAMA					AS name,
-		ip.nik					AS identity_number,
-		ip.httpRequest			AS http_request,
-		pen_last.TANGGAL		AS last_registration,
-		pen_last.nama_ruangan	AS poly
+    SELECT
+        ip.refId             AS norm,
+        p.NAMA               AS name,
+        ip.nik               AS identity_number,
+        ip.httpRequest       AS http_request,
+        pen_last.TANGGAL     AS last_registration,
+        pen_last.nama_ruangan AS poly,
+        pen_last.user        AS registrant
 ` + patientFromBase
 
 func buildPatientWhere(params GetPatientParams) (string, []any) {
