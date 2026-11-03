@@ -15,6 +15,9 @@ FROM alpine:3.21
 
 RUN apk --no-cache add ca-certificates tzdata wget
 
+ENV TZ=Asia/Jakarta
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 RUN addgroup -g 1000 appgroup && \
     adduser -D -u 1000 -G appgroup appuser
 
