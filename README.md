@@ -96,7 +96,7 @@ IHS_DB_PASSWORD=password
 
 # Auth
 JWT_SECRET=your-secret
-JWT_EXP=24h
+JWT_EXP=72h
 
 # Firebase — used to verify Google Sign-In ID tokens
 FIREBASE_PROJECT_ID=your-firebase-project-id

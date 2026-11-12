@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -23,6 +24,11 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/jwtutil"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
+)
+
+const (
+	maxLoginAttempts   = 5
+	loginAttemptWindow = 15 * time.Minute
 )
 
 type repository interface {
@@ -83,18 +89,69 @@ func (s *Service) issueSession(ctx context.Context, user user.UserProjection) (s
 	return token, nil
 }
 
+func (s *Service) checkLoginAttempts(ctx context.Context, key string) error {
+	attempts, err := s.redis.Get(ctx, key)
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return nil
+		}
+		return err
+	}
+
+	count, err := strconv.Atoi(attempts)
+	if err != nil || count < maxLoginAttempts {
+		return nil
+	}
+
+	ttl, err := s.redis.TTL(ctx, key)
+	if err != nil {
+		return err
+	}
+
+	if ttl <= 0 {
+		_ = s.redis.Delete(ctx, key)
+		return nil
+	}
+
+	return apperr.RateLimited(
+		"too many login attempts, please try again later",
+		int64(ttl.Seconds())+1,
+	)
+}
+
+func (s *Service) recordFailedLogin(ctx context.Context, key string) {
+	count, err := s.redis.Incr(ctx, key)
+	if err != nil {
+		return
+	}
+
+	if count == 1 {
+		_ = s.redis.Expire(ctx, key, loginAttemptWindow)
+	}
+}
+
 func (s *Service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
+	attemptKey := buildLoginAttemptsCache(req.Email)
+
+	if err := s.checkLoginAttempts(ctx, attemptKey); err != nil {
+		return nil, err
+	}
+
 	currentUser, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		if errors.Is(err, user.ErrUserNotFound) {
+			s.recordFailedLogin(ctx, attemptKey)
 			return nil, apperr.BadRequest("invalid email or password")
 		}
 		return nil, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(currentUser.Password), []byte(req.Password)); err != nil {
+		s.recordFailedLogin(ctx, attemptKey)
 		return nil, apperr.BadRequest("invalid email or password")
 	}
+
+	_ = s.redis.Delete(ctx, attemptKey)
 
 	token, err := s.issueSession(ctx, *currentUser)
 	if err != nil {

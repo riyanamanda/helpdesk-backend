@@ -145,6 +145,14 @@ func (s *Service) GetUser(ctx context.Context, id uuid.UUID) (*UserResponse, err
 }
 
 func (s *Service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error {
+	existing, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			return apperr.NotFound("user")
+		}
+		return err
+	}
+
 	user := User{
 		Name:       req.Name,
 		Email:      req.Email,
@@ -167,6 +175,10 @@ func (s *Service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpd
 	InvalidateCache(ctx, s.cache)
 	rbac.InvalidateUserPermissionsCache(ctx, s.cache, userID)
 	rbac.InvalidateUserRoleCache(ctx, s.cache, userID)
+
+	if existing.IsActive && !user.IsActive {
+		return jwtutil.RevokeUserSessions(ctx, s.cache, userID)
+	}
 
 	return nil
 }

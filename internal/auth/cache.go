@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"strings"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 )
@@ -12,6 +13,10 @@ func InvalidateResetPasswordCache(ctx context.Context, c cache.Cache, userID str
 		buildPasswordResetRequestCache(userID),
 		buildPasswordResetTokenCache(token),
 	)
+}
+
+func buildLoginAttemptsCache(email string) string {
+	return "auth:login:attempts:" + strings.ToLower(strings.TrimSpace(email))
 }
 
 func buildPasswordResetCooldownCache(userID string) string {

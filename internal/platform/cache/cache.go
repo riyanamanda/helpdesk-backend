@@ -8,6 +8,7 @@ import (
 type Cache interface {
 	Get(ctx context.Context, key string) (string, error)
 	Set(ctx context.Context, key string, value string, ttl time.Duration) error
+	Incr(ctx context.Context, key string) (int64, error)
 	Delete(ctx context.Context, key string) error
 	DeleteMany(ctx context.Context, keys ...string) error
 	TTL(ctx context.Context, key string) (time.Duration, error)

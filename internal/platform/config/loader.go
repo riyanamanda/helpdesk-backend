@@ -40,7 +40,7 @@ func Load() *Config {
 		},
 		Auth: Auth{
 			JWTSecret:         getEnv("JWT_SECRET", "this-is-the-secret"),
-			JWTExp:            getDurationEnv("JWT_EXP", 24*time.Hour),
+			JWTExp:            getDurationEnv("JWT_EXP", 72*time.Hour),
 			FirebaseProjectID: getEnv("FIREBASE_PROJECT_ID", ""),
 		},
 		Storage: Storage{

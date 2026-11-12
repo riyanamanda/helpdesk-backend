@@ -25,6 +25,10 @@ func (r *RedisCache) Set(ctx context.Context, key string, value string, ttl time
 	return r.client.Set(ctx, key, value, ttl).Err()
 }
 
+func (r *RedisCache) Incr(ctx context.Context, key string) (int64, error) {
+	return r.client.Incr(ctx, key).Result()
+}
+
 func (r *RedisCache) Delete(ctx context.Context, key string) error {
 	return r.client.Del(ctx, key).Err()
 }
