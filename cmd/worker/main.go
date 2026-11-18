@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -17,6 +18,13 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		slog.Error("worker stopped", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -27,20 +35,21 @@ func main() {
 	// RabbitMQ Initial
 	client, err := rabbitmq.Connect(cfg.RabbitMQ.RabbitMQConnString())
 	if err != nil {
-		slog.Error("RabbitMQ connect failed", "error", err)
-		return
+		return fmt.Errorf("connect rabbitmq: %w", err)
 	}
 	defer client.Close()
 
 	// Topology -- exchange, queue, bind
 	err = client.SetupEmailTopology()
 	if err != nil {
-		slog.Error("RabbitMQ setup email topology failed", "error", err)
-		return
+		return fmt.Errorf("setup rabbitmq topology: %w", err)
 	}
 
 	// Database connection
-	db := database.NewPostgres(cfg.Database.ConnString())
+	db, err := database.NewPostgres(cfg.Database.ConnString())
+	if err != nil {
+		return err
+	}
 	defer db.Close()
 
 	// Dependencies
@@ -55,24 +64,32 @@ func main() {
 	// goroutine
 	go publisher.Run(ctx)
 
+	errCh := make(chan error, 3)
 	go func() {
 		if err := welcomeConsumer.Run(ctx); err != nil {
-			slog.Error("welcome consumer stopped", "error", err)
+			errCh <- fmt.Errorf("welcome consumer: %w", err)
 		}
 	}()
 
 	go func() {
 		if err := ticketConsumer.Run(ctx); err != nil {
-			slog.Error("ticket consumer stopped", "error", err)
+			errCh <- fmt.Errorf("ticket consumer: %w", err)
 		}
 	}()
 
 	go func() {
 		if err := passwordResetConsumer.Run(ctx); err != nil {
-			slog.Error("password request consumer stopped", "error", err)
+			errCh <- fmt.Errorf("password reset consumer: %w", err)
 		}
 	}()
 
-	<-ctx.Done()
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctx.Done():
+	}
+
 	slog.Info("shutdown signal received")
+
+	return nil
 }

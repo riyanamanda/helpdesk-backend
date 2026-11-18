@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -10,18 +11,29 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		slog.Error("database seeding failed", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	slog.Info("starting database seeding")
 
 	cfg := config.Load()
 
-	db := database.NewPostgres(cfg.Database.ConnString())
+	db, err := database.NewPostgres(cfg.Database.ConnString())
+	if err != nil {
+		return err
+	}
 	defer db.Close()
 
 	if err := seed.Run(db); err != nil {
-		slog.Error("database seeding failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("run seed: %w", err)
 
 	}
 
 	slog.Info("database seeding completed")
+
+	return nil
 }

@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -43,8 +44,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 
 		case msg, ok := <-messages:
 			if !ok {
-				slog.Error("rabbitmq message closed")
-				return nil
+				return errors.New("delivery channel closed")
 			}
 
 			switch msg.RoutingKey {

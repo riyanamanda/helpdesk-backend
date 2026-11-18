@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -39,6 +41,13 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		slog.Error("api stopped", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	}))
@@ -49,13 +58,15 @@ func main() {
 
 	// Database
 	slog.Info("connecting to database")
-	db := database.NewPostgres(cfg.Database.ConnString())
+	db, err := database.NewPostgres(cfg.Database.ConnString())
+	if err != nil {
+		return err
+	}
 	defer db.Close()
 
 	slog.Info("running migrations")
 	if err := database.RunMigrations(db); err != nil {
-		slog.Error("migration failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("run migration: %w", err)
 	}
 
 	txManager := database.NewTxManager(db)
@@ -65,8 +76,6 @@ func main() {
 
 	if cfg.IhsDatabase.Host != "" {
 		slog.Info("connecting to simgos database")
-
-		var err error
 		simgosDB, err = database.NewMySql(cfg.IhsDatabase.MySqlConnString())
 		if err != nil {
 			slog.Warn("simgos database unavailable, simgos routes disabled", "error", err)
@@ -82,33 +91,26 @@ func main() {
 
 	// RustFS
 	slog.Info("connecting to object storage")
-
 	rustfsClient := rustfs.NewClient(cfg.Storage.Endpoint, cfg.Storage.AccessKey, cfg.Storage.SecretKey)
-
 	if err := rustfs.InitBucket(ctx, rustfsClient, cfg.Storage.Bucket); err != nil {
-		slog.Error("rustfs bucket initialization failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("init bucket: %w", err)
 	}
 
 	storageService := storage.NewRustFSStorage(rustfsClient, cfg.Storage.Bucket)
 
 	// RabbitMQ
 	slog.Info("connecting to RabbitMQ")
-
 	rabbitmqClient, err := rabbitmq.Connect(cfg.RabbitMQ.RabbitMQConnString())
 	if err != nil {
-		slog.Error("RabbitMQ connection failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("connect rabbitmq: %w", err)
 	}
 	defer rabbitmqClient.Close()
 
 	// Redis
 	slog.Info("connecting to Redis")
-
 	redisClient, err := redis.NewClient(ctx, cfg.Redis)
 	if err != nil {
-		slog.Error("Redis connection failed", "error", err)
-		os.Exit(1)
+		return err
 	}
 	defer redisClient.Close()
 
@@ -192,11 +194,11 @@ func main() {
 		Handler: e,
 	}
 
+	errCh := make(chan error, 1)
 	go func() {
 		slog.Info("server starting", "addr", server.Addr)
-
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("failed to start server", "addr", server.Addr, "error", err)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errCh <- err
 		}
 	}()
 
@@ -204,15 +206,22 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	<-quit
+	select {
+	case err := <-errCh:
+		return fmt.Errorf("start server: %w", err)
+	case <-quit:
+	}
+
 	slog.Info("shutting down server...")
 
 	shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		slog.Error("graceful shutdown failed", "error", err)
+		return fmt.Errorf("shutdown server: %w", err)
 	}
 
 	slog.Info("server exited properly")
+
+	return nil
 }

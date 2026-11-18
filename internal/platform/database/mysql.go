@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -11,7 +12,7 @@ import (
 func NewMySql(conn string) (*sqlx.DB, error) {
 	db, err := sqlx.Connect("mysql", conn)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connect mysql: %w", err)
 	}
 
 	db.SetMaxOpenConns(10)

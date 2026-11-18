@@ -107,7 +107,7 @@ func (rq RabbitMQ) RabbitMQConnString() string {
 
 func (d Database) MySqlConnString() string {
 	return fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4&loc=Asia%%2FJakarta",
+		"%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4&loc=Asia%%2FJakarta&timeout=5s",
 		d.Username,
 		d.Password,
 		d.Host,
