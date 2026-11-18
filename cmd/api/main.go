@@ -99,7 +99,7 @@ func run() error {
 	storageService := storage.NewRustFSStorage(rustfsClient, cfg.Storage.Bucket)
 
 	// RabbitMQ
-	slog.Info("connecting to RabbitMQ")
+	slog.Info("connecting to rabbitmq")
 	rabbitmqClient, err := rabbitmq.Connect(cfg.RabbitMQ.RabbitMQConnString())
 	if err != nil {
 		return fmt.Errorf("connect rabbitmq: %w", err)
@@ -107,7 +107,7 @@ func run() error {
 	defer rabbitmqClient.Close()
 
 	// Redis
-	slog.Info("connecting to Redis")
+	slog.Info("connecting to redis")
 	redisClient, err := redis.NewClient(ctx, cfg.Redis)
 	if err != nil {
 		return err
@@ -212,7 +212,7 @@ func run() error {
 	case <-quit:
 	}
 
-	slog.Info("shutting down server...")
+	slog.Info("shutting down server")
 
 	shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -221,7 +221,7 @@ func run() error {
 		return fmt.Errorf("shutdown server: %w", err)
 	}
 
-	slog.Info("server exited properly")
+	slog.Info("server stopped")
 
 	return nil
 }

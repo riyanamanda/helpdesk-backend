@@ -50,27 +50,27 @@ func (c *Consumer) Run(ctx context.Context) error {
 			switch msg.RoutingKey {
 			case event.UserCreated:
 				if err := c.handleUserCreated(ctx, msg.Body); err != nil {
-					slog.Error("handle user.created failed", "error", err)
+					slog.Error("handle message", "routing_key", msg.RoutingKey, "error", err)
 					if err := msg.Nack(false, false); err != nil {
-						slog.Error("message nack failed", "error", err)
+						slog.Error("nack message", "routing_key", msg.RoutingKey, "error", err)
 					}
 					continue
 				}
 
 			case event.TicketCreated:
 				if err := c.handleTicketCreated(ctx, msg.Body); err != nil {
-					slog.Error("handle ticket.created failed", "error", err)
+					slog.Error("handle message", "routing_key", msg.RoutingKey, "error", err)
 					if err := msg.Nack(false, false); err != nil {
-						slog.Error("message nack failed", "error", err)
+						slog.Error("nack message", "routing_key", msg.RoutingKey, "error", err)
 					}
 					continue
 				}
 
 			case event.PasswordResetRequested:
 				if err := c.handlePasswordResetRequested(ctx, msg.Body); err != nil {
-					slog.Error("handle password.reset.requested failed", "error", err)
+					slog.Error("handle message", "routing_key", msg.RoutingKey, "error", err)
 					if err := msg.Nack(false, false); err != nil {
-						slog.Error("message nack failed", "error", err)
+						slog.Error("nack message", "routing_key", msg.RoutingKey, "error", err)
 					}
 					continue
 				}
@@ -78,13 +78,13 @@ func (c *Consumer) Run(ctx context.Context) error {
 			default:
 				slog.Error("unknown event", "routing_key", msg.RoutingKey)
 				if err := msg.Nack(false, false); err != nil {
-					slog.Error("message nack failed, unknown event", "error", err)
+					slog.Error("nack message", "routing_key", msg.RoutingKey, "error", err)
 				}
 				continue
 			}
 
 			if err := msg.Ack(false); err != nil {
-				slog.Error("message ack failed", "error", err)
+				slog.Error("ack message", "routing_key", msg.RoutingKey, "error", err)
 				continue
 			}
 

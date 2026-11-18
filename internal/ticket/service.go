@@ -173,7 +173,7 @@ func (s *Service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 	defer func() {
 		if uploaded {
 			if err := s.storage.Delete(ctx, objectKey); err != nil {
-				slog.ErrorContext(ctx, "failed to cleanup ticket attachment", "object_key", objectKey, "error", err)
+				slog.WarnContext(ctx, "cleanup ticket attachment", "object_key", objectKey, "error", err)
 			}
 		}
 	}()
@@ -319,7 +319,7 @@ func (s *Service) DeleteTicket(ctx context.Context, ticketID int64) error {
 
 	for _, a := range attachments {
 		if delErr := s.storage.Delete(ctx, a.FileKey); delErr != nil {
-			slog.ErrorContext(ctx, "failed to delete attachment from storage", "key", a.FileKey, "error", delErr)
+			slog.WarnContext(ctx, "delete attachment from storage", "object_key", a.FileKey, "error", delErr)
 		}
 	}
 
@@ -421,7 +421,7 @@ func (s *Service) CreateResolution(ctx context.Context, ticketID int64, req *Tic
 	defer func() {
 		if uploaded {
 			if err := s.storage.Delete(ctx, objectKey); err != nil {
-				slog.ErrorContext(ctx, "failed to cleanup resolution attachment", "object_key", objectKey, "error", err)
+				slog.WarnContext(ctx, "cleanup resolution attachment", "object_key", objectKey, "error", err)
 			}
 		}
 	}()

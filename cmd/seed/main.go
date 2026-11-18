@@ -12,7 +12,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		slog.Error("database seeding failed", "error", err)
+		slog.Error("seed stopped", "error", err)
 		os.Exit(1)
 	}
 }

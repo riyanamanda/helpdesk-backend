@@ -30,8 +30,6 @@ func run() error {
 
 	cfg := config.Load()
 
-	slog.Info("Worker started...")
-
 	// RabbitMQ Initial
 	client, err := rabbitmq.Connect(cfg.RabbitMQ.RabbitMQConnString())
 	if err != nil {
@@ -82,6 +80,8 @@ func run() error {
 			errCh <- fmt.Errorf("password reset consumer: %w", err)
 		}
 	}()
+
+	slog.Info("worker started")
 
 	select {
 	case err := <-errCh:
