@@ -3,6 +3,7 @@ package ticket
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
@@ -38,12 +39,12 @@ func NewHandler(svc service) *Handler {
 func (h *Handler) ListTickets(c *echo.Context) error {
 	var params GetTicketParams
 	if err := c.Bind(&params); err != nil {
-		return response.Error(c, apperr.BadRequest("invalid query params"))
+		return apperr.BadRequest("invalid query params")
 	}
 
 	tickets, total, err := h.svc.ListTickets(c.Request().Context(), &params)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.Paginated(c, tickets, params.Page, params.Limit, total)
@@ -52,19 +53,19 @@ func (h *Handler) ListTickets(c *echo.Context) error {
 func (h *Handler) CreateTicket(c *echo.Context) error {
 	req, err := httputil.BindAndValidate[TicketCreateRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	file, cleanup, err := parseAttachment(c, "attachment")
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 	if cleanup != nil {
 		defer cleanup()
 	}
 
 	if err := h.svc.CreateTicket(c.Request().Context(), req, file); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.Created(c)
@@ -73,12 +74,12 @@ func (h *Handler) CreateTicket(c *echo.Context) error {
 func (h *Handler) GetTicket(c *echo.Context) error {
 	id, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	ticket, err := h.svc.GetTicket(c.Request().Context(), id)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.OK(c, ticket)
@@ -87,16 +88,16 @@ func (h *Handler) GetTicket(c *echo.Context) error {
 func (h *Handler) UpdateTicket(c *echo.Context) error {
 	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	req, err := httputil.BindAndValidate[TicketUpdateRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.UpdateTicket(c.Request().Context(), ticketID, req); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -105,11 +106,11 @@ func (h *Handler) UpdateTicket(c *echo.Context) error {
 func (h *Handler) DeleteTicket(c *echo.Context) error {
 	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.DeleteTicket(c.Request().Context(), ticketID); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -118,16 +119,16 @@ func (h *Handler) DeleteTicket(c *echo.Context) error {
 func (h *Handler) AssignTicket(c *echo.Context) error {
 	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	req, err := httputil.BindAndValidate[TicketAssignRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.AssignTicket(c.Request().Context(), ticketID, req); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -136,16 +137,16 @@ func (h *Handler) AssignTicket(c *echo.Context) error {
 func (h *Handler) SetPriority(c *echo.Context) error {
 	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	req, err := httputil.BindAndValidate[TicketPriorityRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.SetPriority(c.Request().Context(), ticketID, req); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -154,24 +155,24 @@ func (h *Handler) SetPriority(c *echo.Context) error {
 func (h *Handler) CreateResolution(c *echo.Context) error {
 	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	req, err := httputil.BindAndValidate[TicketResolutionRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	file, cleanup, err := parseAttachment(c, "attachment")
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 	if cleanup != nil {
 		defer cleanup()
 	}
 
 	if err := h.svc.CreateResolution(c.Request().Context(), ticketID, req, file); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -180,11 +181,11 @@ func (h *Handler) CreateResolution(c *echo.Context) error {
 func (h *Handler) CloseTicket(c *echo.Context) error {
 	ticketID, err := httputil.ParsePositiveInt64PathParam(c, "id", "ticket")
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.CloseTicket(c.Request().Context(), ticketID); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -197,7 +198,7 @@ func parseAttachment(c *echo.Context, formName string) (*storage.File, func(), e
 		if errors.Is(err, http.ErrMissingFile) || errors.Is(err, http.ErrNotMultipart) {
 			return nil, nil, nil
 		}
-		return nil, nil, err
+		return nil, nil, apperr.BadRequest("invalid attachment")
 	}
 
 	if err := validation.ValidateImage(fileHeader, maxTicketAttachmentSize, AllowedTicketAttachmentTypes); err != nil {
@@ -206,7 +207,7 @@ func parseAttachment(c *echo.Context, formName string) (*storage.File, func(), e
 
 	f, err := fileHeader.Open()
 	if err != nil {
-		return nil, nil, apperr.Internal()
+		return nil, nil, fmt.Errorf("open attachment: %w", err)
 	}
 
 	file := &storage.File{
