@@ -36,7 +36,6 @@ type ResetPasswordEmailData struct {
 	Name      string
 	ResetURL  string
 	ExpiresIn string
-	Forced    bool
 }
 
 type TicketAssignedEmailData struct {
@@ -183,7 +182,7 @@ func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string
 	return m.send(ctx, email, message)
 }
 
-func (m *Mailer) SendResetPasswordEmail(ctx context.Context, name string, email string, resetUrl string, expiresIn string, forced bool) error {
+func (m *Mailer) SendResetPasswordEmail(ctx context.Context, name string, email string, resetUrl string, expiresIn string) error {
 	tmpl, err := template.New("reset-password.html").Parse(resetPasswordTemplate)
 	if err != nil {
 		return fmt.Errorf("parse reset password email template: %w", err)
@@ -199,7 +198,6 @@ func (m *Mailer) SendResetPasswordEmail(ctx context.Context, name string, email 
 		Name:      name,
 		ResetURL:  resetUrl,
 		ExpiresIn: expiresIn,
-		Forced:    forced,
 	})
 	if err != nil {
 		return fmt.Errorf("execute reset password email template: %w", err)

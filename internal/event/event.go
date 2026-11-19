@@ -48,5 +48,4 @@ type PasswordResetRequestedEvent struct {
 	Email     string `json:"email"`
 	ResetURL  string `json:"reset_url"`
 	ExpiresIn string `json:"expires_in,omitempty"`
-	Forced    bool   `json:"forced,omitempty"`
 }

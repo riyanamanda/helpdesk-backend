@@ -130,7 +130,7 @@ func (c *Consumer) handlePasswordResetRequested(ctx context.Context, body []byte
 		return err
 	}
 
-	return c.mailer.SendResetPasswordEmail(ctx, passwordRequestedEvent.Name, passwordRequestedEvent.Email, passwordRequestedEvent.ResetURL, passwordRequestedEvent.ExpiresIn, passwordRequestedEvent.Forced)
+	return c.mailer.SendResetPasswordEmail(ctx, passwordRequestedEvent.Name, passwordRequestedEvent.Email, passwordRequestedEvent.ResetURL, passwordRequestedEvent.ExpiresIn)
 }
 
 var priorityLabels = map[string]string{
