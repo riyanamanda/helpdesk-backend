@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -12,7 +13,6 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/jwtutil"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
 func AuthMiddleware(cfg config.Auth, redisClient *redis.Client, permissionService ctxkey.PermissionService) echo.MiddlewareFunc {
@@ -20,12 +20,12 @@ func AuthMiddleware(cfg config.Auth, redisClient *redis.Client, permissionServic
 		return func(c *echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
 			if authHeader == "" {
-				return response.Error(c, apperr.Unauthorized(apperr.CodeMissingToken, "missing authorization header"))
+				return apperr.Unauthorized(apperr.CodeMissingToken, "missing authorization header")
 			}
 
 			const bearerPrefix = "Bearer "
 			if !strings.HasPrefix(authHeader, bearerPrefix) {
-				return response.Error(c, apperr.Unauthorized(apperr.CodeMissingToken, "invalid authorization header"))
+				return apperr.Unauthorized(apperr.CodeMissingToken, "invalid authorization header")
 			}
 
 			tokenString := strings.TrimPrefix(authHeader, bearerPrefix)
@@ -33,30 +33,30 @@ func AuthMiddleware(cfg config.Auth, redisClient *redis.Client, permissionServic
 			claims, err := jwtutil.ParseToken(tokenString, cfg.JWTSecret)
 			if err != nil {
 				if errors.Is(err, jwt.ErrTokenExpired) {
-					return response.Error(c, apperr.Unauthorized(apperr.CodeTokenExpired, "token expired"))
+					return apperr.Unauthorized(apperr.CodeTokenExpired, "token expired")
 				}
 
-				return response.Error(c, apperr.Unauthorized(apperr.CodeInvalidToken, "invalid token"))
+				return apperr.Unauthorized(apperr.CodeInvalidToken, "invalid token")
 			}
 
 			key := jwtutil.TokenKeyPrefix + claims.ID
 			exists, err := redisClient.Exists(c.Request().Context(), key).Result()
 			if err != nil {
-				return response.Error(c, apperr.Internal())
+				return fmt.Errorf("check token in redis: %w", err)
 			}
 
 			if exists == 0 {
-				return response.Error(c, apperr.Unauthorized(apperr.CodeInvalidToken, "token revoked"))
+				return apperr.Unauthorized(apperr.CodeInvalidToken, "token revoked")
 			}
 
 			userID, err := uuid.Parse(claims.Subject)
 			if err != nil {
-				return response.Error(c, apperr.Unauthorized(apperr.CodeInvalidToken, "invalid token"))
+				return apperr.Unauthorized(apperr.CodeInvalidToken, "invalid token")
 			}
 
 			permissions, err := permissionService.GetUserPermissions(c.Request().Context(), userID)
 			if err != nil {
-				return response.Error(c, apperr.Internal())
+				return fmt.Errorf("get user permissions: %w", err)
 			}
 
 			authUser := &ctxkey.AuthUser{

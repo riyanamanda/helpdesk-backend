@@ -25,12 +25,12 @@ func NewAntrianHandler(svc service) *Handler {
 func (h *Handler) ListAntrian(c *echo.Context) error {
 	var params GetAntrianParams
 	if err := c.Bind(&params); err != nil {
-		return response.Error(c, apperr.BadRequest("invalid query params"))
+		return apperr.BadRequest("invalid query params")
 	}
 
 	antrian, total, err := h.svc.ListAntrian(c.Request().Context(), &params)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.Paginated(c, antrian, params.Page, params.Limit, total)
@@ -39,11 +39,11 @@ func (h *Handler) ListAntrian(c *echo.Context) error {
 func (h *Handler) CheckIn(c *echo.Context) error {
 	kodeBooking, err := strconv.ParseInt(c.Param("kode_booking"), 10, 64)
 	if err != nil {
-		return response.Error(c, apperr.BadRequest("invalid kode_booking"))
+		return apperr.BadRequest("invalid kode_booking")
 	}
 
 	if err := h.svc.CheckIn(c.Request().Context(), kodeBooking); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)

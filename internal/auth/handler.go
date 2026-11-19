@@ -31,12 +31,12 @@ func NewHandler(svc service) *Handler {
 func (h *Handler) Login(c *echo.Context) error {
 	req, err := httputil.BindAndValidate[LoginRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	result, err := h.svc.Login(c.Request().Context(), req)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.OK(c, result)
@@ -45,12 +45,12 @@ func (h *Handler) Login(c *echo.Context) error {
 func (h *Handler) LoginWithGoogle(c *echo.Context) error {
 	req, err := httputil.BindAndValidate[GoogleLoginRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	result, err := h.svc.LoginWithGoogle(c.Request().Context(), req)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.OK(c, result)
@@ -58,7 +58,7 @@ func (h *Handler) LoginWithGoogle(c *echo.Context) error {
 
 func (h *Handler) Logout(c *echo.Context) error {
 	if err := h.svc.Logout(c.Request().Context()); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -67,7 +67,7 @@ func (h *Handler) Logout(c *echo.Context) error {
 func (h *Handler) Me(c *echo.Context) error {
 	user, err := h.svc.Me(c.Request().Context())
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.OK(c, user)
@@ -76,11 +76,11 @@ func (h *Handler) Me(c *echo.Context) error {
 func (h *Handler) ForgotPassword(c *echo.Context) error {
 	req, err := httputil.BindAndValidate[ForgotPasswordRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.ForgotPassword(c.Request().Context(), *req); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -89,11 +89,11 @@ func (h *Handler) ForgotPassword(c *echo.Context) error {
 func (h *Handler) ResetPassword(c *echo.Context) error {
 	req, err := httputil.BindAndValidate[ResetPasswordRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.ResetPassword(c.Request().Context(), *req); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)

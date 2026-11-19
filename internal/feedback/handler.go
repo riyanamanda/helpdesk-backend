@@ -29,18 +29,18 @@ func NewHandler(svc service) *Handler {
 func (h *Handler) ListFeedbacks(c *echo.Context) error {
 	var params GetFeedbackParams
 	if err := c.Bind(&params); err != nil {
-		return response.Error(c, apperr.BadRequest("invalid query params"))
+		return apperr.BadRequest("invalid query params")
 	}
 
 	userID, ok := ctxkey.GetUserIDFromContext(c.Request().Context())
 	if !ok {
-		return response.Error(c, apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized"))
+		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 	params.CreatedByID = &userID
 
 	feedbacks, total, err := h.svc.ListFeedbacks(c.Request().Context(), &params)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.Paginated(c, feedbacks, params.Page, params.Limit, total)
@@ -49,12 +49,12 @@ func (h *Handler) ListFeedbacks(c *echo.Context) error {
 func (h *Handler) ListAllFeedbacks(c *echo.Context) error {
 	var params GetFeedbackParams
 	if err := c.Bind(&params); err != nil {
-		return response.Error(c, apperr.BadRequest("invalid query params"))
+		return apperr.BadRequest("invalid query params")
 	}
 
 	feedbacks, total, err := h.svc.ListFeedbacks(c.Request().Context(), &params)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.Paginated(c, feedbacks, params.Page, params.Limit, total)
@@ -63,11 +63,11 @@ func (h *Handler) ListAllFeedbacks(c *echo.Context) error {
 func (h *Handler) CreateFeedback(c *echo.Context) error {
 	req, err := httputil.BindAndValidate[CreateFeedbackRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.CreateFeedback(c.Request().Context(), req); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -76,12 +76,12 @@ func (h *Handler) CreateFeedback(c *echo.Context) error {
 func (h *Handler) GetFeedback(c *echo.Context) error {
 	id, err := httputil.ParsePositiveInt64PathParam(c, "id", "feedback")
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	feedback, err := h.svc.GetFeedback(c.Request().Context(), id)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.OK(c, feedback)
@@ -90,16 +90,16 @@ func (h *Handler) GetFeedback(c *echo.Context) error {
 func (h *Handler) UpdateFeedbackStatus(c *echo.Context) error {
 	id, err := httputil.ParsePositiveInt64PathParam(c, "id", "feedback")
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	req, err := httputil.BindAndValidate[UpdateFeedbackStatusRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.UpdateFeedbackStatus(c.Request().Context(), id, *req); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -108,11 +108,11 @@ func (h *Handler) UpdateFeedbackStatus(c *echo.Context) error {
 func (h *Handler) DeleteFeedback(c *echo.Context) error {
 	feedbackID, err := httputil.ParsePositiveInt64PathParam(c, "id", "feedback")
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.DeleteFeedback(c.Request().Context(), feedbackID); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)

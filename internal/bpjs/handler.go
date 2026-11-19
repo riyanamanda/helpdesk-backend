@@ -25,7 +25,7 @@ func (h *Handler) GetPesertaByNIK(c *echo.Context) error {
 
 	peserta, err := h.svc.GetPesertaByNIK(c.Request().Context(), nik)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.OK(c, peserta)

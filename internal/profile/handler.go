@@ -2,6 +2,7 @@ package profile
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/labstack/echo/v5"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
@@ -33,7 +34,7 @@ func NewHandler(svc service) *Handler {
 func (h *Handler) GetProfile(c *echo.Context) error {
 	profile, err := h.svc.GetProfile(c.Request().Context())
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.OK(c, profile)
@@ -42,11 +43,11 @@ func (h *Handler) GetProfile(c *echo.Context) error {
 func (h *Handler) UpdateProfile(c *echo.Context) error {
 	req, err := httputil.BindAndValidate[UpdateProfileRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.UpdateProfile(c.Request().Context(), req); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -55,16 +56,16 @@ func (h *Handler) UpdateProfile(c *echo.Context) error {
 func (h *Handler) UpdateAvatar(c *echo.Context) error {
 	fileHeader, err := c.FormFile("avatar")
 	if err != nil {
-		return response.Error(c, apperr.BadRequest("avatar is required"))
+		return apperr.BadRequest("avatar is required")
 	}
 
 	if err := validation.ValidateImage(fileHeader, maxAvatarSize, allowedAvatarTypes); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	f, err := fileHeader.Open()
 	if err != nil {
-		return response.Error(c, apperr.Internal())
+		return fmt.Errorf("open avatar file: %w", err)
 	}
 	defer f.Close()
 
@@ -76,7 +77,7 @@ func (h *Handler) UpdateAvatar(c *echo.Context) error {
 	}
 
 	if err := h.svc.UpdateAvatar(c.Request().Context(), file); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -85,11 +86,11 @@ func (h *Handler) UpdateAvatar(c *echo.Context) error {
 func (h *Handler) SyncGoogle(c *echo.Context) error {
 	req, err := httputil.BindAndValidate[SyncGoogleRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.SyncGoogle(c.Request().Context(), req); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -97,7 +98,7 @@ func (h *Handler) SyncGoogle(c *echo.Context) error {
 
 func (h *Handler) RevokeGoogle(c *echo.Context) error {
 	if err := h.svc.RevokeGoogle(c.Request().Context()); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)
@@ -106,11 +107,11 @@ func (h *Handler) RevokeGoogle(c *echo.Context) error {
 func (h *Handler) UpdatePassword(c *echo.Context) error {
 	req, err := httputil.BindAndValidate[UpdatePasswordRequest](c)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	if err := h.svc.UpdatePassword(c.Request().Context(), *req); err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.NoContent(c)

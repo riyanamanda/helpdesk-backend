@@ -2,12 +2,12 @@ package dashboard
 
 import (
 	"context"
-	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v5"
 
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
@@ -31,7 +31,7 @@ func NewDashboardHandler(svc service) *Handler {
 func (h *Handler) GetSummary(c *echo.Context) error {
 	summary, err := h.svc.GetSummary(c.Request().Context())
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.OK(c, summary)
@@ -41,12 +41,12 @@ func (h *Handler) GetMonthlyTrend(c *echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year < 2000 || year > time.Now().Year() {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid year"})
+		return apperr.BadRequest("invalid year")
 	}
 
 	trend, err := h.svc.GetMonthlyTrend(c.Request().Context(), year)
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.OK(c, trend)
@@ -55,7 +55,7 @@ func (h *Handler) GetMonthlyTrend(c *echo.Context) error {
 func (h *Handler) GetTicketsByCategory(c *echo.Context) error {
 	categories, err := h.svc.GetTicketsByCategory(c.Request().Context())
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.OK(c, categories)
@@ -64,7 +64,7 @@ func (h *Handler) GetTicketsByCategory(c *echo.Context) error {
 func (h *Handler) GetAgentWorkload(c *echo.Context) error {
 	workload, err := h.svc.GetAgentWorkload(c.Request().Context())
 	if err != nil {
-		return response.Error(c, err)
+		return err
 	}
 
 	return response.OK(c, workload)
