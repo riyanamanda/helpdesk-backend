@@ -146,6 +146,36 @@ func (r *Repository) UpdatePassword(ctx context.Context, id uuid.UUID, password 
 	return database.CheckRowsAffected(result, ErrUserNotFound)
 }
 
+func (r *Repository) RecordLogin(ctx context.Context, id uuid.UUID, method string) error {
+	const query = `
+		UPDATE users
+		SET last_login_at		= NOW(),
+			last_login_method	= $2,
+			last_active_at		= NOW()
+		WHERE id = $1
+	`
+
+	if _, err := r.db.ExecContext(ctx, query, id, method); err != nil {
+		return fmt.Errorf("user: record login: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Repository) UpdateLastActive(ctx context.Context, id uuid.UUID) error {
+	const query = `
+		UPDATE users
+		SET last_active_at = NOW()
+		WHERE id = $1
+	`
+
+	if _, err := r.db.ExecContext(ctx, query, id); err != nil {
+		return fmt.Errorf("user: update last active: %w", err)
+	}
+
+	return nil
+}
+
 func (r *Repository) GetEmailsByRoles(ctx context.Context, roles ...rbac.RoleType) ([]string, error) {
 	var emails []string
 

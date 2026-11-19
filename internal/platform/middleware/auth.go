@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -15,7 +16,11 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/jwtutil"
 )
 
-func AuthMiddleware(cfg config.Auth, redisClient *redis.Client, permissionService ctxkey.PermissionService) echo.MiddlewareFunc {
+type presenceToucher interface {
+	Touch(ctx context.Context, userID uuid.UUID)
+}
+
+func AuthMiddleware(cfg config.Auth, redisClient *redis.Client, permissionService ctxkey.PermissionService, presence presenceToucher) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
@@ -69,6 +74,8 @@ func AuthMiddleware(cfg config.Auth, redisClient *redis.Client, permissionServic
 			ctx = ctxkey.SetAuthUserToContext(ctx, authUser)
 
 			c.SetRequest(c.Request().WithContext(ctx))
+
+			presence.Touch(ctx, userID)
 
 			return next(c)
 		}

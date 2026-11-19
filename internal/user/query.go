@@ -5,6 +5,7 @@ import "fmt"
 var userSortableColumns = map[string]string{
 	"name": "u.name", "role": "r.code", "division": "u.division_id",
 	"is_active": "u.is_active", "created_at": "u.created_at",
+	"last_active_at": "u.last_active_at",
 }
 
 const userSelectBase = `
@@ -24,7 +25,10 @@ const userSelectBase = `
 		cb.id as created_by_id,
 		cb.name as created_by_name,
 		u.created_at,
-		u.updated_at
+		u.updated_at,
+		u.last_login_at,
+		u.last_login_method,
+		u.last_active_at
 	FROM users u
 	JOIN roles r
 		ON r.id = u.role_id
@@ -52,7 +56,10 @@ const userSelectWithPassword = `
 		cb.id as created_by_id,
 		cb.name as created_by_name,
 		u.created_at,
-		u.updated_at
+		u.updated_at,
+		u.last_login_at,
+		u.last_login_method,
+		u.last_active_at
 	FROM users u
 	JOIN roles r
 		ON r.id = u.role_id
@@ -97,9 +104,9 @@ func buildUserSort(params GetUserParams) (string, string) {
 		col = "u.created_at"
 	}
 
-	dir := "DESC"
+	dir := "DESC NULLS LAST"
 	if params.SortType == "ASC" {
-		dir = "ASC"
+		dir = "ASC NULLS LAST"
 	}
 
 	return col, dir

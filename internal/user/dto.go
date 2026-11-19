@@ -8,19 +8,23 @@ import (
 )
 
 type UserResponse struct {
-	ID        uuid.UUID     `json:"id"`
-	Name      string        `json:"name"`
-	Email     string        `json:"email"`
-	GoogleID  *string       `json:"google_id"`
-	AvatarURL *string       `json:"avatar_url"`
-	Phone     *string       `json:"phone"`
-	Role      UserRole      `json:"role"`
-	Gender    string        `json:"gender"`
-	Division  DivisionBrief `json:"division"`
-	IsActive  bool          `json:"is_active"`
-	CreatedBy *UserBrief    `json:"created_by"`
-	CreatedAt time.Time     `json:"created_at"`
-	UpdatedAt time.Time     `json:"updated_at"`
+	ID              uuid.UUID     `json:"id"`
+	Name            string        `json:"name"`
+	Email           string        `json:"email"`
+	GoogleID        *string       `json:"google_id"`
+	AvatarURL       *string       `json:"avatar_url"`
+	Phone           *string       `json:"phone"`
+	Role            UserRole      `json:"role"`
+	Gender          string        `json:"gender"`
+	Division        DivisionBrief `json:"division"`
+	IsActive        bool          `json:"is_active"`
+	CreatedBy       *UserBrief    `json:"created_by"`
+	CreatedAt       time.Time     `json:"created_at"`
+	UpdatedAt       time.Time     `json:"updated_at"`
+	IsOnline        bool          `json:"is_online"`
+	LastLoginAt     *time.Time    `json:"last_login_at"`
+	LastLoginMethod *string       `json:"last_login_method"`
+	LastActiveAt    *time.Time    `json:"last_active_at"`
 }
 
 type UserRole struct {

@@ -36,6 +36,11 @@ type repository interface {
 	GetByEmail(ctx context.Context, email string) (*user.UserProjection, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*user.UserProjection, error)
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
+	RecordLogin(ctx context.Context, id uuid.UUID, method string) error
+}
+
+type presenceRemover interface {
+	Remove(ctx context.Context, userID uuid.UUID)
 }
 
 type Service struct {
@@ -46,6 +51,7 @@ type Service struct {
 	redis             cache.Cache
 	permissionService ctxkey.PermissionService
 	rabbitmq          rabbitmq.Client
+	presence          presenceRemover
 }
 
 func NewService(
@@ -56,6 +62,7 @@ func NewService(
 	redis cache.Cache,
 	permissionService ctxkey.PermissionService,
 	rabbitmq rabbitmq.Client,
+	presence presenceRemover,
 ) *Service {
 	return &Service{
 		userRepo:          repo,
@@ -65,6 +72,15 @@ func NewService(
 		redis:             redis,
 		permissionService: permissionService,
 		rabbitmq:          rabbitmq,
+		presence:          presence,
+	}
+}
+
+func (s *Service) recordLogin(ctx context.Context, userID uuid.UUID, method string) {
+	slog.InfoContext(ctx, "user logged in", "user_id", userID, "auth_method", method)
+
+	if err := s.userRepo.RecordLogin(ctx, userID, method); err != nil {
+		slog.WarnContext(ctx, "record login", "user_id", userID, "error", err)
 	}
 }
 
@@ -171,6 +187,8 @@ func (s *Service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse,
 		return nil, err
 	}
 
+	s.recordLogin(ctx, currentUser.ID, user.LoginMethodPassword)
+
 	return toLoginResponse(token, *currentUser, s.storageConfig, permissions.ToSlice()), nil
 }
 
@@ -205,6 +223,8 @@ func (s *Service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) 
 		return nil, err
 	}
 
+	s.recordLogin(ctx, currentUser.ID, user.LoginMethodGoogle)
+
 	return toLoginResponse(token, *currentUser, s.storageConfig, permissions.ToSlice()), nil
 }
 
@@ -223,7 +243,13 @@ func (s *Service) Logout(ctx context.Context) error {
 		return err
 	}
 
-	return jwtutil.UntrackSession(ctx, s.redis, userID, jti)
+	if err := jwtutil.UntrackSession(ctx, s.redis, userID, jti); err != nil {
+		return err
+	}
+
+	s.presence.Remove(ctx, userID)
+
+	return nil
 }
 
 func (s *Service) Me(ctx context.Context) (*CurrentUserResponse, error) {

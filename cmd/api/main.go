@@ -28,6 +28,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/middleware"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/presence"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/rabbitmq"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/redis"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/rustfs"
@@ -148,10 +149,12 @@ func run() error {
 	ihsRepo := ihs.NewRepository(simgosDB)
 	antrianRepo := antrian.NewRepository(simgosDB)
 
+	presenceTracker := presence.NewTracker(redisClient, userRepo)
+
 	// Services
 	categoryService := category.NewService(categoryRepo, cacheStore)
 	divisionService := division.NewService(divisionRepo, cacheStore)
-	userService := user.NewService(userRepo, outboxRepo, txManager, cfg.Storage, cacheStore)
+	userService := user.NewService(userRepo, outboxRepo, txManager, cfg.Storage, cacheStore, presenceTracker)
 	ticketService := ticket.NewService(ticketRepo, outboxRepo, txManager, storageService, cfg.Storage, cacheStore, categoryService, divisionService, userService)
 	feedbackService := feedback.NewService(feedbackRepo)
 	profileService := profile.NewService(profileRepo, storageService, cfg.Storage, cfg.Auth, cacheStore)
@@ -161,7 +164,7 @@ func run() error {
 
 	ihsService := ihs.NewService(ihsRepo)
 	antrianService := antrian.NewService(antrianRepo, simgosClient)
-	authService := auth.NewService(userRepo, cfg.Auth, cfg.Storage, cfg.App, cacheStore, permissionService, *rabbitmqClient)
+	authService := auth.NewService(userRepo, cfg.Auth, cfg.Storage, cfg.App, cacheStore, permissionService, *rabbitmqClient, presenceTracker)
 	bpjsService := bpjs.NewService(bpjsClient)
 
 	// HTTP
@@ -185,8 +188,9 @@ func run() error {
 	// API
 	api := e.Group("/api/v1")
 	protected := api.Group("")
-	protected.Use(middleware.AuthMiddleware(cfg.Auth, redisClient, permissionService))
-	auth.Register(api, authService, middleware.AuthMiddleware(cfg.Auth, redisClient, permissionService))
+	authMiddleware := middleware.AuthMiddleware(cfg.Auth, redisClient, permissionService, presenceTracker)
+	protected.Use(authMiddleware)
+	auth.Register(api, authService, authMiddleware)
 	category.Register(protected, categoryService)
 	division.Register(protected, divisionService)
 	user.Register(protected, userService)

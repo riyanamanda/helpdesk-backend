@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -27,21 +28,44 @@ type repository interface {
 	AssignableUser(ctx context.Context) ([]AssignableUserProjection, error)
 }
 
+type presenceReader interface {
+	Online(ctx context.Context, userIDs []uuid.UUID) (map[uuid.UUID]bool, error)
+}
+
 type Service struct {
 	repo          repository
 	outboxRepo    outbox.Repository
 	txManager     *database.TxManager
 	storageConfig config.Storage
 	cache         cache.Cache
+	presence      presenceReader
 }
 
-func NewService(repo repository, outboxRepo outbox.Repository, txManager *database.TxManager, storageConfig config.Storage, cache cache.Cache) *Service {
+func NewService(repo repository, outboxRepo outbox.Repository, txManager *database.TxManager, storageConfig config.Storage, cache cache.Cache, presence presenceReader) *Service {
 	return &Service{
 		repo:          repo,
 		outboxRepo:    outboxRepo,
 		txManager:     txManager,
 		storageConfig: storageConfig,
 		cache:         cache,
+		presence:      presence,
+	}
+}
+
+func (s *Service) markOnline(ctx context.Context, users []UserResponse) {
+	ids := make([]uuid.UUID, len(users))
+	for i, u := range users {
+		ids[i] = u.ID
+	}
+
+	online, err := s.presence.Online(ctx, ids)
+	if err != nil {
+		slog.WarnContext(ctx, "read user presence", "error", err)
+		return
+	}
+
+	for i := range users {
+		users[i].IsOnline = online[users[i].ID]
 	}
 }
 
@@ -56,7 +80,10 @@ func (s *Service) ListUsers(ctx context.Context, params *GetUserParams) ([]UserR
 		return nil, 0, err
 	}
 
-	return toUserResponses(users, s.storageConfig), total, nil
+	result := toUserResponses(users, s.storageConfig)
+	s.markOnline(ctx, result)
+
+	return result, total, nil
 }
 
 func (s *Service) CreateUser(ctx context.Context, req *UserCreateRequest) error {
@@ -131,9 +158,10 @@ func (s *Service) GetUser(ctx context.Context, id uuid.UUID) (*UserResponse, err
 		return nil, err
 	}
 
-	result := toUserResponse(*user, s.storageConfig)
+	result := []UserResponse{toUserResponse(*user, s.storageConfig)}
+	s.markOnline(ctx, result)
 
-	return &result, nil
+	return &result[0], nil
 }
 
 func (s *Service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error {

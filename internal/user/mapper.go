@@ -37,10 +37,13 @@ func toUserResponse(u UserProjection, storageConfig config.Storage) UserResponse
 			ID:   u.DivisionID,
 			Name: u.DivisionName,
 		},
-		IsActive:  u.IsActive,
-		CreatedBy: createdBy,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
+		IsActive:        u.IsActive,
+		CreatedBy:       createdBy,
+		CreatedAt:       u.CreatedAt,
+		UpdatedAt:       u.UpdatedAt,
+		LastLoginAt:     u.LastLoginAt,
+		LastLoginMethod: u.LastLoginMethod,
+		LastActiveAt:    u.LastActiveAt,
 	}
 }
 
