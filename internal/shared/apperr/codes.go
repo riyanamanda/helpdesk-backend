@@ -11,6 +11,8 @@ const (
 	CodeUnauthorized    = "UNAUTHORIZED"
 	CodeRateLimited     = "RATE_LIMITED"
 
+	CodeMethodNotAllowed = "METHOD_NOT_ALLOWED"
+
 	CodeInvalidToken = "INVALID_TOKEN"
 	CodeTokenExpired = "TOKEN_EXPIRED"
 	CodeMissingToken = "MISSING_TOKEN"

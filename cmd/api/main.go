@@ -34,6 +34,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/storage"
 	"github.com/riyanamanda/helpdesk-backend/internal/profile"
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/validation"
 	"github.com/riyanamanda/helpdesk-backend/internal/simgos"
 	"github.com/riyanamanda/helpdesk-backend/internal/ticket"
@@ -155,6 +156,7 @@ func run() error {
 	// HTTP
 	e := echo.New()
 	e.Validator = validation.New()
+	e.HTTPErrorHandler = response.HTTPErrorHandler
 
 	middleware.Register(e, cfg.App)
 
