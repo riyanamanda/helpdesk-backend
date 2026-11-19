@@ -2,13 +2,24 @@ package apperr
 
 import (
 	"errors"
-	"net/http"
+)
+
+type Kind int
+
+const (
+	KindInternal Kind = iota
+	KindInvalid
+	KindUnauthenticated
+	KindForbidden
+	KindNotFound
+	KindConflict
+	KindRateLimited
 )
 
 type Error struct {
+	Kind    Kind
 	Code    string
 	Message string
-	Status  int
 	Details map[string]any
 }
 
@@ -18,76 +29,84 @@ func (e *Error) Error() string {
 
 func NotFound(resource string) *Error {
 	return &Error{
+		Kind:    KindNotFound,
 		Code:    CodeNotFound,
 		Message: resource + " not found",
-		Status:  http.StatusNotFound,
 	}
 }
 
 func AlreadyExists(resource string) *Error {
 	return &Error{
+		Kind:    KindConflict,
 		Code:    CodeAlreadyExists,
 		Message: resource + " already exists",
-		Status:  http.StatusConflict,
 	}
 }
 
 func Conflict(message string) *Error {
 	return &Error{
+		Kind:    KindConflict,
 		Code:    CodeConflict,
 		Message: message,
-		Status:  http.StatusConflict,
 	}
 }
 
 func BadRequest(message string) *Error {
 	return &Error{
+		Kind:    KindInvalid,
 		Code:    CodeBadRequest,
 		Message: message,
-		Status:  http.StatusBadRequest,
 	}
 }
 
 func Forbidden(message string) *Error {
 	return &Error{
+		Kind:    KindForbidden,
 		Code:    CodeForbidden,
 		Message: message,
-		Status:  http.StatusForbidden,
 	}
 }
 
 func Unauthorized(code string, message string) *Error {
 	return &Error{
+		Kind:    KindUnauthenticated,
 		Code:    code,
 		Message: message,
-		Status:  http.StatusUnauthorized,
 	}
 }
 
 func Internal() *Error {
 	return &Error{
+		Kind:    KindInternal,
 		Code:    CodeInternalError,
 		Message: "internal server error",
-		Status:  http.StatusInternalServerError,
 	}
 }
 
 func RateLimited(message string, retryAfter int64) *Error {
 	return &Error{
+		Kind:    KindRateLimited,
 		Code:    CodeRateLimited,
 		Message: message,
-		Status:  http.StatusTooManyRequests,
 		Details: map[string]any{
 			"retry_after": retryAfter,
 		},
 	}
 }
 
-func TokenExpired(message string) *Error {
+func InvalidResetToken(message string) *Error {
 	return &Error{
-		Code:    CodeTokenExpired,
+		Kind:    KindInvalid,
+		Code:    CodeInvalidResetToken,
 		Message: message,
-		Status:  http.StatusBadRequest,
+	}
+}
+
+func InvalidCredentials() *Error {
+	return &Error{
+		Kind:    KindInvalid,
+		Code:    CodeInvalidCredentials,
+		Message: "invalid email or password",
 	}
 }
 

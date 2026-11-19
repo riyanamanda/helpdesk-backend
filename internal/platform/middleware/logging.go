@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/response"
 )
 
 func requestID() echo.MiddlewareFunc {
@@ -22,7 +22,7 @@ func requestID() echo.MiddlewareFunc {
 
 			status := 0
 			if err != nil {
-				status = apperr.As(err).Status
+				status = response.StatusOf(err)
 			} else if resp, unwrapErr := echo.UnwrapResponse(c.Response()); unwrapErr == nil {
 				status = resp.Status
 			}

@@ -141,14 +141,14 @@ func (s *Service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse,
 	if err != nil {
 		if errors.Is(err, user.ErrUserNotFound) {
 			s.recordFailedLogin(ctx, attemptKey)
-			return nil, apperr.BadRequest("invalid email or password")
+			return nil, apperr.InvalidCredentials()
 		}
 		return nil, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(currentUser.Password), []byte(req.Password)); err != nil {
 		s.recordFailedLogin(ctx, attemptKey)
-		return nil, apperr.BadRequest("invalid email or password")
+		return nil, apperr.InvalidCredentials()
 	}
 
 	_ = s.redis.Delete(ctx, attemptKey)
@@ -325,7 +325,7 @@ func (s *Service) ResetPassword(ctx context.Context, req ResetPasswordRequest) e
 	userID, err := s.redis.Get(ctx, buildPasswordResetTokenCache(req.Token))
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			return apperr.TokenExpired("token invalid or expired, please make a reset request again")
+			return apperr.InvalidResetToken("token invalid or expired, please make a reset request again")
 		}
 
 		return err
@@ -333,7 +333,7 @@ func (s *Service) ResetPassword(ctx context.Context, req ResetPasswordRequest) e
 
 	id, err := uuid.Parse(userID)
 	if err != nil {
-		return apperr.TokenExpired("token invalid or expired, please make a reset request again")
+		return apperr.InvalidResetToken("token invalid or expired, please make a reset request again")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)

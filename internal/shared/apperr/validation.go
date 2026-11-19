@@ -2,16 +2,15 @@ package apperr
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/go-playground/validator/v10"
 )
 
 func Validation(details map[string]any) *Error {
 	return &Error{
+		Kind:    KindInvalid,
 		Code:    CodeValidationError,
 		Message: "validation failed",
-		Status:  http.StatusBadRequest,
 		Details: details,
 	}
 }

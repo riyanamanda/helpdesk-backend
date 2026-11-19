@@ -14,4 +14,7 @@ const (
 	CodeInvalidToken = "INVALID_TOKEN"
 	CodeTokenExpired = "TOKEN_EXPIRED"
 	CodeMissingToken = "MISSING_TOKEN"
+
+	CodeInvalidCredentials = "INVALID_CREDENTIALS"
+	CodeInvalidResetToken  = "INVALID_RESET_TOKEN"
 )
