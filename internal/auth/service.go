@@ -175,7 +175,7 @@ func (s *Service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse,
 }
 
 func (s *Service) LoginWithGoogle(ctx context.Context, req *GoogleLoginRequest) (*LoginResponse, error) {
-	firebaseClaims, err := firebase.VerifyIDToken(req.IDToken, s.authConfig.FirebaseProjectID)
+	firebaseClaims, err := firebase.VerifyIDToken(ctx, req.IDToken, s.authConfig.FirebaseProjectID)
 	if err != nil {
 		if errors.Is(err, firebase.ErrInvalidToken) {
 			return nil, apperr.Unauthorized(apperr.CodeUnauthorized, "invalid google token")

@@ -2,6 +2,7 @@ package profile
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -112,9 +113,12 @@ func (s *Service) SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error 
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
-	claims, err := firebase.VerifyIDToken(req.IDToken, s.authConfig.FirebaseProjectID)
+	claims, err := firebase.VerifyIDToken(ctx, req.IDToken, s.authConfig.FirebaseProjectID)
 	if err != nil {
-		return apperr.Unauthorized(apperr.CodeUnauthorized, "invalid google token")
+		if errors.Is(err, firebase.ErrInvalidToken) {
+			return apperr.Unauthorized(apperr.CodeUnauthorized, "invalid google token")
+		}
+		return fmt.Errorf("verify google token: %w", err)
 	}
 
 	currentProfile, err := s.repo.GetByID(ctx, userID)

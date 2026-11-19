@@ -1,6 +1,7 @@
 package firebase
 
 import (
+	"context"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
@@ -8,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -16,18 +18,29 @@ const firebasePublicKeyURL = "https://www.googleapis.com/robot/v1/metadata/x509/
 
 var ErrInvalidToken = errors.New("invalid firebase token")
 
+var httpClient = &http.Client{Timeout: 10 * time.Second}
+
 type Claims struct {
 	Email         string `json:"email"`
 	EmailVerified bool   `json:"email_verified"`
 	jwt.RegisteredClaims
 }
 
-func VerifyIDToken(idToken, projectID string) (*Claims, error) {
-	resp, err := http.Get(firebasePublicKeyURL)
+func VerifyIDToken(ctx context.Context, idToken, projectID string) (*Claims, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, firebasePublicKeyURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("fetch firebase public keys: %w", err)
+	}
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetch firebase public keys: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("fetch firebase public keys: status %d", resp.StatusCode)
+	}
 
 	var certs map[string]string
 	if err := json.NewDecoder(resp.Body).Decode(&certs); err != nil {
