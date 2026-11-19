@@ -1,9 +1,5 @@
 package apperr
 
-import (
-	"errors"
-)
-
 type Kind int
 
 const (
@@ -75,14 +71,6 @@ func Unauthorized(code string, message string) *Error {
 	}
 }
 
-func Internal() *Error {
-	return &Error{
-		Kind:    KindInternal,
-		Code:    CodeInternalError,
-		Message: "internal server error",
-	}
-}
-
 func RateLimited(message string, retryAfter int64) *Error {
 	return &Error{
 		Kind:    KindRateLimited,
@@ -108,12 +96,4 @@ func InvalidCredentials() *Error {
 		Code:    CodeInvalidCredentials,
 		Message: "invalid email or password",
 	}
-}
-
-func As(err error) *Error {
-	if e, ok := errors.AsType[*Error](err); ok {
-		return e
-	}
-
-	return Internal()
 }

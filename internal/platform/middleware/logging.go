@@ -39,12 +39,8 @@ func requestID() echo.MiddlewareFunc {
 				"status", status,
 				"latency_ms", latency.Milliseconds(),
 			}
-			if status >= 500 {
-				if internalErr, ok := c.Get("internal_error").(error); ok && internalErr != nil {
-					attrs = append(attrs, "error", internalErr.Error())
-				} else if err != nil {
-					attrs = append(attrs, "error", err.Error())
-				}
+			if status >= 500 && err != nil {
+				attrs = append(attrs, "error", err.Error())
 			}
 
 			logFn("request", attrs...)

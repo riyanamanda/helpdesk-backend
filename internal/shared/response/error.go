@@ -39,16 +39,6 @@ func HTTPErrorHandler(c *echo.Context, err error) {
 	}
 }
 
-func Error(c *echo.Context, err error) error {
-	status := StatusOf(err)
-
-	if status >= 500 {
-		c.Set("internal_error", err)
-	}
-
-	return c.JSON(status, ErrorResponse{Error: bodyOf(err, status)})
-}
-
 func StatusOf(err error) int {
 	if appErr, ok := errors.AsType[*apperr.Error](err); ok {
 		return statusOfKind(appErr.Kind)
