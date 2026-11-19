@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/passwordtoken"
 )
 
 func InvalidateResetPasswordCache(ctx context.Context, c cache.Cache, userID string, token string) {
@@ -32,5 +33,5 @@ func buildPasswordResetRequestCache(userID string) string {
 }
 
 func buildPasswordResetTokenCache(token string) string {
-	return "password-reset:token:" + token
+	return passwordtoken.CacheKey(token)
 }

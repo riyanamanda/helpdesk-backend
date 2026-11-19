@@ -9,7 +9,8 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o api ./cmd/api && \
     CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o seed ./cmd/seed && \
-    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o worker ./cmd/worker
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o worker ./cmd/worker && \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o passwordaudit ./cmd/passwordaudit
 
 FROM alpine:3.21
 
@@ -26,6 +27,7 @@ WORKDIR /app
 COPY --from=builder /app/api .
 COPY --from=builder /app/seed .
 COPY --from=builder /app/worker .
+COPY --from=builder /app/passwordaudit .
 COPY --from=builder /app/migrations ./migrations
 
 RUN chown -R appuser:appgroup /app

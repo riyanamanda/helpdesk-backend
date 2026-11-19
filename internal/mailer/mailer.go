@@ -19,8 +19,10 @@ type Mailer struct {
 }
 
 type WelcomeEmailData struct {
-	Name  string
-	Email string
+	Name           string
+	Email          string
+	SetPasswordURL string
+	ExpiresIn      string
 }
 
 type TicketEmailData struct {
@@ -31,9 +33,13 @@ type TicketEmailData struct {
 }
 
 type ResetPasswordEmailData struct {
-	Name     string
-	ResetURL string
+	Name      string
+	ResetURL  string
+	ExpiresIn string
+	Forced    bool
 }
+
+const defaultResetExpiry = "15 menit"
 
 //go:embed templates/user/welcome.html
 var welcomeTemplate string
@@ -112,7 +118,7 @@ func (m *Mailer) send(ctx context.Context, email string, message []byte) error {
 	)
 }
 
-func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string) error {
+func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string, setPasswordURL string, expiresIn string) error {
 	tmpl, err := template.New("welcome.html").Parse(welcomeTemplate)
 	if err != nil {
 		return fmt.Errorf("parse welcome email template: %w", err)
@@ -121,8 +127,10 @@ func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string
 	var body bytes.Buffer
 
 	err = tmpl.Execute(&body, WelcomeEmailData{
-		Name:  name,
-		Email: email,
+		Name:           name,
+		Email:          email,
+		SetPasswordURL: setPasswordURL,
+		ExpiresIn:      expiresIn,
 	})
 	if err != nil {
 		return fmt.Errorf("execute welcome email template: %w", err)
@@ -141,17 +149,23 @@ func (m *Mailer) SendWelcomeEmail(ctx context.Context, name string, email string
 	return m.send(ctx, email, message)
 }
 
-func (m *Mailer) SendResetPasswordEmail(ctx context.Context, name string, email string, resetUrl string) error {
+func (m *Mailer) SendResetPasswordEmail(ctx context.Context, name string, email string, resetUrl string, expiresIn string, forced bool) error {
 	tmpl, err := template.New("reset-password.html").Parse(resetPasswordTemplate)
 	if err != nil {
 		return fmt.Errorf("parse reset password email template: %w", err)
 	}
 
+	if expiresIn == "" {
+		expiresIn = defaultResetExpiry
+	}
+
 	var body bytes.Buffer
 
 	err = tmpl.Execute(&body, ResetPasswordEmailData{
-		Name:     name,
-		ResetURL: resetUrl,
+		Name:      name,
+		ResetURL:  resetUrl,
+		ExpiresIn: expiresIn,
+		Forced:    forced,
 	})
 	if err != nil {
 		return fmt.Errorf("execute reset password email template: %w", err)

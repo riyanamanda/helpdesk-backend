@@ -1,8 +1,10 @@
 package event
 
 type UserCreatedEvent struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	Name           string `json:"name"`
+	Email          string `json:"email"`
+	SetPasswordURL string `json:"set_password_url,omitempty"`
+	ExpiresIn      string `json:"expires_in,omitempty"`
 }
 
 type TicketCreatedEvent struct {
@@ -13,7 +15,9 @@ type TicketCreatedEvent struct {
 }
 
 type PasswordResetRequestedEvent struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	ResetURL string `json:"reset_url"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	ResetURL  string `json:"reset_url"`
+	ExpiresIn string `json:"expires_in,omitempty"`
+	Forced    bool   `json:"forced,omitempty"`
 }

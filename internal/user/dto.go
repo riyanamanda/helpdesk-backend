@@ -53,7 +53,7 @@ type GetUserParams struct {
 type UserCreateRequest struct {
 	Name     string `json:"name" validate:"required,min=3,max=50"`
 	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=8"`
+	Password string `json:"password" validate:"omitempty,min=8,notcommon"`
 	Role     int64  `json:"role" validate:"required,gt=0"`
 	Division int64  `json:"division" validate:"required,gt=0"`
 	Gender   string `json:"gender" validate:"required"`
@@ -69,7 +69,7 @@ type UserUpdateRequest struct {
 }
 
 type UserUpdatePasswordRequest struct {
-	Password string `json:"password" validate:"required,min=8"`
+	Password string `json:"password" validate:"required,min=8,notcommon"`
 }
 
 func (p *GetUserParams) Normalize() {

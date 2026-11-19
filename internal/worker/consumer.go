@@ -100,7 +100,7 @@ func (c *Consumer) handleUserCreated(ctx context.Context, body []byte) error {
 		return err
 	}
 
-	return c.mailer.SendWelcomeEmail(ctx, createdEvent.Name, createdEvent.Email)
+	return c.mailer.SendWelcomeEmail(ctx, createdEvent.Name, createdEvent.Email, createdEvent.SetPasswordURL, createdEvent.ExpiresIn)
 }
 
 func (c *Consumer) handleTicketCreated(ctx context.Context, body []byte) error {
@@ -112,12 +112,12 @@ func (c *Consumer) handleTicketCreated(ctx context.Context, body []byte) error {
 
 	emails, err := c.userRepo.GetEmailsByRoles(ctx, rbac.ADMIN, rbac.SUPERADMIN)
 	if err != nil {
-		return fmt.Errorf("get admin emails, %w", err)
+		return fmt.Errorf("get admin emails: %w", err)
 	}
 
-	for _, email := range emails {
+	for i, email := range emails {
 		if err := c.mailer.SendNewTicketEmail(ctx, email, createdEvent.TicketID, createdEvent.SubmittedBy, createdEvent.Title, createdEvent.Description); err != nil {
-			return fmt.Errorf("send ticket email to %s: %w", email, err)
+			return fmt.Errorf("send ticket email %d of %d: %w", i+1, len(emails), err)
 		}
 	}
 
@@ -131,5 +131,5 @@ func (c *Consumer) handlePasswordResetRequested(ctx context.Context, body []byte
 		return err
 	}
 
-	return c.mailer.SendResetPasswordEmail(ctx, passwordRequestedEvent.Name, passwordRequestedEvent.Email, passwordRequestedEvent.ResetURL)
+	return c.mailer.SendResetPasswordEmail(ctx, passwordRequestedEvent.Name, passwordRequestedEvent.Email, passwordRequestedEvent.ResetURL, passwordRequestedEvent.ExpiresIn, passwordRequestedEvent.Forced)
 }

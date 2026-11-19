@@ -154,7 +154,7 @@ func run() error {
 	// Services
 	categoryService := category.NewService(categoryRepo, cacheStore)
 	divisionService := division.NewService(divisionRepo, cacheStore)
-	userService := user.NewService(userRepo, outboxRepo, txManager, cfg.Storage, cacheStore, presenceTracker)
+	userService := user.NewService(userRepo, outboxRepo, txManager, cfg.Storage, cfg.App, cacheStore, presenceTracker)
 	ticketService := ticket.NewService(ticketRepo, outboxRepo, txManager, storageService, cfg.Storage, cacheStore, categoryService, divisionService, userService)
 	feedbackService := feedback.NewService(feedbackRepo)
 	profileService := profile.NewService(profileRepo, storageService, cfg.Storage, cfg.Auth, cacheStore)

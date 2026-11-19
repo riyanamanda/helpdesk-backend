@@ -203,9 +203,8 @@
                       line-height: 1.5;
                     "
                   >
-                    Akun IT Helpdesk Anda telah dibuat. Silakan gunakan
-                    kredensial di bawah ini untuk masuk ke dalam sistem pertama
-                    kali.
+                    Akun IT Helpdesk Anda telah dibuat. Silakan atur kata sandi
+                    Anda terlebih dahulu untuk mulai menggunakan sistem.
                   </p>
                 </div>
               </td>
@@ -229,12 +228,7 @@
                 >
                   <!-- Email -->
                   <tr>
-                    <td
-                      style="
-                        padding-bottom: 16px;
-                        border-bottom: 1px solid #f1f5f9;
-                      "
-                    >
+                    <td>
                       <p
                         style="
                           margin: 0;
@@ -258,46 +252,6 @@
                       >
                         {{ .Email }}
                       </p>
-                    </td>
-                  </tr>
-                  <!-- Password -->
-                  <tr>
-                    <td style="padding-top: 16px">
-                      <p
-                        style="
-                          margin: 0;
-                          color: #94a3b8;
-                          font-size: 11px;
-                          font-weight: 700;
-                          text-transform: uppercase;
-                          letter-spacing: 0.5px;
-                        "
-                      >
-                        Kata Sandi Sementara
-                      </p>
-                      <div
-                        style="
-                          margin-top: 6px;
-                          display: inline-block;
-                          background-color: #f1f5f9;
-                          border: 1px solid #e2e8f0;
-                          padding: 8px 16px;
-                          border-radius: 6px;
-                        "
-                      >
-                        <span
-                          style="
-                            color: #4f46e5;
-                            font-family:
-                              &quot;Courier New&quot;, Courier, monospace;
-                            font-size: 18px;
-                            font-weight: 700;
-                            letter-spacing: 1.5px;
-                          "
-                        >
-                          password
-                        </span>
-                      </div>
                     </td>
                   </tr>
                 </table>
@@ -341,10 +295,17 @@
                           line-height: 1.5;
                         "
                       >
-                        Demi keamanan akun, harap
-                        <strong>segera ubah kata sandi Anda</strong> setelah
-                        berhasil login pertama kali. Jangan berikan kredensial
-                        ini kepada siapa pun.
+                        {{ if .SetPasswordURL }}
+                        Tautan untuk mengatur kata sandi hanya berlaku selama
+                        <strong>{{ .ExpiresIn }}</strong> dan hanya untuk Anda.
+                        Jangan teruskan email ini kepada siapa pun. Jika tautan
+                        sudah kedaluwarsa, gunakan menu
+                        <strong>Lupa Kata Sandi</strong> di halaman login.
+                        {{ else }}
+                        Untuk masuk pertama kali, gunakan menu
+                        <strong>Lupa Kata Sandi</strong> di halaman login untuk
+                        membuat kata sandi Anda.
+                        {{ end }}
                       </p>
                     </td>
                   </tr>
@@ -374,7 +335,7 @@
                     >
                       <a
                         class="btn-responsive"
-                        href="https://helpdesk.rs-erba.go.id/login"
+                        href="{{ if .SetPasswordURL }}{{ .SetPasswordURL }}{{ else }}https://helpdesk.rs-erba.go.id/login{{ end }}"
                         target="_blank"
                         style="
                           display: inline-block;
@@ -387,11 +348,25 @@
                           background-color: #4f46e5;
                         "
                       >
-                        Login ke IT Helpdesk &rarr;
+                        {{ if .SetPasswordURL }}Atur Kata Sandi &rarr;{{ else }}Login ke IT Helpdesk &rarr;{{ end }}
                       </a>
                     </td>
                   </tr>
                 </table>
+                {{ if .SetPasswordURL }}
+                <p
+                  style="
+                    margin: 16px 0 0 0;
+                    color: #64748b;
+                    font-size: 12px;
+                    line-height: 1.5;
+                    word-break: break-all;
+                  "
+                >
+                  Jika tombol tidak berfungsi, salin tautan ini ke browser Anda:<br />
+                  <a href="{{ .SetPasswordURL }}" style="color: #4f46e5">{{ .SetPasswordURL }}</a>
+                </p>
+                {{ end }}
               </td>
             </tr>
 

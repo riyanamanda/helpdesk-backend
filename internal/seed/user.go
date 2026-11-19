@@ -5,6 +5,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/passwordtoken"
 )
 
 func SeedUserAdmin(db *sqlx.DB) (bool, error) {
@@ -29,7 +31,12 @@ func SeedUserAdmin(db *sqlx.DB) (bool, error) {
 		return false, nil
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+	random, err := passwordtoken.New()
+	if err != nil {
+		return false, err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(random), bcrypt.DefaultCost)
 	if err != nil {
 		return false, err
 	}
@@ -43,6 +50,8 @@ func SeedUserAdmin(db *sqlx.DB) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
+	slog.Info("user admin created with a random password, use forgot password to set it")
 
 	return true, nil
 }

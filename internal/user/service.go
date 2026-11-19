@@ -16,6 +16,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/jwtutil"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/passwordtoken"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -37,16 +38,18 @@ type Service struct {
 	outboxRepo    outbox.Repository
 	txManager     *database.TxManager
 	storageConfig config.Storage
+	appConfig     config.App
 	cache         cache.Cache
 	presence      presenceReader
 }
 
-func NewService(repo repository, outboxRepo outbox.Repository, txManager *database.TxManager, storageConfig config.Storage, cache cache.Cache, presence presenceReader) *Service {
+func NewService(repo repository, outboxRepo outbox.Repository, txManager *database.TxManager, storageConfig config.Storage, appConfig config.App, cache cache.Cache, presence presenceReader) *Service {
 	return &Service{
 		repo:          repo,
 		outboxRepo:    outboxRepo,
 		txManager:     txManager,
 		storageConfig: storageConfig,
+		appConfig:     appConfig,
 		cache:         cache,
 		presence:      presence,
 	}
@@ -87,7 +90,16 @@ func (s *Service) ListUsers(ctx context.Context, params *GetUserParams) ([]UserR
 }
 
 func (s *Service) CreateUser(ctx context.Context, req *UserCreateRequest) error {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	password := req.Password
+	if password == "" {
+		random, err := passwordtoken.New()
+		if err != nil {
+			return err
+		}
+		password = random
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
@@ -122,9 +134,16 @@ func (s *Service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 		return err
 	}
 
+	setPasswordURL, err := passwordtoken.Issue(ctx, s.cache, s.appConfig.URL, userID, SetPasswordTokenTTL)
+	if err != nil {
+		return err
+	}
+
 	event := event.UserCreatedEvent{
-		Name:  user.Name,
-		Email: user.Email,
+		Name:           user.Name,
+		Email:          user.Email,
+		SetPasswordURL: setPasswordURL,
+		ExpiresIn:      SetPasswordExpiryText,
 	}
 	payload, err := json.Marshal(event)
 	if err != nil {

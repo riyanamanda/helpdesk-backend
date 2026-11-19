@@ -2,13 +2,10 @@ package auth
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -24,6 +21,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/jwtutil"
+	"github.com/riyanamanda/helpdesk-backend/internal/shared/passwordtoken"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -304,12 +302,10 @@ func (s *Service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 	}
 
 	// Generate token
-	tokenByte := make([]byte, 32)
-	if _, err := rand.Read(tokenByte); err != nil {
+	token, err := passwordtoken.New()
+	if err != nil {
 		return err
 	}
-
-	token := hex.EncodeToString(tokenByte)
 
 	// Active token: 15 minutes
 	if err := s.redis.Set(ctx, requestKey, token, 15*time.Minute); err != nil {
@@ -331,16 +327,11 @@ func (s *Service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 		return err
 	}
 
-	resetURL := fmt.Sprintf(
-		"%s/reset-password?token=%s",
-		s.appConfig.URL,
-		url.QueryEscape(token),
-	)
-
 	passwordEvent := event.PasswordResetRequestedEvent{
-		Name:     userValue.Name,
-		Email:    userValue.Email,
-		ResetURL: resetURL,
+		Name:      userValue.Name,
+		Email:     userValue.Email,
+		ResetURL:  passwordtoken.URL(s.appConfig.URL, token),
+		ExpiresIn: "15 menit",
 	}
 
 	payload, err := json.Marshal(passwordEvent)

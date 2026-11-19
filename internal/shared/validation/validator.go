@@ -26,7 +26,38 @@ func New() *CustomValidator {
 		return name
 	})
 
+	if err := v.RegisterValidation("notcommon", notCommonPassword); err != nil {
+		panic(err)
+	}
+
 	return &CustomValidator{validator: v}
+}
+
+var commonPasswords = map[string]struct{}{
+	"password":    {},
+	"password1":   {},
+	"password12":  {},
+	"password123": {},
+	"passw0rd":    {},
+	"12345678":    {},
+	"123456789":   {},
+	"1234567890":  {},
+	"87654321":    {},
+	"11111111":    {},
+	"00000000":    {},
+	"qwerty123":   {},
+	"qwertyuiop":  {},
+	"abcd1234":    {},
+	"iloveyou":    {},
+	"admin123":    {},
+	"helpdesk":    {},
+	"helpdesk123": {},
+	"rahasia123":  {},
+}
+
+func notCommonPassword(fl validator.FieldLevel) bool {
+	_, common := commonPasswords[strings.ToLower(strings.TrimSpace(fl.Field().String()))]
+	return !common
 }
 
 func (cv *CustomValidator) Validate(i any) error {
