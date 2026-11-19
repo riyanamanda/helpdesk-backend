@@ -141,7 +141,7 @@ func (r *Repository) GetAttachmentsByTicketID(ctx context.Context, ticketID int6
 	return attachments, nil
 }
 
-func (r *Repository) Assign(ctx context.Context, ticketID int64, assigneeID uuid.UUID, assignedBy uuid.UUID, note *string) error {
+func (r *Repository) Assign(ctx context.Context, tx database.Tx, ticketID int64, assigneeID uuid.UUID, assignedBy uuid.UUID, note *string) error {
 	const query = `
 		UPDATE tickets
 		SET assigned_to = $2,
@@ -153,7 +153,7 @@ func (r *Repository) Assign(ctx context.Context, ticketID int64, assigneeID uuid
 		WHERE id = $1
 	`
 
-	result, err := r.db.ExecContext(ctx, query, ticketID, assigneeID, assignedBy, note)
+	result, err := tx.ExecContext(ctx, query, ticketID, assigneeID, assignedBy, note)
 	if err != nil {
 		if database.IsForeignKeyViolation(err) {
 			return user.ErrUserNotFound

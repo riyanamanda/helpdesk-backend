@@ -41,9 +41,10 @@ type Service struct {
 	appConfig     config.App
 	cache         cache.Cache
 	presence      presenceReader
+	publisher     event.Publisher
 }
 
-func NewService(repo repository, outboxRepo outbox.Repository, txManager *database.TxManager, storageConfig config.Storage, appConfig config.App, cache cache.Cache, presence presenceReader) *Service {
+func NewService(repo repository, outboxRepo outbox.Repository, txManager *database.TxManager, storageConfig config.Storage, appConfig config.App, cache cache.Cache, presence presenceReader, publisher event.Publisher) *Service {
 	return &Service{
 		repo:          repo,
 		outboxRepo:    outboxRepo,
@@ -52,6 +53,7 @@ func NewService(repo repository, outboxRepo outbox.Repository, txManager *databa
 		appConfig:     appConfig,
 		cache:         cache,
 		presence:      presence,
+		publisher:     publisher,
 	}
 }
 
@@ -223,7 +225,13 @@ func (s *Service) UpdatePassword(ctx context.Context, userID uuid.UUID, req *Use
 		return err
 	}
 
-	return jwtutil.RevokeUserSessions(ctx, s.cache, userID)
+	if err := jwtutil.RevokeUserSessions(ctx, s.cache, userID); err != nil {
+		return err
+	}
+
+	event.NotifyPasswordChanged(ctx, s.publisher, userID, true)
+
+	return nil
 }
 
 func (s *Service) ListAssignableUser(ctx context.Context) ([]UserBrief, error) {

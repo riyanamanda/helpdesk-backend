@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/riyanamanda/helpdesk-backend/internal/event"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/firebase"
@@ -33,15 +34,17 @@ type Service struct {
 	storageConfig config.Storage
 	authConfig    config.Auth
 	cache         cache.Cache
+	publisher     event.Publisher
 }
 
-func NewService(repo repository, store storage.Storage, storageConfig config.Storage, authConfig config.Auth, cache cache.Cache) *Service {
+func NewService(repo repository, store storage.Storage, storageConfig config.Storage, authConfig config.Auth, cache cache.Cache, publisher event.Publisher) *Service {
 	return &Service{
 		repo:          repo,
 		storage:       store,
 		storageConfig: storageConfig,
 		authConfig:    authConfig,
 		cache:         cache,
+		publisher:     publisher,
 	}
 }
 
@@ -179,5 +182,11 @@ func (s *Service) UpdatePassword(ctx context.Context, req UpdatePasswordRequest)
 		return err
 	}
 
-	return jwtutil.RevokeUserSessions(ctx, s.cache, userID)
+	if err := jwtutil.RevokeUserSessions(ctx, s.cache, userID); err != nil {
+		return err
+	}
+
+	event.NotifyPasswordChanged(ctx, s.publisher, userID, false)
+
+	return nil
 }

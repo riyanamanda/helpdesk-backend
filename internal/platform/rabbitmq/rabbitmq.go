@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -45,6 +46,15 @@ func (c *Client) Publish(ctx context.Context, exchange string, routingKey string
 	}
 
 	return nil
+}
+
+func (c *Client) PublishJSON(ctx context.Context, routingKey string, v any) error {
+	body, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Errorf("encode %s: %w", routingKey, err)
+	}
+
+	return c.Publish(ctx, ExchangeEvent, routingKey, "application/json", body)
 }
 
 func (c *Client) Consume(queue string) (<-chan amqp.Delivery, error) {

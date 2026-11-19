@@ -27,13 +27,13 @@ type repository interface {
 	GetAll(ctx context.Context, params GetTicketParams) ([]TicketProjection, int64, error)
 	GetByID(ctx context.Context, id int64) (*TicketProjection, error)
 	GetAttachmentsByTicketID(ctx context.Context, ticketID int64) ([]TicketAttachmentProjection, error)
-	Assign(ctx context.Context, ticketID int64, assigneeID uuid.UUID, assignedBy uuid.UUID, note *string) error
 	UpdatePriority(ctx context.Context, ticketID int64, priority TicketPriority) error
 	Update(ctx context.Context, ticketID int64, ticket Ticket) error
 	CloseTicket(ctx context.Context, ticketID int64, userID uuid.UUID) error
 
 	// with db transaction
 	Create(ctx context.Context, tx database.Tx, ticket Ticket) (int64, error)
+	Assign(ctx context.Context, tx database.Tx, ticketID int64, assigneeID uuid.UUID, assignedBy uuid.UUID, note *string) error
 	CreateAttachment(ctx context.Context, tx database.Tx, attachment TicketAttachment) error
 	UpdateResolution(ctx context.Context, tx database.Tx, ticketID int64, resolveBy uuid.UUID, resolution string) error
 	DeleteAttachmentsByTicketID(ctx context.Context, tx database.Tx, ticketID int64) error
@@ -313,6 +313,19 @@ func (s *Service) DeleteTicket(ctx context.Context, ticketID int64) error {
 	return nil
 }
 
+func (s *Service) addOutboxEvent(ctx context.Context, tx database.Tx, eventType string, ticketID int64, payload any) error {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode %s event: %w", eventType, err)
+	}
+
+	return s.outboxRepo.Create(ctx, tx, outbox.OutboxEvent{
+		EventType:   eventType,
+		AggregateID: strconv.FormatInt(ticketID, 10),
+		Payload:     data,
+	})
+}
+
 func (s *Service) AssignTicket(ctx context.Context, ticketID int64, req *TicketAssignRequest) error {
 	if req == nil {
 		return apperr.BadRequest("request body cannot be empty")
@@ -332,7 +345,35 @@ func (s *Service) AssignTicket(ctx context.Context, ticketID int64, req *TicketA
 		return apperr.Unauthorized(apperr.CodeUnauthorized, "unauthorized")
 	}
 
-	if err := s.repo.Assign(ctx, ticketID, req.AssignedTo, actorID, req.Note); err != nil {
+	tx, err := s.txManager.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if err := s.repo.Assign(ctx, tx, ticketID, req.AssignedTo, actorID, req.Note); err != nil {
+		return err
+	}
+
+	if req.AssignedTo != actorID {
+		var note string
+		if req.Note != nil {
+			note = *req.Note
+		}
+
+		if err := s.addOutboxEvent(ctx, tx, event.TicketAssigned, ticketID, event.TicketAssignedEvent{
+			TicketID:     ticketID,
+			Title:        existing.Title,
+			Priority:     *existing.Priority,
+			AssigneeID:   req.AssignedTo,
+			AssignedByID: actorID,
+			Note:         note,
+		}); err != nil {
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
 		return err
 	}
 
@@ -411,6 +452,18 @@ func (s *Service) CreateResolution(ctx context.Context, ticketID int64, req *Tic
 		}
 
 		if err := s.repo.CreateAttachment(ctx, tx, attachment); err != nil {
+			return err
+		}
+	}
+
+	if existing.CreatedByID != req.ResolvedBy {
+		if err := s.addOutboxEvent(ctx, tx, event.TicketResolved, ticketID, event.TicketResolvedEvent{
+			TicketID:     ticketID,
+			Title:        existing.Title,
+			ReporterID:   existing.CreatedByID,
+			ResolvedByID: req.ResolvedBy,
+			Resolution:   req.Resolution,
+		}); err != nil {
 			return err
 		}
 	}

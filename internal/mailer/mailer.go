@@ -39,6 +39,31 @@ type ResetPasswordEmailData struct {
 	Forced    bool
 }
 
+type TicketAssignedEmailData struct {
+	TicketID   int64
+	Title      string
+	Priority   string
+	AssignedBy string
+	Note       string
+	TicketURL  string
+}
+
+type TicketResolvedEmailData struct {
+	TicketID     int64
+	Title        string
+	ReporterName string
+	ResolvedBy   string
+	Resolution   string
+	TicketURL    string
+}
+
+type PasswordChangedEmailData struct {
+	Name      string
+	ChangedAt string
+	ByAdmin   bool
+	LoginURL  string
+}
+
 const defaultResetExpiry = "15 menit"
 
 //go:embed templates/user/welcome.html
@@ -47,8 +72,17 @@ var welcomeTemplate string
 //go:embed templates/user/reset-password.html
 var resetPasswordTemplate string
 
+//go:embed templates/user/password-changed.html
+var passwordChangedTemplate string
+
 //go:embed templates/ticket/created.html
 var ticketCreatedTemplate string
+
+//go:embed templates/ticket/assigned.html
+var ticketAssignedTemplate string
+
+//go:embed templates/ticket/resolved.html
+var ticketResolvedTemplate string
 
 func NewMailer(config config.Email) *Mailer {
 	return &Mailer{
@@ -206,6 +240,44 @@ func (m *Mailer) SendNewTicketEmail(ctx context.Context, email string, ticketID 
 		"From: IT Helpdesk <" + m.config.From + ">\r\n" +
 			"To: " + email + "\r\n" +
 			"Subject: [IT Helpdesk] New Ticket #" + strconv.FormatInt(ticketID, 10) + " — Need Review ASAP\r\n" +
+			"MIME-Version: 1.0\r\n" +
+			"Content-Type: text/html; charset=UTF-8\r\n" +
+			"\r\n" +
+			body.String(),
+	)
+
+	return m.send(ctx, email, message)
+}
+
+func (m *Mailer) SendTicketAssignedEmail(ctx context.Context, email string, data TicketAssignedEmailData) error {
+	subject := "[IT Helpdesk] Tiket #" + strconv.FormatInt(data.TicketID, 10) + " ditugaskan kepada Anda"
+	return m.sendTemplate(ctx, email, subject, "assigned.html", ticketAssignedTemplate, data)
+}
+
+func (m *Mailer) SendTicketResolvedEmail(ctx context.Context, email string, data TicketResolvedEmailData) error {
+	subject := "[IT Helpdesk] Tiket #" + strconv.FormatInt(data.TicketID, 10) + " telah diselesaikan"
+	return m.sendTemplate(ctx, email, subject, "resolved.html", ticketResolvedTemplate, data)
+}
+
+func (m *Mailer) SendPasswordChangedEmail(ctx context.Context, email string, data PasswordChangedEmailData) error {
+	return m.sendTemplate(ctx, email, "[IT Helpdesk] Kata sandi Anda telah diubah", "password-changed.html", passwordChangedTemplate, data)
+}
+
+func (m *Mailer) sendTemplate(ctx context.Context, email string, subject string, name string, text string, data any) error {
+	tmpl, err := template.New(name).Parse(text)
+	if err != nil {
+		return fmt.Errorf("parse %s: %w", name, err)
+	}
+
+	var body bytes.Buffer
+	if err := tmpl.Execute(&body, data); err != nil {
+		return fmt.Errorf("execute %s: %w", name, err)
+	}
+
+	message := []byte(
+		"From: IT Helpdesk <" + m.config.From + ">\r\n" +
+			"To: " + email + "\r\n" +
+			"Subject: " + subject + "\r\n" +
 			"MIME-Version: 1.0\r\n" +
 			"Content-Type: text/html; charset=UTF-8\r\n" +
 			"\r\n" +

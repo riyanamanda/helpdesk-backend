@@ -62,31 +62,26 @@ func run() error {
 	userRepo := user.NewRepository(db)
 	mailer := mailer.NewMailer(cfg.Email)
 	publisher := worker.NewPublisher(outboxRepo, client)
-	welcomeConsumer := worker.NewConsumer(client, mailer, *userRepo, rabbitmq.QueueWelcome)
-	ticketConsumer := worker.NewConsumer(client, mailer, *userRepo, rabbitmq.QueueTicket)
-	passwordResetConsumer := worker.NewConsumer(client, mailer, *userRepo, rabbitmq.QueuePasswordReset)
 
 	// goroutine
 	go publisher.Run(ctx)
 
-	errCh := make(chan error, 3)
-	go func() {
-		if err := welcomeConsumer.Run(ctx); err != nil {
-			errCh <- fmt.Errorf("welcome consumer: %w", err)
-		}
-	}()
+	queues := []string{
+		rabbitmq.QueueWelcome,
+		rabbitmq.QueueTicket,
+		rabbitmq.QueueTicketActivity,
+		rabbitmq.QueuePasswordReset,
+	}
 
-	go func() {
-		if err := ticketConsumer.Run(ctx); err != nil {
-			errCh <- fmt.Errorf("ticket consumer: %w", err)
-		}
-	}()
-
-	go func() {
-		if err := passwordResetConsumer.Run(ctx); err != nil {
-			errCh <- fmt.Errorf("password reset consumer: %w", err)
-		}
-	}()
+	errCh := make(chan error, len(queues))
+	for _, queue := range queues {
+		consumer := worker.NewConsumer(client, mailer, *userRepo, queue, cfg.App.URL)
+		go func() {
+			if err := consumer.Run(ctx); err != nil {
+				errCh <- fmt.Errorf("%s consumer: %w", queue, err)
+			}
+		}()
+	}
 
 	slog.Info("worker started")
 

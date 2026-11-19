@@ -383,5 +383,7 @@ func (s *Service) ResetPassword(ctx context.Context, req ResetPasswordRequest) e
 
 	InvalidateResetPasswordCache(ctx, s.redis, id.String(), req.Token)
 
+	event.NotifyPasswordChanged(ctx, &s.rabbitmq, id, false)
+
 	return nil
 }
