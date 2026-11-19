@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"strconv"
 	"time"
@@ -82,7 +83,9 @@ func (s *Service) issueSession(ctx context.Context, user user.UserProjection) (s
 	}
 
 	if err := jwtutil.TrackSession(ctx, s.redis, user.ID, jti, s.authConfig.JWTExp); err != nil {
-		_ = s.redis.Delete(ctx, jwtutil.TokenKeyPrefix+jti)
+		if delErr := s.redis.Delete(ctx, jwtutil.TokenKeyPrefix+jti); delErr != nil {
+			slog.WarnContext(ctx, "cleanup session token", "user_id", user.ID, "error", delErr)
+		}
 		return "", err
 	}
 
@@ -122,11 +125,14 @@ func (s *Service) checkLoginAttempts(ctx context.Context, key string) error {
 func (s *Service) recordFailedLogin(ctx context.Context, key string) {
 	count, err := s.redis.Incr(ctx, key)
 	if err != nil {
+		slog.WarnContext(ctx, "record failed login", "error", err)
 		return
 	}
 
 	if count == 1 {
-		_ = s.redis.Expire(ctx, key, loginAttemptWindow)
+		if err := s.redis.Expire(ctx, key, loginAttemptWindow); err != nil {
+			slog.WarnContext(ctx, "set login attempt window", "error", err)
+		}
 	}
 }
 
@@ -151,7 +157,9 @@ func (s *Service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse,
 		return nil, apperr.InvalidCredentials()
 	}
 
-	_ = s.redis.Delete(ctx, attemptKey)
+	if err := s.redis.Delete(ctx, attemptKey); err != nil {
+		slog.WarnContext(ctx, "reset login attempts", "user_id", currentUser.ID, "error", err)
+	}
 
 	token, err := s.issueSession(ctx, *currentUser)
 	if err != nil {
@@ -283,13 +291,17 @@ func (s *Service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 	}
 
 	if err := s.redis.Set(ctx, buildPasswordResetTokenCache(token), userValue.ID.String(), 15*time.Minute); err != nil {
-		_ = s.redis.Delete(ctx, requestKey)
+		if delErr := s.redis.Delete(ctx, requestKey); delErr != nil {
+			slog.WarnContext(ctx, "cleanup password reset request", "user_id", userValue.ID, "error", delErr)
+		}
 		return err
 	}
 
 	// Cooldown: 60 seconds
 	if err := s.redis.Set(ctx, cooldownKey, "1", 60*time.Second); err != nil {
-		_ = s.redis.DeleteMany(ctx, requestKey, buildPasswordResetTokenCache(token))
+		if delErr := s.redis.DeleteMany(ctx, requestKey, buildPasswordResetTokenCache(token)); delErr != nil {
+			slog.WarnContext(ctx, "cleanup password reset request", "user_id", userValue.ID, "error", delErr)
+		}
 		return err
 	}
 

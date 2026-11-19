@@ -2,17 +2,21 @@ package auth
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
 )
 
 func InvalidateResetPasswordCache(ctx context.Context, c cache.Cache, userID string, token string) {
-	_ = c.DeleteMany(
+	err := c.DeleteMany(
 		ctx,
 		buildPasswordResetRequestCache(userID),
 		buildPasswordResetTokenCache(token),
 	)
+	if err != nil {
+		slog.WarnContext(ctx, "invalidate password reset token", "user_id", userID, "error", err)
+	}
 }
 
 func buildLoginAttemptsCache(email string) string {

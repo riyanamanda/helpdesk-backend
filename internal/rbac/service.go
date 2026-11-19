@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
@@ -68,7 +69,9 @@ func (s *Service) SetRolePermissions(ctx context.Context, roleID int64, permissi
 	for i, userID := range userIDs {
 		keys[i] = BuildUserPermissionsCacheKey(userID)
 	}
-	_ = s.cache.DeleteMany(ctx, keys...)
+	if err := s.cache.DeleteMany(ctx, keys...); err != nil {
+		slog.WarnContext(ctx, "invalidate role permissions cache", "role_id", roleID, "error", err)
+	}
 
 	return nil
 }

@@ -3,6 +3,7 @@ package rbac
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/google/uuid"
 
@@ -14,7 +15,9 @@ func BuildUserPermissionsCacheKey(userID uuid.UUID) string {
 }
 
 func InvalidateUserPermissionsCache(ctx context.Context, c cache.Cache, userID uuid.UUID) {
-	_ = c.Delete(ctx, BuildUserPermissionsCacheKey(userID))
+	if err := c.Delete(ctx, BuildUserPermissionsCacheKey(userID)); err != nil {
+		slog.WarnContext(ctx, "invalidate user permissions cache", "user_id", userID, "error", err)
+	}
 }
 
 func BuildUserRoleCacheKey(userID uuid.UUID) string {
@@ -22,5 +25,7 @@ func BuildUserRoleCacheKey(userID uuid.UUID) string {
 }
 
 func InvalidateUserRoleCache(ctx context.Context, c cache.Cache, userID uuid.UUID) {
-	_ = c.Delete(ctx, BuildUserRoleCacheKey(userID))
+	if err := c.Delete(ctx, BuildUserRoleCacheKey(userID)); err != nil {
+		slog.WarnContext(ctx, "invalidate user role cache", "user_id", userID, "error", err)
+	}
 }
