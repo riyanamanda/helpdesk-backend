@@ -26,9 +26,6 @@ func (c *Config) InsecureDefaults() []string {
 	if c.Database.Password == defaultDBPassword {
 		names = append(names, "DB_PASSWORD")
 	}
-	if c.Storage.AccessKey == defaultStorageKey {
-		names = append(names, "RUSTFS_ACCESS_KEY")
-	}
 	if c.Storage.SecretKey == defaultStorageKey {
 		names = append(names, "RUSTFS_SECRET_KEY")
 	}
