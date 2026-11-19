@@ -3,11 +3,9 @@ package division
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 )
 
 type repository interface {
@@ -78,9 +76,6 @@ func (s *Service) CreateDivision(ctx context.Context, req *DivisionCreateRequest
 	}
 
 	if err := s.repo.Create(ctx, &division); err != nil {
-		if errors.Is(err, ErrDivisionAlreadyExists) {
-			return apperr.AlreadyExists("division")
-		}
 		return err
 	}
 
@@ -92,9 +87,6 @@ func (s *Service) CreateDivision(ctx context.Context, req *DivisionCreateRequest
 func (s *Service) GetDivision(ctx context.Context, id int64) (*DivisionResponse, error) {
 	division, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, ErrDivisionNotFound) {
-			return nil, apperr.NotFound("division")
-		}
 		return nil, err
 	}
 
@@ -106,9 +98,6 @@ func (s *Service) GetDivision(ctx context.Context, id int64) (*DivisionResponse,
 func (s *Service) UpdateDivision(ctx context.Context, id int64, req *DivisionUpdateRequest) error {
 	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, ErrDivisionNotFound) {
-			return apperr.NotFound("division")
-		}
 		return err
 	}
 
@@ -123,12 +112,6 @@ func (s *Service) UpdateDivision(ctx context.Context, id int64, req *DivisionUpd
 	}
 
 	if err := s.repo.Update(ctx, id, &division); err != nil {
-		if errors.Is(err, ErrDivisionNotFound) {
-			return apperr.NotFound("division")
-		}
-		if errors.Is(err, ErrDivisionAlreadyExists) {
-			return apperr.AlreadyExists("division")
-		}
 		return err
 	}
 
@@ -139,9 +122,6 @@ func (s *Service) UpdateDivision(ctx context.Context, id int64, req *DivisionUpd
 
 func (s *Service) DeleteDivision(ctx context.Context, id int64) error {
 	if err := s.repo.Delete(ctx, id); err != nil {
-		if errors.Is(err, ErrDivisionNotFound) {
-			return apperr.NotFound("division")
-		}
 		return err
 	}
 

@@ -3,7 +3,6 @@ package ticket
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -211,9 +210,6 @@ func (s *Service) CreateTicket(ctx context.Context, req *TicketCreateRequest, fi
 func (s *Service) GetTicket(ctx context.Context, id int64) (*TicketDetailResponse, error) {
 	ticket, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, ErrTicketNotFound) {
-			return nil, apperr.NotFound("ticket")
-		}
 		return nil, err
 	}
 
@@ -234,9 +230,6 @@ func (s *Service) UpdateTicket(ctx context.Context, ticketID int64, req *TicketU
 
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
-		if errors.Is(err, ErrTicketNotFound) {
-			return apperr.NotFound("ticket")
-		}
 		return err
 	}
 
@@ -279,9 +272,6 @@ func (s *Service) UpdateTicket(ctx context.Context, ticketID int64, req *TicketU
 func (s *Service) DeleteTicket(ctx context.Context, ticketID int64) error {
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
-		if errors.Is(err, ErrTicketNotFound) {
-			return apperr.NotFound("ticket")
-		}
 		return err
 	}
 
@@ -305,9 +295,6 @@ func (s *Service) DeleteTicket(ctx context.Context, ticketID int64) error {
 	}
 
 	if err = s.repo.Delete(ctx, tx, ticketID); err != nil {
-		if errors.Is(err, ErrTicketNotFound) {
-			return apperr.NotFound("ticket")
-		}
 		return err
 	}
 
@@ -333,9 +320,6 @@ func (s *Service) AssignTicket(ctx context.Context, ticketID int64, req *TicketA
 
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
-		if errors.Is(err, ErrTicketNotFound) {
-			return apperr.NotFound("ticket")
-		}
 		return err
 	}
 
@@ -349,12 +333,6 @@ func (s *Service) AssignTicket(ctx context.Context, ticketID int64, req *TicketA
 	}
 
 	if err := s.repo.Assign(ctx, ticketID, req.AssignedTo, actorID, req.Note); err != nil {
-		if errors.Is(err, ErrTicketNotFound) {
-			return apperr.NotFound("ticket")
-		}
-		if errors.Is(err, user.ErrUserNotFound) {
-			return apperr.NotFound("user")
-		}
 		return err
 	}
 
@@ -369,9 +347,6 @@ func (s *Service) SetPriority(ctx context.Context, ticketID int64, req *TicketPr
 	}
 
 	if err := s.repo.UpdatePriority(ctx, ticketID, req.Priority); err != nil {
-		if errors.Is(err, ErrTicketNotFound) {
-			return apperr.NotFound("ticket")
-		}
 		return err
 	}
 
@@ -387,9 +362,6 @@ func (s *Service) CreateResolution(ctx context.Context, ticketID int64, req *Tic
 
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
-		if errors.Is(err, ErrTicketNotFound) {
-			return apperr.NotFound("ticket")
-		}
 		return err
 	}
 
@@ -409,9 +381,6 @@ func (s *Service) CreateResolution(ctx context.Context, ticketID int64, req *Tic
 	defer tx.Rollback()
 
 	if err = s.repo.UpdateResolution(ctx, tx, ticketID, req.ResolvedBy, req.Resolution); err != nil {
-		if errors.Is(err, ErrTicketNotFound) {
-			return apperr.NotFound("ticket")
-		}
 		return err
 	}
 
@@ -459,9 +428,6 @@ func (s *Service) CreateResolution(ctx context.Context, ticketID int64, req *Tic
 func (s *Service) CloseTicket(ctx context.Context, ticketID int64) error {
 	existing, err := s.repo.GetByID(ctx, ticketID)
 	if err != nil {
-		if errors.Is(err, ErrTicketNotFound) {
-			return apperr.NotFound("ticket")
-		}
 		return err
 	}
 
@@ -475,9 +441,6 @@ func (s *Service) CloseTicket(ctx context.Context, ticketID int64) error {
 	}
 
 	if err := s.repo.CloseTicket(ctx, ticketID, userID); err != nil {
-		if errors.Is(err, ErrTicketNotFound) {
-			return apperr.NotFound("ticket")
-		}
 		return err
 	}
 

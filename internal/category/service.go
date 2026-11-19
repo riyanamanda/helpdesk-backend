@@ -3,11 +3,9 @@ package category
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 )
 
 type repository interface {
@@ -79,9 +77,6 @@ func (s *Service) CreateCategory(ctx context.Context, req *CategoryCreateRequest
 	}
 
 	if err := s.repo.Create(ctx, &category); err != nil {
-		if errors.Is(err, ErrCategoryAlreadyExists) {
-			return apperr.AlreadyExists("category")
-		}
 		return err
 	}
 
@@ -93,9 +88,6 @@ func (s *Service) CreateCategory(ctx context.Context, req *CategoryCreateRequest
 func (s *Service) GetCategory(ctx context.Context, id int64) (*CategoryResponse, error) {
 	category, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, ErrCategoryNotFound) {
-			return nil, apperr.NotFound("category")
-		}
 		return nil, err
 	}
 
@@ -107,9 +99,6 @@ func (s *Service) GetCategory(ctx context.Context, id int64) (*CategoryResponse,
 func (s *Service) UpdateCategory(ctx context.Context, id int64, req *CategoryUpdateRequest) error {
 	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, ErrCategoryNotFound) {
-			return apperr.NotFound("category")
-		}
 		return err
 	}
 
@@ -124,12 +113,6 @@ func (s *Service) UpdateCategory(ctx context.Context, id int64, req *CategoryUpd
 	}
 
 	if err := s.repo.Update(ctx, id, &category); err != nil {
-		if errors.Is(err, ErrCategoryNotFound) {
-			return apperr.NotFound("category")
-		}
-		if errors.Is(err, ErrCategoryAlreadyExists) {
-			return apperr.AlreadyExists("category")
-		}
 		return err
 	}
 
@@ -140,9 +123,6 @@ func (s *Service) UpdateCategory(ctx context.Context, id int64, req *CategoryUpd
 
 func (s *Service) DeleteCategory(ctx context.Context, id int64) error {
 	if err := s.repo.Delete(ctx, id); err != nil {
-		if errors.Is(err, ErrCategoryNotFound) {
-			return apperr.NotFound("category")
-		}
 		return err
 	}
 

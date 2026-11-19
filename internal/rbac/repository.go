@@ -122,7 +122,7 @@ func (r *Repository) SetRolePermissions(ctx context.Context, roleID int64, permi
 			SELECT $1, UNNEST($2::bigint[])
 		`, roleID, pq.Array(permissionIDs)); err != nil {
 			if database.IsForeignKeyViolation(err) {
-				return ErrPermissionNotFound
+				return ErrInvalidPermissionIDs
 			}
 			return err
 		}

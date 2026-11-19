@@ -3,7 +3,6 @@ package user
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"strings"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/jwtutil"
 	"golang.org/x/crypto/bcrypt"
@@ -93,9 +91,6 @@ func (s *Service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 
 	userID, err := s.repo.Create(ctx, tx, user)
 	if err != nil {
-		if errors.Is(err, ErrUserAlreadyExists) {
-			return apperr.AlreadyExists("user")
-		}
 
 		return err
 	}
@@ -132,9 +127,6 @@ func (s *Service) CreateUser(ctx context.Context, req *UserCreateRequest) error 
 func (s *Service) GetUser(ctx context.Context, id uuid.UUID) (*UserResponse, error) {
 	user, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, ErrUserNotFound) {
-			return nil, apperr.NotFound("user")
-		}
 
 		return nil, err
 	}
@@ -147,9 +139,6 @@ func (s *Service) GetUser(ctx context.Context, id uuid.UUID) (*UserResponse, err
 func (s *Service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpdateRequest) error {
 	existing, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
-		if errors.Is(err, ErrUserNotFound) {
-			return apperr.NotFound("user")
-		}
 		return err
 	}
 
@@ -163,12 +152,6 @@ func (s *Service) UpdateUser(ctx context.Context, userID uuid.UUID, req *UserUpd
 	}
 
 	if err := s.repo.UpdateByID(ctx, userID, user); err != nil {
-		if errors.Is(err, ErrUserNotFound) {
-			return apperr.NotFound("user")
-		}
-		if errors.Is(err, ErrUserAlreadyExists) {
-			return apperr.AlreadyExists("user")
-		}
 		return err
 	}
 
@@ -190,9 +173,6 @@ func (s *Service) UpdatePassword(ctx context.Context, userID uuid.UUID, req *Use
 	}
 
 	if err := s.repo.UpdatePassword(ctx, userID, string(hashedPassword)); err != nil {
-		if errors.Is(err, ErrUserNotFound) {
-			return apperr.NotFound("user")
-		}
 		return err
 	}
 

@@ -1,5 +1,5 @@
 package ticket
 
-import "errors"
+import "github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 
-var ErrTicketNotFound = errors.New("ticket not found")
+var ErrTicketNotFound = apperr.NotFound("ticket")

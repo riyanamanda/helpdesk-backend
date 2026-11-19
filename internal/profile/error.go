@@ -1,8 +1,8 @@
 package profile
 
-import "errors"
+import "github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 
 var (
-	ErrProfileNotFound       = errors.New("profile not found")
-	ErrGoogleIDAlreadyLinked = errors.New("google account already linked")
+	ErrProfileNotFound       = apperr.NotFound("profile")
+	ErrGoogleIDAlreadyLinked = apperr.AlreadyExists("google account")
 )

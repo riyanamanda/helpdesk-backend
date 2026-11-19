@@ -1,8 +1,8 @@
 package division
 
-import "errors"
+import "github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 
 var (
-	ErrDivisionAlreadyExists = errors.New("division already exists")
-	ErrDivisionNotFound      = errors.New("division not found")
+	ErrDivisionAlreadyExists = apperr.AlreadyExists("division")
+	ErrDivisionNotFound      = apperr.NotFound("division")
 )

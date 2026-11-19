@@ -1,5 +1,5 @@
 package feedback
 
-import "errors"
+import "github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 
-var ErrFeedbackNotFound = errors.New("feedback not found")
+var ErrFeedbackNotFound = apperr.NotFound("feedback")

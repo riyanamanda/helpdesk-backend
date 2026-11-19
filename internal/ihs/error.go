@@ -1,8 +1,8 @@
 package ihs
 
-import "errors"
+import "github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 
 var (
-	ErrPatientNotFound    = errors.New("patient not found")
-	ErrPatientNotEligible = errors.New("patient is not eligible for resubmission")
+	ErrPatientNotFound    = apperr.NotFound("patient")
+	ErrPatientNotEligible = apperr.Conflict("patient has already been submitted or is currently being processed")
 )

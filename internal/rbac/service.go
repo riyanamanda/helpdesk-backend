@@ -2,11 +2,9 @@ package rbac
 
 import (
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/cache"
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 )
 
 type repository interface {
@@ -58,9 +56,6 @@ func (s *Service) GetRolePermissions(ctx context.Context, roleID int64) ([]Permi
 
 func (s *Service) SetRolePermissions(ctx context.Context, roleID int64, permissionIDs []int64) error {
 	if err := s.repo.SetRolePermissions(ctx, roleID, permissionIDs); err != nil {
-		if errors.Is(err, ErrPermissionNotFound) {
-			return apperr.BadRequest("one or more permission IDs are invalid")
-		}
 		return err
 	}
 

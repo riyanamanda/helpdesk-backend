@@ -1,8 +1,8 @@
 package rbac
 
-import "errors"
+import "github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 
 var (
-	ErrRoleNotFound       = errors.New("role not found")
-	ErrPermissionNotFound = errors.New("permission not found")
+	ErrRoleNotFound         = apperr.NotFound("role")
+	ErrInvalidPermissionIDs = apperr.BadRequest("one or more permission IDs are invalid")
 )

@@ -1,8 +1,8 @@
 package category
 
-import "errors"
+import "github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 
 var (
-	ErrCategoryAlreadyExists = errors.New("category already exists")
-	ErrCategoryNotFound      = errors.New("category not found")
+	ErrCategoryAlreadyExists = apperr.AlreadyExists("category")
+	ErrCategoryNotFound      = apperr.NotFound("category")
 )

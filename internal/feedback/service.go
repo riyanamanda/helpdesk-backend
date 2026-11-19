@@ -2,7 +2,6 @@ package feedback
 
 import (
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
@@ -58,9 +57,6 @@ func (s *Service) CreateFeedback(ctx context.Context, req *CreateFeedbackRequest
 func (s *Service) GetFeedback(ctx context.Context, id int64) (*FeedbackResponse, error) {
 	feedback, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, ErrFeedbackNotFound) {
-			return nil, apperr.NotFound("feedback")
-		}
 		return nil, err
 	}
 
@@ -76,9 +72,6 @@ func (s *Service) UpdateFeedbackStatus(ctx context.Context, id int64, req Update
 
 	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, ErrFeedbackNotFound) {
-			return apperr.NotFound("feedback")
-		}
 		return err
 	}
 
@@ -87,9 +80,6 @@ func (s *Service) UpdateFeedbackStatus(ctx context.Context, id int64, req Update
 	}
 
 	if err := s.repo.UpdateStatus(ctx, id, reviewerID, req.Status); err != nil {
-		if errors.Is(err, ErrFeedbackNotFound) {
-			return apperr.NotFound("feedback")
-		}
 		return err
 	}
 
@@ -99,9 +89,6 @@ func (s *Service) UpdateFeedbackStatus(ctx context.Context, id int64, req Update
 func (s *Service) DeleteFeedback(ctx context.Context, id int64) error {
 	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, ErrFeedbackNotFound) {
-			return apperr.NotFound("feedback")
-		}
 		return err
 	}
 

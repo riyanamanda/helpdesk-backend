@@ -2,7 +2,6 @@ package profile
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -53,9 +52,6 @@ func (s *Service) GetProfile(ctx context.Context) (*ProfileResponse, error) {
 
 	p, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
-		if errors.Is(err, ErrProfileNotFound) {
-			return nil, apperr.NotFound("profile")
-		}
 		return nil, err
 	}
 
@@ -82,9 +78,6 @@ func (s *Service) UpdateProfile(ctx context.Context, req *UpdateProfileRequest) 
 	}
 
 	if err := s.repo.UpdateProfile(ctx, userID, req.Name, req.Email, req.Phone, strings.ToUpper(req.Gender)); err != nil {
-		if errors.Is(err, ErrProfileNotFound) {
-			return apperr.NotFound("profile")
-		}
 		return err
 	}
 
@@ -134,9 +127,6 @@ func (s *Service) SyncGoogle(ctx context.Context, req *SyncGoogleRequest) error 
 	}
 
 	if err := s.repo.SetGoogleID(ctx, userID, claims.Subject); err != nil {
-		if errors.Is(err, ErrGoogleIDAlreadyLinked) {
-			return apperr.AlreadyExists("google account")
-		}
 		return err
 	}
 

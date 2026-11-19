@@ -1,8 +1,8 @@
 package user
 
-import "errors"
+import "github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 
 var (
-	ErrUserAlreadyExists = errors.New("user already exists")
-	ErrUserNotFound      = errors.New("user not found")
+	ErrUserAlreadyExists = apperr.AlreadyExists("user")
+	ErrUserNotFound      = apperr.NotFound("user")
 )

@@ -1,11 +1,6 @@
 package ihs
 
-import (
-	"context"
-	"errors"
-
-	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
-)
+import "context"
 
 type repository interface {
 	GetPatients(ctx context.Context, params GetPatientParams) ([]PatientProjection, int64, error)
@@ -40,9 +35,6 @@ func (s *Service) ListPatients(ctx context.Context, params *GetPatientParams) ([
 func (s *Service) GetPatientByNORM(ctx context.Context, NORM string) (*PatientDetailResponse, error) {
 	patient, err := s.repo.GetPatientDetail(ctx, NORM)
 	if err != nil {
-		if errors.Is(err, ErrPatientNotFound) {
-			return nil, apperr.NotFound("patient")
-		}
 		return nil, err
 	}
 
@@ -52,12 +44,6 @@ func (s *Service) GetPatientByNORM(ctx context.Context, NORM string) (*PatientDe
 
 func (s *Service) UpdatePatientMethodByNORM(ctx context.Context, NORM string) error {
 	if err := s.repo.UpdatePatientMethod(ctx, NORM); err != nil {
-		if errors.Is(err, ErrPatientNotFound) {
-			return apperr.NotFound("patient")
-		}
-		if errors.Is(err, ErrPatientNotEligible) {
-			return apperr.Conflict("patient has already been submitted or is currently being processed")
-		}
 		return err
 	}
 
