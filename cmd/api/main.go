@@ -57,6 +57,17 @@ func run() error {
 	ctx := context.Background()
 	cfg := config.Load()
 
+	slog.Info("config loaded",
+		"addr", net.JoinHostPort(cfg.App.Host, cfg.App.Port),
+		"simgos_enabled", cfg.IhsDatabase.Host != "",
+		"bpjs_enabled", cfg.BPJS.VClaimURL != "",
+		"antrol_enabled", cfg.Antrol.Domain != "",
+		"google_login_enabled", cfg.Auth.FirebaseProjectID != "",
+	)
+	if names := cfg.InsecureDefaults(); len(names) > 0 {
+		slog.Warn("insecure default config in use", "env", names)
+	}
+
 	// Database
 	slog.Info("connecting to database")
 	db, err := database.NewPostgres(cfg.Database.ConnString())

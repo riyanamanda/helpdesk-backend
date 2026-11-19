@@ -3,13 +3,22 @@ package redis
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/config"
 )
 
+type slogLogger struct{}
+
+func (slogLogger) Printf(ctx context.Context, format string, v ...any) {
+	slog.WarnContext(ctx, "redis client", "detail", fmt.Sprintf(format, v...))
+}
+
 func NewClient(ctx context.Context, cfg config.Redis) (*redis.Client, error) {
+	redis.SetLogger(slogLogger{})
+
 	client := redis.NewClient(&redis.Options{
 		Addr:     net.JoinHostPort(cfg.Host, cfg.Port),
 		Password: cfg.Password,

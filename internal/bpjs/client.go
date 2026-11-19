@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"strconv"
 	"time"
@@ -62,6 +63,7 @@ func (c *Client) GetPeserta(ctx context.Context, nik string) ([]byte, error) {
 	}
 
 	if result.MetaData.Code != "200" {
+		slog.InfoContext(ctx, "bpjs returned no peserta", "bpjs_code", result.MetaData.Code)
 		return []byte("{}"), nil
 	}
 

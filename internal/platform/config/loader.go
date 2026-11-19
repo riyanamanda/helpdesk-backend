@@ -10,6 +10,35 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const (
+	defaultJWTSecret        = "this-is-the-secret"
+	defaultDBPassword       = "postgres"
+	defaultStorageKey       = "rustfsadmin"
+	defaultRabbitMQPassword = "guest"
+)
+
+func (c *Config) InsecureDefaults() []string {
+	var names []string
+
+	if c.Auth.JWTSecret == defaultJWTSecret {
+		names = append(names, "JWT_SECRET")
+	}
+	if c.Database.Password == defaultDBPassword {
+		names = append(names, "DB_PASSWORD")
+	}
+	if c.Storage.AccessKey == defaultStorageKey {
+		names = append(names, "RUSTFS_ACCESS_KEY")
+	}
+	if c.Storage.SecretKey == defaultStorageKey {
+		names = append(names, "RUSTFS_SECRET_KEY")
+	}
+	if c.RabbitMQ.Password == defaultRabbitMQPassword {
+		names = append(names, "RABBITMQ_PASSWORD")
+	}
+
+	return names
+}
+
 func Load() *Config {
 	if err := godotenv.Load(); err != nil {
 		slog.Warn("no .env file found, reading from environment")
@@ -28,7 +57,7 @@ func Load() *Config {
 			Port:     getEnv("DB_PORT", "5432"),
 			Name:     getEnv("DB_NAME", "helpdesk_db"),
 			Username: getEnv("DB_USERNAME", "postgres"),
-			Password: getEnv("DB_PASSWORD", "postgres"),
+			Password: getEnv("DB_PASSWORD", defaultDBPassword),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
 		IhsDatabase: Database{
@@ -39,14 +68,14 @@ func Load() *Config {
 			Password: getEnv("IHS_DB_PASSWORD", ""),
 		},
 		Auth: Auth{
-			JWTSecret:         getEnv("JWT_SECRET", "this-is-the-secret"),
+			JWTSecret:         getEnv("JWT_SECRET", defaultJWTSecret),
 			JWTExp:            getDurationEnv("JWT_EXP", 72*time.Hour),
 			FirebaseProjectID: getEnv("FIREBASE_PROJECT_ID", ""),
 		},
 		Storage: Storage{
 			Endpoint:  getEnv("RUSTFS_ENDPOINT", "localhost:9000"),
-			AccessKey: getEnv("RUSTFS_ACCESS_KEY", "rustfsadmin"),
-			SecretKey: getEnv("RUSTFS_SECRET_KEY", "rustfsadmin"),
+			AccessKey: getEnv("RUSTFS_ACCESS_KEY", defaultStorageKey),
+			SecretKey: getEnv("RUSTFS_SECRET_KEY", defaultStorageKey),
 			Bucket:    getEnv("RUSTFS_BUCKET", "helpdesk-dev"),
 		},
 		Redis: Redis{
@@ -58,7 +87,7 @@ func Load() *Config {
 			Host:     getEnv("RABBITMQ_HOST", "localhost"),
 			Port:     getEnv("RABBITMQ_PORT", "5672"),
 			Username: getEnv("RABBITMQ_USERNAME", "guest"),
-			Password: getEnv("RABBITMQ_PASSWORD", "guest"),
+			Password: getEnv("RABBITMQ_PASSWORD", defaultRabbitMQPassword),
 		},
 		Email: Email{
 			Host:     getEnv("MAIL_HOST", ""),
@@ -113,6 +142,7 @@ func getBoolEnv(key string, fallback bool) bool {
 		if err == nil {
 			return parsed
 		}
+		slog.Warn("invalid env value, using default", "env", key, "default", fallback)
 	}
 
 	return fallback
@@ -126,6 +156,7 @@ func getDurationEnv(key string, fallback time.Duration) time.Duration {
 
 	d, err := time.ParseDuration(v)
 	if err != nil {
+		slog.Warn("invalid env value, using default", "env", key, "default", fallback.String())
 		return fallback
 	}
 

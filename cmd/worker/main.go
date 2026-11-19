@@ -30,6 +30,13 @@ func run() error {
 
 	cfg := config.Load()
 
+	if names := cfg.InsecureDefaults(); len(names) > 0 {
+		slog.Warn("insecure default config in use", "env", names)
+	}
+	if cfg.Email.Host == "" {
+		slog.Warn("mail not configured, emails will fail")
+	}
+
 	// RabbitMQ Initial
 	client, err := rabbitmq.Connect(cfg.RabbitMQ.RabbitMQConnString())
 	if err != nil {
