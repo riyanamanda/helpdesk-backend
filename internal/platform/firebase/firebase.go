@@ -14,6 +14,8 @@ import (
 
 const firebasePublicKeyURL = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
 
+var ErrInvalidToken = errors.New("invalid firebase token")
+
 type Claims struct {
 	Email         string `json:"email"`
 	EmailVerified bool   `json:"email_verified"`
@@ -23,13 +25,13 @@ type Claims struct {
 func VerifyIDToken(idToken, projectID string) (*Claims, error) {
 	resp, err := http.Get(firebasePublicKeyURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch firebase public keys: %w", err)
+		return nil, fmt.Errorf("fetch firebase public keys: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var certs map[string]string
 	if err := json.NewDecoder(resp.Body).Decode(&certs); err != nil {
-		return nil, fmt.Errorf("failed to decode firebase public keys: %w", err)
+		return nil, fmt.Errorf("decode firebase public keys: %w", err)
 	}
 
 	claims := &Claims{}
@@ -67,20 +69,20 @@ func VerifyIDToken(idToken, projectID string) (*Claims, error) {
 	}, jwt.WithAudience(projectID))
 
 	if err != nil {
-		return nil, fmt.Errorf("invalid firebase token: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidToken, err)
 	}
 
 	if !token.Valid {
-		return nil, errors.New("invalid firebase token")
+		return nil, ErrInvalidToken
 	}
 
 	expectedIss := "https://securetoken.google.com/" + projectID
 	if iss, _ := claims.GetIssuer(); iss != expectedIss {
-		return nil, fmt.Errorf("invalid token issuer: %s", iss)
+		return nil, fmt.Errorf("%w: unexpected issuer %s", ErrInvalidToken, iss)
 	}
 
 	if !claims.EmailVerified {
-		return nil, errors.New("google email is not verified")
+		return nil, fmt.Errorf("%w: email not verified", ErrInvalidToken)
 	}
 
 	return claims, nil
