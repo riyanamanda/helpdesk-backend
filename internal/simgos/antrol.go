@@ -32,7 +32,7 @@ func NewAntrolClient(domain, username, password string) *AntrolClient {
 func (c *AntrolClient) getToken(ctx context.Context) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/getToken", nil)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("antrol get token: %w", err)
 	}
 	req.Header.Set("x-username", c.username)
 	req.Header.Set("x-password", c.password)
@@ -40,17 +40,17 @@ func (c *AntrolClient) getToken(ctx context.Context) (string, error) {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("antrol get token: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var result antrolTokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", err
+		return "", fmt.Errorf("antrol get token: decode response: %w", err)
 	}
 
 	if result.Metadata.Code != 200 {
-		return "", fmt.Errorf("antrol: failed to get token (code %d)", result.Metadata.Code)
+		return "", fmt.Errorf("antrol get token: code %d", result.Metadata.Code)
 	}
 
 	return result.Response.Token, nil
@@ -68,12 +68,12 @@ func (c *AntrolClient) CheckIn(ctx context.Context, kodeBooking int64) error {
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return fmt.Errorf("antrol check in: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/checkInAntrian", bytes.NewReader(body))
 	if err != nil {
-		return err
+		return fmt.Errorf("antrol check in: %w", err)
 	}
 	req.Header.Set("X-token", token)
 	req.Header.Set("Content-Type", "application/json")
@@ -81,12 +81,12 @@ func (c *AntrolClient) CheckIn(ctx context.Context, kodeBooking int64) error {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("antrol check in: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("antrol: check-in failed (status %d)", resp.StatusCode)
+		return fmt.Errorf("antrol check in: status %d", resp.StatusCode)
 	}
 
 	return nil

@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -70,7 +71,7 @@ func (r *Repository) GetMonthlyTrend(ctx context.Context, year int) ([]MonthlyTr
 	`
 
 	if err := r.db.SelectContext(ctx, &rows, query, year); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dashboard: get monthly trend: %w", err)
 	}
 
 	return rows, nil
@@ -93,7 +94,7 @@ func (r *Repository) GetTicketsByCategory(ctx context.Context) ([]CategoryTicket
 	`
 
 	if err := r.db.SelectContext(ctx, &rows, query); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dashboard: get tickets by category: %w", err)
 	}
 
 	return rows, nil
@@ -134,7 +135,7 @@ func (r *Repository) GetAgentWorkload(ctx context.Context) ([]AgentWorkloadProje
 	`
 
 	if err := r.db.SelectContext(ctx, &rows, query); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dashboard: get agent workload: %w", err)
 	}
 
 	return rows, nil

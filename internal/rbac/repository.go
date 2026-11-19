@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -28,7 +29,7 @@ func (r *Repository) GetRoles(ctx context.Context) ([]Role, error) {
 	`
 
 	if err := r.db.SelectContext(ctx, &roles, query); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("rbac: get roles: %w", err)
 	}
 
 	return roles, nil
@@ -43,7 +44,7 @@ func (r *Repository) GetPermissions(ctx context.Context) ([]Permission, error) {
 	`
 
 	if err := r.db.SelectContext(ctx, &permissions, query); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("rbac: get permissions: %w", err)
 	}
 
 	return permissions, nil
@@ -62,7 +63,7 @@ func (r *Repository) GetPermissionsByRoleID(ctx context.Context, roleID int64) (
 	`
 
 	if err := r.db.SelectContext(ctx, &permissions, query, roleID); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("rbac: get permissions by role id: %w", err)
 	}
 
 	return permissions, nil
@@ -82,7 +83,7 @@ func (r *Repository) GetPermissionsByUserID(ctx context.Context, userID uuid.UUI
 	`
 
 	if err := r.db.SelectContext(ctx, &permissions, query, userID); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("rbac: get permissions by user id: %w", err)
 	}
 
 	return permissions, nil
@@ -99,7 +100,7 @@ func (r *Repository) GetUserRoleCode(ctx context.Context, userID uuid.UUID) (str
 	`
 
 	if err := r.db.GetContext(ctx, &code, query, userID); err != nil {
-		return "", err
+		return "", fmt.Errorf("rbac: get user role code: %w", err)
 	}
 
 	return code, nil
@@ -108,12 +109,12 @@ func (r *Repository) GetUserRoleCode(ctx context.Context, userID uuid.UUID) (str
 func (r *Repository) SetRolePermissions(ctx context.Context, roleID int64, permissionIDs []int64) error {
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("rbac: set role permissions: %w", err)
 	}
 	defer tx.Rollback()
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM role_permissions WHERE role_id = $1`, roleID); err != nil {
-		return err
+		return fmt.Errorf("rbac: set role permissions: %w", err)
 	}
 
 	if len(permissionIDs) > 0 {
@@ -124,7 +125,7 @@ func (r *Repository) SetRolePermissions(ctx context.Context, roleID int64, permi
 			if database.IsForeignKeyViolation(err) {
 				return ErrInvalidPermissionIDs
 			}
-			return err
+			return fmt.Errorf("rbac: set role permissions: %w", err)
 		}
 	}
 
@@ -137,7 +138,7 @@ func (r *Repository) GetUserIDsByRoleID(ctx context.Context, roleID int64) ([]uu
 	const query = `SELECT id FROM users WHERE role_id = $1`
 
 	if err := r.db.SelectContext(ctx, &ids, query, roleID); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("rbac: get user ids by role id: %w", err)
 	}
 
 	return ids, nil

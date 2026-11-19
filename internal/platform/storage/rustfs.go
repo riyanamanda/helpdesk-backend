@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -26,8 +27,11 @@ func (r *rustfsStorage) Upload(ctx context.Context, key string, file *File) erro
 		Body:        file.Content,
 		ContentType: aws.String(file.ContentType),
 	})
+	if err != nil {
+		return fmt.Errorf("upload object: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func (r *rustfsStorage) Delete(ctx context.Context, key string) error {
@@ -35,6 +39,9 @@ func (r *rustfsStorage) Delete(ctx context.Context, key string) error {
 		Bucket: aws.String(r.bucketName),
 		Key:    aws.String(key),
 	})
+	if err != nil {
+		return fmt.Errorf("delete object: %w", err)
+	}
 
-	return err
+	return nil
 }

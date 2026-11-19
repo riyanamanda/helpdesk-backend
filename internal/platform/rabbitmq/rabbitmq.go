@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"context"
+	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -20,7 +21,7 @@ func Connect(url string) (*Client, error) {
 	ch, err := conn.Channel()
 	if err != nil {
 		conn.Close()
-		return nil, err
+		return nil, fmt.Errorf("open channel: %w", err)
 	}
 
 	return &Client{
@@ -35,12 +36,22 @@ func (c *Client) Close() {
 }
 
 func (c *Client) Publish(ctx context.Context, exchange string, routingKey string, contentType string, body []byte) error {
-	return c.ch.PublishWithContext(ctx, exchange, routingKey, false, false, amqp.Publishing{
+	err := c.ch.PublishWithContext(ctx, exchange, routingKey, false, false, amqp.Publishing{
 		ContentType: contentType,
 		Body:        body,
 	})
+	if err != nil {
+		return fmt.Errorf("publish %s: %w", routingKey, err)
+	}
+
+	return nil
 }
 
 func (c *Client) Consume(queue string) (<-chan amqp.Delivery, error) {
-	return c.ch.Consume(queue, "", false, false, false, false, nil)
+	deliveries, err := c.ch.Consume(queue, "", false, false, false, false, nil)
+	if err != nil {
+		return nil, fmt.Errorf("consume %s: %w", queue, err)
+	}
+
+	return deliveries, nil
 }

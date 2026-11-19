@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -54,10 +55,10 @@ func (c *Client) GetPeserta(ctx context.Context, nik string) ([]byte, error) {
 		Get(endpoint)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("bpjs get peserta: %w", withoutURL(err))
 	}
 	if resp.IsStatusFailure() {
-		return nil, errors.New("HTTP status failure dari BPJS")
+		return nil, fmt.Errorf("bpjs get peserta: status %d", resp.StatusCode())
 	}
 
 	if result.MetaData.Code != "200" {
@@ -68,8 +69,15 @@ func (c *Client) GetPeserta(ctx context.Context, nik string) ([]byte, error) {
 
 	plainJson, err := DecryptResponse(decryptKey, result.Response)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("bpjs decrypt peserta: %w", err)
 	}
 
 	return []byte(plainJson), nil
+}
+
+func withoutURL(err error) error {
+	if urlErr, ok := errors.AsType[*url.Error](err); ok {
+		return fmt.Errorf("%s: %w", urlErr.Op, urlErr.Err)
+	}
+	return err
 }

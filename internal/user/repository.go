@@ -32,7 +32,7 @@ func (r *Repository) GetAll(ctx context.Context, params GetUserParams) ([]UserPr
 
 	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id %s`, where)
 	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("user: get all: %w", err)
 	}
 
 	offset := (params.Page - 1) * params.Limit
@@ -46,7 +46,7 @@ func (r *Repository) GetAll(ctx context.Context, params GetUserParams) ([]UserPr
 		LIMIT $%d OFFSET $%d
 	`, where, col, dir, len(args)-1, len(args))
 	if err := r.db.SelectContext(ctx, &users, query, args...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("user: get all: %w", err)
 	}
 
 	return users, total, nil
@@ -68,7 +68,7 @@ func (r *Repository) Create(ctx context.Context, tx database.Tx, user *User) (uu
 			return uuid.Nil, ErrUserAlreadyExists
 		}
 
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("user: create: %w", err)
 	}
 
 	return id, nil
@@ -84,7 +84,7 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*UserProjection
 			return nil, ErrUserNotFound
 		}
 
-		return nil, err
+		return nil, fmt.Errorf("user: get by id: %w", err)
 	}
 
 	return &user, nil
@@ -100,7 +100,7 @@ func (r *Repository) GetByEmail(ctx context.Context, email string) (*UserProject
 			return nil, ErrUserNotFound
 		}
 
-		return nil, err
+		return nil, fmt.Errorf("user: get by email: %w", err)
 	}
 
 	return &user, nil
@@ -124,7 +124,7 @@ func (r *Repository) UpdateByID(ctx context.Context, id uuid.UUID, user User) er
 		if database.IsUniqueViolation(err) {
 			return ErrUserAlreadyExists
 		}
-		return err
+		return fmt.Errorf("user: update by id: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrUserNotFound)
@@ -140,7 +140,7 @@ func (r *Repository) UpdatePassword(ctx context.Context, id uuid.UUID, password 
 
 	result, err := r.db.ExecContext(ctx, query, id, password)
 	if err != nil {
-		return err
+		return fmt.Errorf("user: update password: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrUserNotFound)
@@ -158,7 +158,7 @@ func (r *Repository) GetEmailsByRoles(ctx context.Context, roles ...rbac.RoleTyp
 	`
 
 	if err := r.db.SelectContext(ctx, &emails, query, roles); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("user: get emails by roles: %w", err)
 	}
 
 	return emails, nil
@@ -178,7 +178,7 @@ func (r *Repository) GetIDsByRoleAndDivision(ctx context.Context, role rbac.Role
 	`
 
 	if err := r.db.SelectContext(ctx, &ids, query, role, divisionName); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("user: get ids by role and division: %w", err)
 	}
 	return ids, nil
 }
@@ -197,7 +197,7 @@ func (r *Repository) AssignableUser(ctx context.Context) ([]AssignableUserProjec
 	`
 
 	if err := r.db.SelectContext(ctx, &users, query); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("user: assignable user: %w", err)
 	}
 
 	return users, nil

@@ -30,7 +30,7 @@ func (r *Repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Di
 
 	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM divisions %s`, where)
 	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("division: get all: %w", err)
 	}
 
 	offset := (params.Page - 1) * params.Limit
@@ -45,7 +45,7 @@ func (r *Repository) GetAll(ctx context.Context, params GetDivisionParams) ([]Di
 	`, where, col, dir, len(args)-1, len(args))
 
 	if err := r.db.SelectContext(ctx, &divisions, query, args...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("division: get all: %w", err)
 	}
 
 	return divisions, total, nil
@@ -64,7 +64,7 @@ func (r *Repository) GetOptions(ctx context.Context) ([]DivisionOptionProjection
 	`
 
 	if err := r.db.SelectContext(ctx, &divisions, query); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("division: get options: %w", err)
 	}
 
 	return divisions, nil
@@ -81,7 +81,7 @@ func (r *Repository) Create(ctx context.Context, division *Division) error {
 		if database.IsUniqueViolation(err) {
 			return ErrDivisionAlreadyExists
 		}
-		return err
+		return fmt.Errorf("division: create: %w", err)
 	}
 
 	return nil
@@ -96,7 +96,7 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*Division, error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrDivisionNotFound
 		}
-		return nil, err
+		return nil, fmt.Errorf("division: get by id: %w", err)
 	}
 
 	return &division, nil
@@ -116,7 +116,7 @@ func (r *Repository) Update(ctx context.Context, id int64, division *Division) e
 		if database.IsUniqueViolation(err) {
 			return ErrDivisionAlreadyExists
 		}
-		return err
+		return fmt.Errorf("division: update: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrDivisionNotFound)
@@ -130,7 +130,7 @@ func (r *Repository) Delete(ctx context.Context, id int64) error {
 
 	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return err
+		return fmt.Errorf("division: delete: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrDivisionNotFound)

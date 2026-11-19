@@ -33,7 +33,7 @@ func (r *Repository) Create(ctx context.Context, tx database.Tx, ticket Ticket) 
 	err := tx.QueryRowxContext(ctx, query, ticket.Title, ticket.Description, ticket.CategoryID, ticket.DivisionID, ticket.CreatedBy).
 		Scan(&id)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("ticket: create: %w", err)
 	}
 
 	return id, nil
@@ -47,7 +47,7 @@ func (r *Repository) CreateAttachment(ctx context.Context, tx database.Tx, attac
 
 	_, err := tx.ExecContext(ctx, query, attachment.TicketID, attachment.FileKey, attachment.AttachmentType, attachment.UploadedBy)
 
-	return err
+	return fmt.Errorf("ticket: create attachment: %w", err)
 }
 
 func (r *Repository) UpdateResolution(ctx context.Context, tx database.Tx, ticketID int64, resolveBy uuid.UUID, resolution string) error {
@@ -64,7 +64,7 @@ func (r *Repository) UpdateResolution(ctx context.Context, tx database.Tx, ticke
 
 	result, err := tx.ExecContext(ctx, query, ticketID, resolveBy, resolution)
 	if err != nil {
-		return err
+		return fmt.Errorf("ticket: update resolution: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrTicketNotFound)
@@ -80,7 +80,7 @@ func (r *Repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 
 	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM tickets t %s`, where)
 	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("ticket: get all: %w", err)
 	}
 
 	offset := (params.Page - 1) * params.Limit
@@ -94,7 +94,7 @@ func (r *Repository) GetAll(ctx context.Context, params GetTicketParams) ([]Tick
 		LIMIT $%d OFFSET $%d
 	`, where, col, dir, len(args)-1, len(args))
 	if err := r.db.SelectContext(ctx, &tickets, query, args...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("ticket: get all: %w", err)
 	}
 
 	return tickets, total, nil
@@ -109,7 +109,7 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*TicketProjection, 
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrTicketNotFound
 		}
-		return nil, err
+		return nil, fmt.Errorf("ticket: get by id: %w", err)
 	}
 
 	return &ticket, nil
@@ -135,7 +135,7 @@ func (r *Repository) GetAttachmentsByTicketID(ctx context.Context, ticketID int6
 	`
 
 	if err := r.db.SelectContext(ctx, &attachments, query, ticketID); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ticket: get attachments by ticket id: %w", err)
 	}
 
 	return attachments, nil
@@ -158,7 +158,7 @@ func (r *Repository) Assign(ctx context.Context, ticketID int64, assigneeID uuid
 		if database.IsForeignKeyViolation(err) {
 			return user.ErrUserNotFound
 		}
-		return err
+		return fmt.Errorf("ticket: assign: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrTicketNotFound)
@@ -174,7 +174,7 @@ func (r *Repository) UpdatePriority(ctx context.Context, ticketID int64, priorit
 
 	result, err := r.db.ExecContext(ctx, query, ticketID, priority)
 	if err != nil {
-		return err
+		return fmt.Errorf("ticket: update priority: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrTicketNotFound)
@@ -183,14 +183,14 @@ func (r *Repository) UpdatePriority(ctx context.Context, ticketID int64, priorit
 func (r *Repository) DeleteAttachmentsByTicketID(ctx context.Context, tx database.Tx, ticketID int64) error {
 	const query = `DELETE FROM ticket_attachments WHERE ticket_id = $1`
 	_, err := tx.ExecContext(ctx, query, ticketID)
-	return err
+	return fmt.Errorf("ticket: delete attachments by ticket id: %w", err)
 }
 
 func (r *Repository) Delete(ctx context.Context, tx database.Tx, ticketID int64) error {
 	const query = `DELETE FROM tickets WHERE id = $1`
 	result, err := tx.ExecContext(ctx, query, ticketID)
 	if err != nil {
-		return err
+		return fmt.Errorf("ticket: delete: %w", err)
 	}
 	return database.CheckRowsAffected(result, ErrTicketNotFound)
 }
@@ -212,7 +212,7 @@ func (r *Repository) Update(ctx context.Context, ticketID int64, ticket Ticket) 
 		ticketID, ticket.Title, ticket.Description, ticket.CategoryID, ticket.DivisionID, ticket.CreatedBy,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("ticket: update: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrTicketNotFound)
@@ -231,7 +231,7 @@ func (r *Repository) CloseTicket(ctx context.Context, ticketID int64, userID uui
 
 	result, err := r.db.ExecContext(ctx, query, ticketID, userID)
 	if err != nil {
-		return err
+		return fmt.Errorf("ticket: close ticket: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrTicketNotFound)

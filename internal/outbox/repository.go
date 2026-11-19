@@ -2,6 +2,7 @@ package outbox
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -33,7 +34,7 @@ func (r *repository) Create(ctx context.Context, tx database.Tx, event OutboxEve
 
 	_, err := tx.ExecContext(ctx, query, event.EventType, event.AggregateID, event.Payload)
 	if err != nil {
-		return err
+		return fmt.Errorf("outbox: create: %w", err)
 	}
 
 	return nil
@@ -57,7 +58,7 @@ func (r *repository) GetUnpublished(ctx context.Context, limit int) ([]OutboxEve
 	`
 
 	if err := r.db.SelectContext(ctx, &events, query, limit); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("outbox: get unpublished: %w", err)
 	}
 
 	return events, nil
@@ -72,7 +73,7 @@ func (r *repository) MarkPublished(ctx context.Context, id uuid.UUID) error {
 
 	_, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return err
+		return fmt.Errorf("outbox: mark published: %w", err)
 	}
 
 	return nil

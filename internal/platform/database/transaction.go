@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -31,7 +32,7 @@ func NewTxManager(db *sqlx.DB) *TxManager {
 func (m *TxManager) Begin(ctx context.Context) (Tx, error) {
 	tx, err := m.db.BeginTxx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("begin transaction: %w", err)
 	}
 
 	return &transaction{
@@ -48,7 +49,10 @@ func (t *transaction) ExecContext(ctx context.Context, query string, args ...any
 }
 
 func (t *transaction) Commit() error {
-	return t.tx.Commit()
+	if err := t.tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+	return nil
 }
 
 func (t *transaction) Rollback() error {

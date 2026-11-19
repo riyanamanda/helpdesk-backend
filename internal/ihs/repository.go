@@ -29,7 +29,7 @@ func (r *Repository) GetPatients(ctx context.Context, params GetPatientParams) (
 
 	queryTotal := fmt.Sprintf("SELECT COUNT(*) %s %s", patientFromBase, where)
 	if err := r.db.GetContext(ctx, &total, queryTotal, whereArgs...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("ihs: get patients: %w", err)
 	}
 
 	selectArgs := make([]any, len(whereArgs))
@@ -42,7 +42,7 @@ func (r *Repository) GetPatients(ctx context.Context, params GetPatientParams) (
 	query := fmt.Sprintf("%s %s ORDER BY %s LIMIT ? OFFSET ?", patientSelectBase, where, orderBy)
 
 	if err := r.db.SelectContext(ctx, &patients, query, selectArgs...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("ihs: get patients: %w", err)
 	}
 
 	return patients, total, nil
@@ -93,7 +93,7 @@ func (r *Repository) GetPatientDetail(ctx context.Context, NORM string) (*Patien
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrPatientNotFound
 		}
-		return nil, err
+		return nil, fmt.Errorf("ihs: get patient detail: %w", err)
 	}
 
 	return &patient, nil
@@ -110,12 +110,12 @@ func (r *Repository) UpdatePatientMethod(ctx context.Context, NORM string) error
 
 	result, err := r.db.ExecContext(ctx, query, NORM)
 	if err != nil {
-		return err
+		return fmt.Errorf("ihs: update patient method: %w", err)
 	}
 
 	affected, err := result.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("ihs: update patient method: %w", err)
 	}
 
 	if affected == 0 {
@@ -130,7 +130,7 @@ func (r *Repository) classifyIneligible(ctx context.Context, NORM string) error 
 
 	var exists bool
 	if err := r.db.GetContext(ctx, &exists, query, NORM); err != nil {
-		return err
+		return fmt.Errorf("ihs: classify ineligible: %w", err)
 	}
 
 	if !exists {

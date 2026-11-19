@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -54,7 +55,7 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*user.UserProje
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrProfileNotFound
 		}
-		return nil, err
+		return nil, fmt.Errorf("profile: get by id: %w", err)
 	}
 
 	return &user, nil
@@ -73,7 +74,7 @@ func (r *Repository) UpdateProfile(ctx context.Context, id uuid.UUID, name strin
 
 	result, err := r.db.ExecContext(ctx, query, id, name, email, phone, gender)
 	if err != nil {
-		return err
+		return fmt.Errorf("profile: update profile: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrProfileNotFound)
@@ -89,7 +90,7 @@ func (r *Repository) UpdateAvatar(ctx context.Context, id uuid.UUID, avatarKey s
 
 	result, err := r.db.ExecContext(ctx, query, id, avatarKey)
 	if err != nil {
-		return err
+		return fmt.Errorf("profile: update avatar: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrProfileNotFound)
@@ -108,7 +109,7 @@ func (r *Repository) SetGoogleID(ctx context.Context, id uuid.UUID, googleID str
 		if database.IsUniqueViolation(err) {
 			return ErrGoogleIDAlreadyLinked
 		}
-		return err
+		return fmt.Errorf("profile: set google id: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrProfileNotFound)
@@ -124,7 +125,7 @@ func (r *Repository) UnsetGoogleID(ctx context.Context, id uuid.UUID) error {
 
 	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return err
+		return fmt.Errorf("profile: unset google id: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrProfileNotFound)
@@ -140,7 +141,7 @@ func (r *Repository) UpdatePassword(ctx context.Context, userID uuid.UUID, passw
 
 	result, err := r.db.ExecContext(ctx, query, userID, password)
 	if err != nil {
-		return err
+		return fmt.Errorf("profile: update password: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrProfileNotFound)

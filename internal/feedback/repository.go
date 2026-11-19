@@ -29,7 +29,7 @@ func (r *Repository) GetAll(ctx context.Context, params GetFeedbackParams) ([]Fe
 
 	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM feedbacks f %s`, where)
 	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("feedback: get all: %w", err)
 	}
 
 	offset := (params.Page - 1) * params.Limit
@@ -44,7 +44,7 @@ func (r *Repository) GetAll(ctx context.Context, params GetFeedbackParams) ([]Fe
 	`, where, col, dir, len(args)-1, len(args))
 
 	if err := r.db.SelectContext(ctx, &feedbacks, query, args...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("feedback: get all: %w", err)
 	}
 
 	return feedbacks, total, nil
@@ -59,7 +59,7 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*FeedbackProjection
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrFeedbackNotFound
 		}
-		return nil, err
+		return nil, fmt.Errorf("feedback: get by id: %w", err)
 	}
 
 	return &feedback, nil
@@ -72,7 +72,7 @@ func (r *Repository) Create(ctx context.Context, feedback Feedback) error {
 	`
 
 	_, err := r.db.ExecContext(ctx, query, feedback.Title, feedback.Description, feedback.Type, feedback.CreatedBy)
-	return err
+	return fmt.Errorf("feedback: create: %w", err)
 }
 
 func (r *Repository) UpdateStatus(ctx context.Context, id int64, reviewerID uuid.UUID, status FeedbackStatus) error {
@@ -87,7 +87,7 @@ func (r *Repository) UpdateStatus(ctx context.Context, id int64, reviewerID uuid
 
 	result, err := r.db.ExecContext(ctx, query, id, reviewerID, status)
 	if err != nil {
-		return err
+		return fmt.Errorf("feedback: update status: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrFeedbackNotFound)
@@ -101,7 +101,7 @@ func (r *Repository) Delete(ctx context.Context, id int64) error {
 
 	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return err
+		return fmt.Errorf("feedback: delete: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrFeedbackNotFound)

@@ -25,7 +25,7 @@ func (r *Repository) GetAntrian(ctx context.Context, params GetAntrianParams) ([
 
 	queryTotal := fmt.Sprintf("SELECT COUNT(*) FROM regonline.reservasi r LEFT JOIN regonline.dokter d ON d.KODE = r.DOKTER %s", where)
 	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("antrian: get antrian: %w", err)
 	}
 
 	offset := (params.Page - 1) * params.Limit
@@ -38,7 +38,7 @@ func (r *Repository) GetAntrian(ctx context.Context, params GetAntrianParams) ([
 		`, where)
 
 	if err := r.db.SelectContext(ctx, &antrian, query, args...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("antrian: get antrian: %w", err)
 	}
 
 	return antrian, total, nil

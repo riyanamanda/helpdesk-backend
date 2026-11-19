@@ -31,7 +31,7 @@ func (r *Repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Ca
 
 	queryTotal := fmt.Sprintf(`SELECT COUNT(*) FROM categories %s`, where)
 	if err := r.db.GetContext(ctx, &total, queryTotal, args...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("category: get all: %w", err)
 	}
 
 	offset := (params.Page - 1) * params.Limit
@@ -46,7 +46,7 @@ func (r *Repository) GetAll(ctx context.Context, params GetCategoryParams) ([]Ca
 	`, where, col, dir, len(args)-1, len(args))
 
 	if err := r.db.SelectContext(ctx, &categories, query, args...); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("category: get all: %w", err)
 	}
 
 	return categories, total, nil
@@ -65,7 +65,7 @@ func (r *Repository) GetOptions(ctx context.Context) ([]CategoryOptionProjection
 	`
 
 	if err := r.db.SelectContext(ctx, &categories, query); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("category: get options: %w", err)
 	}
 
 	return categories, nil
@@ -82,7 +82,7 @@ func (r *Repository) Create(ctx context.Context, category *Category) error {
 		if database.IsUniqueViolation(err) {
 			return ErrCategoryAlreadyExists
 		}
-		return err
+		return fmt.Errorf("category: create: %w", err)
 	}
 
 	return nil
@@ -97,7 +97,7 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*Category, error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrCategoryNotFound
 		}
-		return nil, err
+		return nil, fmt.Errorf("category: get by id: %w", err)
 	}
 
 	return &category, nil
@@ -117,7 +117,7 @@ func (r *Repository) Update(ctx context.Context, id int64, category *Category) e
 		if database.IsUniqueViolation(err) {
 			return ErrCategoryAlreadyExists
 		}
-		return err
+		return fmt.Errorf("category: update: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrCategoryNotFound)
@@ -131,7 +131,7 @@ func (r *Repository) Delete(ctx context.Context, id int64) error {
 
 	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return err
+		return fmt.Errorf("category: delete: %w", err)
 	}
 
 	return database.CheckRowsAffected(result, ErrCategoryNotFound)
