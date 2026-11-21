@@ -7,6 +7,7 @@ import (
 	"github.com/riyanamanda/helpdesk-backend/internal/event"
 	"github.com/riyanamanda/helpdesk-backend/internal/outbox"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
+	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 )
@@ -93,10 +94,23 @@ func (s *Service) CreateFeedback(ctx context.Context, req *CreateFeedbackRequest
 	return tx.Commit()
 }
 
+func canAccess(ctx context.Context, feedback *FeedbackProjection) bool {
+	authUser, ok := ctxkey.GetAuthUserFromContext(ctx)
+	if !ok || authUser == nil {
+		return false
+	}
+
+	return feedback.CreatedByID == authUser.ID || authUser.Permissions.Has(rbac.PermissionFeedbackUpdate)
+}
+
 func (s *Service) GetFeedback(ctx context.Context, id int64) (*FeedbackResponse, error) {
 	feedback, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	if !canAccess(ctx, feedback) {
+		return nil, ErrFeedbackNotFound
 	}
 
 	result := toFeedbackResponse(*feedback)
@@ -147,6 +161,10 @@ func (s *Service) DeleteFeedback(ctx context.Context, id int64) error {
 	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return err
+	}
+
+	if !canAccess(ctx, existing) {
+		return ErrFeedbackNotFound
 	}
 
 	if FeedbackStatus(existing.Status) != FeedbackStatusOpen {
