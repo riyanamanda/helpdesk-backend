@@ -314,16 +314,12 @@ func (s *Service) DeleteTicket(ctx context.Context, ticketID int64) error {
 }
 
 func (s *Service) addOutboxEvent(ctx context.Context, tx database.Tx, eventType string, ticketID int64, payload any) error {
-	data, err := json.Marshal(payload)
+	ev, err := outbox.NewEvent(eventType, ticketID, payload)
 	if err != nil {
-		return fmt.Errorf("encode %s event: %w", eventType, err)
+		return err
 	}
 
-	return s.outboxRepo.Create(ctx, tx, outbox.OutboxEvent{
-		EventType:   eventType,
-		AggregateID: strconv.FormatInt(ticketID, 10),
-		Payload:     data,
-	})
+	return s.outboxRepo.Create(ctx, tx, ev)
 }
 
 func (s *Service) AssignTicket(ctx context.Context, ticketID int64, req *TicketAssignRequest) error {

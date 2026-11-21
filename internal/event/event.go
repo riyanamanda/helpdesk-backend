@@ -49,3 +49,19 @@ type PasswordResetRequestedEvent struct {
 	ResetURL  string `json:"reset_url"`
 	ExpiresIn string `json:"expires_in,omitempty"`
 }
+
+type FeedbackCreatedEvent struct {
+	FeedbackID    int64     `json:"feedback_id"`
+	Title         string    `json:"title"`
+	Type          string    `json:"type"`
+	Description   string    `json:"description"`
+	SubmittedByID uuid.UUID `json:"submitted_by_id"`
+}
+
+type FeedbackStatusChangedEvent struct {
+	FeedbackID   int64     `json:"feedback_id"`
+	Title        string    `json:"title"`
+	Status       string    `json:"status"`
+	SubmitterID  uuid.UUID `json:"submitter_id"`
+	ReviewedByID uuid.UUID `json:"reviewed_by_id"`
+}

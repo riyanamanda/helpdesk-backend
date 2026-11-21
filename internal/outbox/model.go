@@ -2,10 +2,25 @@ package outbox
 
 import (
 	"encoding/json"
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+func NewEvent(eventType string, aggregateID int64, payload any) (OutboxEvent, error) {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return OutboxEvent{}, fmt.Errorf("encode %s event: %w", eventType, err)
+	}
+
+	return OutboxEvent{
+		EventType:   eventType,
+		AggregateID: strconv.FormatInt(aggregateID, 10),
+		Payload:     data,
+	}, nil
+}
 
 type OutboxEvent struct {
 	ID          uuid.UUID       `db:"id"`

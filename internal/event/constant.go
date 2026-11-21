@@ -7,4 +7,6 @@ const (
 	TicketResolved         = "ticket.resolved"
 	PasswordResetRequested = "password.reset.requested"
 	PasswordChanged        = "password.changed"
+	FeedbackCreated        = "feedback.created"
+	FeedbackStatusChanged  = "feedback.status.changed"
 )

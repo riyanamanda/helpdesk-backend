@@ -21,6 +21,10 @@ func (c *Client) SetupEmailTopology() error {
 		return err
 	}
 
+	if err := c.ch.ExchangeDeclare(ExchangeFeedbackDLX, "direct", true, false, false, false, nil); err != nil {
+		return err
+	}
+
 	// welcome queue
 	if _, err := c.ch.QueueDeclare(QueueWelcome, true, false, false, false, amqp.Table{
 		"x-queue-type":              "quorum",
@@ -42,6 +46,19 @@ func (c *Client) SetupEmailTopology() error {
 	if _, err := c.ch.QueueDeclare(QueueTicketActivity, true, false, false, false, amqp.Table{
 		"x-queue-type":           "quorum",
 		"x-dead-letter-exchange": ExchangeTicketDLX,
+	}); err != nil {
+		return err
+	}
+
+	if _, err := c.ch.QueueDeclare(QueueFeedback, true, false, false, false, amqp.Table{
+		"x-queue-type":           "quorum",
+		"x-dead-letter-exchange": ExchangeFeedbackDLX,
+	}); err != nil {
+		return err
+	}
+
+	if _, err := c.ch.QueueDeclare(QueueFeedbackDLQ, true, false, false, false, amqp.Table{
+		"x-queue-type": "quorum",
 	}); err != nil {
 		return err
 	}
@@ -88,6 +105,12 @@ func (c *Client) SetupEmailTopology() error {
 			return err
 		}
 	}
+
+	for _, routingKey := range []string{event.FeedbackCreated, event.FeedbackStatusChanged} {
+		if err := c.ch.QueueBind(QueueFeedback, routingKey, ExchangeEvent, false, nil); err != nil {
+			return err
+		}
+	}
 	// end main queue
 
 	// DLQ queue
@@ -97,6 +120,12 @@ func (c *Client) SetupEmailTopology() error {
 
 	for _, routingKey := range []string{event.TicketCreated, event.TicketAssigned, event.TicketResolved} {
 		if err := c.ch.QueueBind(QueueTicketDLQ, routingKey, ExchangeTicketDLX, false, nil); err != nil {
+			return err
+		}
+	}
+
+	for _, routingKey := range []string{event.FeedbackCreated, event.FeedbackStatusChanged} {
+		if err := c.ch.QueueBind(QueueFeedbackDLQ, routingKey, ExchangeFeedbackDLX, false, nil); err != nil {
 			return err
 		}
 	}

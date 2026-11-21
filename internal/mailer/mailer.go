@@ -63,6 +63,23 @@ type PasswordChangedEmailData struct {
 	LoginURL  string
 }
 
+type FeedbackCreatedEmailData struct {
+	FeedbackID  int64
+	Title       string
+	Type        string
+	Description string
+	SubmittedBy string
+	FeedbackURL string
+}
+
+type FeedbackDeliveredEmailData struct {
+	FeedbackID    int64
+	Title         string
+	SubmitterName string
+	ReviewedBy    string
+	FeedbackURL   string
+}
+
 const defaultResetExpiry = "15 menit"
 
 //go:embed templates/user/welcome.html
@@ -82,6 +99,12 @@ var ticketAssignedTemplate string
 
 //go:embed templates/ticket/resolved.html
 var ticketResolvedTemplate string
+
+//go:embed templates/feedback/created.html
+var feedbackCreatedTemplate string
+
+//go:embed templates/feedback/delivered.html
+var feedbackDeliveredTemplate string
 
 func NewMailer(config config.Email) *Mailer {
 	return &Mailer{
@@ -255,6 +278,16 @@ func (m *Mailer) SendTicketAssignedEmail(ctx context.Context, email string, data
 func (m *Mailer) SendTicketResolvedEmail(ctx context.Context, email string, data TicketResolvedEmailData) error {
 	subject := "[IT Helpdesk] Tiket #" + strconv.FormatInt(data.TicketID, 10) + " telah diselesaikan"
 	return m.sendTemplate(ctx, email, subject, "resolved.html", ticketResolvedTemplate, data)
+}
+
+func (m *Mailer) SendFeedbackCreatedEmail(ctx context.Context, email string, data FeedbackCreatedEmailData) error {
+	subject := "[IT Helpdesk] Feedback baru #" + strconv.FormatInt(data.FeedbackID, 10)
+	return m.sendTemplate(ctx, email, subject, "feedback-created.html", feedbackCreatedTemplate, data)
+}
+
+func (m *Mailer) SendFeedbackDeliveredEmail(ctx context.Context, email string, data FeedbackDeliveredEmailData) error {
+	subject := "[IT Helpdesk] Feedback #" + strconv.FormatInt(data.FeedbackID, 10) + " telah dirilis"
+	return m.sendTemplate(ctx, email, subject, "feedback-delivered.html", feedbackDeliveredTemplate, data)
 }
 
 func (m *Mailer) SendPasswordChangedEmail(ctx context.Context, email string, data PasswordChangedEmailData) error {

@@ -70,6 +70,7 @@ func run() error {
 		rabbitmq.QueueWelcome,
 		rabbitmq.QueueTicket,
 		rabbitmq.QueueTicketActivity,
+		rabbitmq.QueueFeedback,
 		rabbitmq.QueuePasswordReset,
 	}
 

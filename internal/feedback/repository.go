@@ -65,20 +65,22 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*FeedbackProjection
 	return &feedback, nil
 }
 
-func (r *Repository) Create(ctx context.Context, feedback Feedback) error {
+func (r *Repository) Create(ctx context.Context, tx database.Tx, feedback Feedback) (int64, error) {
 	const query = `
 		INSERT INTO feedbacks (title, description, type, created_by)
 		VALUES ($1, $2, $3, $4)
+		RETURNING id
 	`
 
-	if _, err := r.db.ExecContext(ctx, query, feedback.Title, feedback.Description, feedback.Type, feedback.CreatedBy); err != nil {
-		return fmt.Errorf("feedback: create: %w", err)
+	var id int64
+	if err := tx.QueryRowxContext(ctx, query, feedback.Title, feedback.Description, feedback.Type, feedback.CreatedBy).Scan(&id); err != nil {
+		return 0, fmt.Errorf("feedback: create: %w", err)
 	}
 
-	return nil
+	return id, nil
 }
 
-func (r *Repository) UpdateStatus(ctx context.Context, id int64, reviewerID uuid.UUID, status FeedbackStatus) error {
+func (r *Repository) UpdateStatus(ctx context.Context, tx database.Tx, id int64, reviewerID uuid.UUID, status FeedbackStatus) error {
 	const query = `
 		UPDATE feedbacks
 		SET status      = $3,
@@ -88,7 +90,7 @@ func (r *Repository) UpdateStatus(ctx context.Context, id int64, reviewerID uuid
 		WHERE id = $1
 	`
 
-	result, err := r.db.ExecContext(ctx, query, id, reviewerID, status)
+	result, err := tx.ExecContext(ctx, query, id, reviewerID, status)
 	if err != nil {
 		return fmt.Errorf("feedback: update status: %w", err)
 	}

@@ -156,7 +156,7 @@ func run() error {
 	divisionService := division.NewService(divisionRepo, cacheStore)
 	userService := user.NewService(userRepo, outboxRepo, txManager, cfg.Storage, cfg.App, cacheStore, presenceTracker, rabbitmqClient)
 	ticketService := ticket.NewService(ticketRepo, outboxRepo, txManager, storageService, cfg.Storage, cacheStore, categoryService, divisionService, userService)
-	feedbackService := feedback.NewService(feedbackRepo)
+	feedbackService := feedback.NewService(feedbackRepo, outboxRepo, txManager)
 	profileService := profile.NewService(profileRepo, storageService, cfg.Storage, cfg.Auth, cacheStore, rabbitmqClient)
 	rbacService := rbac.NewService(rbacRepo, cacheStore)
 	permissionService := rbac.NewPermissionService(rbacRepo, cacheStore)

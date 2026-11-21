@@ -4,6 +4,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/riyanamanda/helpdesk-backend/internal/event"
+	"github.com/riyanamanda/helpdesk-backend/internal/outbox"
+	"github.com/riyanamanda/helpdesk-backend/internal/platform/database"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/apperr"
 	"github.com/riyanamanda/helpdesk-backend/internal/shared/ctxkey"
 )
@@ -11,17 +14,32 @@ import (
 type repository interface {
 	GetAll(ctx context.Context, params GetFeedbackParams) ([]FeedbackProjection, int64, error)
 	GetByID(ctx context.Context, id int64) (*FeedbackProjection, error)
-	Create(ctx context.Context, feedback Feedback) error
-	UpdateStatus(ctx context.Context, id int64, reviewerID uuid.UUID, status FeedbackStatus) error
+	Create(ctx context.Context, tx database.Tx, feedback Feedback) (int64, error)
+	UpdateStatus(ctx context.Context, tx database.Tx, id int64, reviewerID uuid.UUID, status FeedbackStatus) error
 	Delete(ctx context.Context, id int64) error
 }
 
 type Service struct {
-	repo repository
+	repo       repository
+	outboxRepo outbox.Repository
+	txManager  *database.TxManager
 }
 
-func NewService(repo repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo repository, outboxRepo outbox.Repository, txManager *database.TxManager) *Service {
+	return &Service{
+		repo:       repo,
+		outboxRepo: outboxRepo,
+		txManager:  txManager,
+	}
+}
+
+func (s *Service) addOutboxEvent(ctx context.Context, tx database.Tx, eventType string, feedbackID int64, payload any) error {
+	ev, err := outbox.NewEvent(eventType, feedbackID, payload)
+	if err != nil {
+		return err
+	}
+
+	return s.outboxRepo.Create(ctx, tx, ev)
 }
 
 func (s *Service) ListFeedbacks(ctx context.Context, params *GetFeedbackParams) ([]FeedbackResponse, int64, error) {
@@ -51,7 +69,28 @@ func (s *Service) CreateFeedback(ctx context.Context, req *CreateFeedbackRequest
 		CreatedBy:   createdBy,
 	}
 
-	return s.repo.Create(ctx, feedback)
+	tx, err := s.txManager.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	id, err := s.repo.Create(ctx, tx, feedback)
+	if err != nil {
+		return err
+	}
+
+	if err := s.addOutboxEvent(ctx, tx, event.FeedbackCreated, id, event.FeedbackCreatedEvent{
+		FeedbackID:    id,
+		Title:         feedback.Title,
+		Type:          string(feedback.Type),
+		Description:   feedback.Description,
+		SubmittedByID: createdBy,
+	}); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (s *Service) GetFeedback(ctx context.Context, id int64) (*FeedbackResponse, error) {
@@ -79,11 +118,29 @@ func (s *Service) UpdateFeedbackStatus(ctx context.Context, id int64, req Update
 		return apperr.BadRequest("status is delivered or rejected")
 	}
 
-	if err := s.repo.UpdateStatus(ctx, id, reviewerID, req.Status); err != nil {
+	tx, err := s.txManager.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if err := s.repo.UpdateStatus(ctx, tx, id, reviewerID, req.Status); err != nil {
 		return err
 	}
 
-	return nil
+	if existing.CreatedByID != reviewerID {
+		if err := s.addOutboxEvent(ctx, tx, event.FeedbackStatusChanged, id, event.FeedbackStatusChangedEvent{
+			FeedbackID:   id,
+			Title:        existing.Title,
+			Status:       string(req.Status),
+			SubmitterID:  existing.CreatedByID,
+			ReviewedByID: reviewerID,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 func (s *Service) DeleteFeedback(ctx context.Context, id int64) error {
