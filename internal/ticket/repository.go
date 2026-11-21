@@ -45,9 +45,11 @@ func (r *Repository) CreateAttachment(ctx context.Context, tx database.Tx, attac
 		VALUES ($1, $2, $3, $4)
 	`
 
-	_, err := tx.ExecContext(ctx, query, attachment.TicketID, attachment.FileKey, attachment.AttachmentType, attachment.UploadedBy)
+	if _, err := tx.ExecContext(ctx, query, attachment.TicketID, attachment.FileKey, attachment.AttachmentType, attachment.UploadedBy); err != nil {
+		return fmt.Errorf("ticket: create attachment: %w", err)
+	}
 
-	return fmt.Errorf("ticket: create attachment: %w", err)
+	return nil
 }
 
 func (r *Repository) UpdateResolution(ctx context.Context, tx database.Tx, ticketID int64, resolveBy uuid.UUID, resolution string) error {
@@ -182,8 +184,11 @@ func (r *Repository) UpdatePriority(ctx context.Context, ticketID int64, priorit
 
 func (r *Repository) DeleteAttachmentsByTicketID(ctx context.Context, tx database.Tx, ticketID int64) error {
 	const query = `DELETE FROM ticket_attachments WHERE ticket_id = $1`
-	_, err := tx.ExecContext(ctx, query, ticketID)
-	return fmt.Errorf("ticket: delete attachments by ticket id: %w", err)
+	if _, err := tx.ExecContext(ctx, query, ticketID); err != nil {
+		return fmt.Errorf("ticket: delete attachments by ticket id: %w", err)
+	}
+
+	return nil
 }
 
 func (r *Repository) Delete(ctx context.Context, tx database.Tx, ticketID int64) error {

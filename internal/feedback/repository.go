@@ -71,8 +71,11 @@ func (r *Repository) Create(ctx context.Context, feedback Feedback) error {
 		VALUES ($1, $2, $3, $4)
 	`
 
-	_, err := r.db.ExecContext(ctx, query, feedback.Title, feedback.Description, feedback.Type, feedback.CreatedBy)
-	return fmt.Errorf("feedback: create: %w", err)
+	if _, err := r.db.ExecContext(ctx, query, feedback.Title, feedback.Description, feedback.Type, feedback.CreatedBy); err != nil {
+		return fmt.Errorf("feedback: create: %w", err)
+	}
+
+	return nil
 }
 
 func (r *Repository) UpdateStatus(ctx context.Context, id int64, reviewerID uuid.UUID, status FeedbackStatus) error {
