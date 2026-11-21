@@ -2,18 +2,14 @@ package worker
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/riyanamanda/helpdesk-backend/internal/event"
 	"github.com/riyanamanda/helpdesk-backend/internal/mailer"
 	"github.com/riyanamanda/helpdesk-backend/internal/platform/rabbitmq"
-	"github.com/riyanamanda/helpdesk-backend/internal/rbac"
 	"github.com/riyanamanda/helpdesk-backend/internal/user"
 )
 
@@ -95,60 +91,6 @@ func (c *Consumer) Run(ctx context.Context) error {
 	}
 }
 
-func (c *Consumer) handleUserCreated(ctx context.Context, body []byte) error {
-	var createdEvent event.UserCreatedEvent
-
-	if err := json.Unmarshal(body, &createdEvent); err != nil {
-		return err
-	}
-
-	return c.mailer.SendWelcomeEmail(ctx, createdEvent.Name, createdEvent.Email, createdEvent.SetPasswordURL, createdEvent.ExpiresIn)
-}
-
-func (c *Consumer) handleTicketCreated(ctx context.Context, body []byte) error {
-	var createdEvent event.TicketCreatedEvent
-
-	if err := json.Unmarshal(body, &createdEvent); err != nil {
-		return err
-	}
-
-	emails, err := c.userRepo.GetEmailsByRoles(ctx, rbac.ADMIN, rbac.SUPERADMIN)
-	if err != nil {
-		return fmt.Errorf("get admin emails: %w", err)
-	}
-
-	for i, email := range emails {
-		if err := c.mailer.SendNewTicketEmail(ctx, email, createdEvent.TicketID, createdEvent.SubmittedBy, createdEvent.Title, createdEvent.Description); err != nil {
-			return fmt.Errorf("send ticket email %d of %d: %w", i+1, len(emails), err)
-		}
-	}
-
-	return nil
-}
-
-func (c *Consumer) handlePasswordResetRequested(ctx context.Context, body []byte) error {
-	var passwordRequestedEvent event.PasswordResetRequestedEvent
-
-	if err := json.Unmarshal(body, &passwordRequestedEvent); err != nil {
-		return err
-	}
-
-	return c.mailer.SendResetPasswordEmail(ctx, passwordRequestedEvent.Name, passwordRequestedEvent.Email, passwordRequestedEvent.ResetURL, passwordRequestedEvent.ExpiresIn)
-}
-
-var priorityLabels = map[string]string{
-	"LOW":    "Rendah",
-	"MEDIUM": "Sedang",
-	"HIGH":   "Tinggi",
-	"URGENT": "Mendesak",
-}
-
-var wib = time.FixedZone("WIB", 7*60*60)
-
-func (c *Consumer) ticketURL(ticketID int64) string {
-	return fmt.Sprintf("%s/ticket/%d", c.appURL, ticketID)
-}
-
 func (c *Consumer) recipient(ctx context.Context, userID uuid.UUID) (*user.UserProjection, error) {
 	u, err := c.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -171,163 +113,4 @@ func (c *Consumer) displayName(ctx context.Context, userID uuid.UUID) string {
 		return "Tim IT"
 	}
 	return u.Name
-}
-
-func (c *Consumer) handleTicketAssigned(ctx context.Context, body []byte) error {
-	var ev event.TicketAssignedEvent
-	if err := json.Unmarshal(body, &ev); err != nil {
-		return err
-	}
-
-	assignee, err := c.recipient(ctx, ev.AssigneeID)
-	if err != nil {
-		return err
-	}
-	if assignee == nil {
-		slog.InfoContext(ctx, "skip ticket assigned email", "ticket_id", ev.TicketID, "reason", "assignee missing or inactive")
-		return nil
-	}
-
-	priority := priorityLabels[ev.Priority]
-	if priority == "" {
-		priority = ev.Priority
-	}
-
-	return c.mailer.SendTicketAssignedEmail(ctx, assignee.Email, mailer.TicketAssignedEmailData{
-		TicketID:   ev.TicketID,
-		Title:      ev.Title,
-		Priority:   priority,
-		AssignedBy: c.displayName(ctx, ev.AssignedByID),
-		Note:       ev.Note,
-		TicketURL:  c.ticketURL(ev.TicketID),
-	})
-}
-
-func (c *Consumer) handleTicketResolved(ctx context.Context, body []byte) error {
-	var ev event.TicketResolvedEvent
-	if err := json.Unmarshal(body, &ev); err != nil {
-		return err
-	}
-
-	reporter, err := c.recipient(ctx, ev.ReporterID)
-	if err != nil {
-		return err
-	}
-	if reporter == nil {
-		slog.InfoContext(ctx, "skip ticket resolved email", "ticket_id", ev.TicketID, "reason", "reporter missing or inactive")
-		return nil
-	}
-
-	return c.mailer.SendTicketResolvedEmail(ctx, reporter.Email, mailer.TicketResolvedEmailData{
-		TicketID:     ev.TicketID,
-		Title:        ev.Title,
-		ReporterName: reporter.Name,
-		ResolvedBy:   c.displayName(ctx, ev.ResolvedByID),
-		Resolution:   ev.Resolution,
-		TicketURL:    c.ticketURL(ev.TicketID),
-	})
-}
-
-func (c *Consumer) handlePasswordChanged(ctx context.Context, body []byte) error {
-	var ev event.PasswordChangedEvent
-	if err := json.Unmarshal(body, &ev); err != nil {
-		return err
-	}
-
-	u, err := c.recipient(ctx, ev.UserID)
-	if err != nil {
-		return err
-	}
-	if u == nil {
-		return nil
-	}
-
-	return c.mailer.SendPasswordChangedEmail(ctx, u.Email, mailer.PasswordChangedEmailData{
-		Name:      u.Name,
-		ChangedAt: ev.ChangedAt.In(wib).Format("02/01/2006 15.04") + " WIB",
-		ByAdmin:   ev.ByAdmin,
-		LoginURL:  c.appURL + "/login",
-	})
-}
-
-var feedbackTypeLabels = map[string]string{
-	"FEATURE_REQUEST": "Permintaan Fitur",
-	"IMPROVEMENT":     "Peningkatan",
-	"BUG_REPORT":      "Laporan Bug",
-}
-
-func (c *Consumer) feedbackURL() string {
-	return c.appURL + "/feedback"
-}
-
-func (c *Consumer) handleFeedbackCreated(ctx context.Context, body []byte) error {
-	var ev event.FeedbackCreatedEvent
-	if err := json.Unmarshal(body, &ev); err != nil {
-		return err
-	}
-
-	submitterName := "Pengguna"
-	var submitterEmail string
-	if submitter, err := c.userRepo.GetByID(ctx, ev.SubmittedByID); err == nil {
-		submitterName = submitter.Name
-		submitterEmail = submitter.Email
-	}
-
-	emails, err := c.userRepo.GetEmailsByRoles(ctx, rbac.ADMIN, rbac.SUPERADMIN)
-	if err != nil {
-		return fmt.Errorf("get admin emails: %w", err)
-	}
-
-	typeLabel := feedbackTypeLabels[ev.Type]
-	if typeLabel == "" {
-		typeLabel = ev.Type
-	}
-
-	data := mailer.FeedbackCreatedEmailData{
-		FeedbackID:  ev.FeedbackID,
-		Title:       ev.Title,
-		Type:        typeLabel,
-		Description: ev.Description,
-		SubmittedBy: submitterName,
-		FeedbackURL: c.feedbackURL(),
-	}
-
-	for i, email := range emails {
-		if strings.EqualFold(email, submitterEmail) {
-			continue
-		}
-		if err := c.mailer.SendFeedbackCreatedEmail(ctx, email, data); err != nil {
-			return fmt.Errorf("send feedback email %d of %d: %w", i+1, len(emails), err)
-		}
-	}
-
-	return nil
-}
-
-func (c *Consumer) handleFeedbackStatusChanged(ctx context.Context, body []byte) error {
-	var ev event.FeedbackStatusChangedEvent
-	if err := json.Unmarshal(body, &ev); err != nil {
-		return err
-	}
-
-	if ev.Status != "DELIVERED" {
-		return nil
-	}
-
-	submitter, err := c.recipient(ctx, ev.SubmitterID)
-	if err != nil {
-		return err
-	}
-	if submitter == nil {
-		slog.InfoContext(ctx, "skip feedback delivered email", "feedback_id", ev.FeedbackID, "reason", "submitter missing or inactive")
-		return nil
-	}
-
-	return c.mailer.SendFeedbackDeliveredEmail(ctx, submitter.Email, mailer.FeedbackDeliveredEmailData{
-		FeedbackID:    ev.FeedbackID,
-		Title:         ev.Title,
-		SubmitterName: submitter.Name,
-		ReviewedBy:    c.displayName(ctx, ev.ReviewedByID),
-		FeedbackURL:   c.feedbackURL(),
-	})
 }
